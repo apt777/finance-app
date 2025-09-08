@@ -43,6 +43,7 @@ const dummyTransactions = [
     description: 'Salary',
     amount: 3000000,
     currency: 'KRW',
+    type: 'income',
   },
   {
     id: 'txn-2',
@@ -51,6 +52,7 @@ const dummyTransactions = [
     description: 'Groceries',
     amount: -150000,
     currency: 'KRW',
+    type: 'expense',
   },
   {
     id: 'txn-3',
@@ -59,6 +61,7 @@ const dummyTransactions = [
     description: 'Transfer to Savings',
     amount: 100000,
     currency: 'JPY',
+    type: 'transfer',
   },
 ];
 

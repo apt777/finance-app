@@ -55,6 +55,7 @@ model Transaction {
   date        DateTime
   description String
   amount      Float
+  type        String // e.g., 'income', 'expense'
   currency    String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

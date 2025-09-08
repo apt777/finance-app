@@ -74,6 +74,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     { name: 'Accounts', href: '/accounts', icon: Wallet },
     { name: 'Holdings', href: '/holdings', icon: TrendingUp },
     { name: 'Goals', href: '/goals', icon: Target },
+    { name: 'Transactions', href: '/transactions', icon: Wallet }, // Added Transactions link
   ]
 
   useEffect(() => {

@@ -3,7 +3,7 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import prisma from '@lib/prisma'
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   const supabase = createRouteHandlerClient({ cookies })
   try {
     const { data: { session } } = await supabase.auth.getSession()
@@ -23,21 +23,21 @@ export async function GET(request: Request, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Account not found or does not belong to user' }, { status: 404 })
     }
 
-    const transactions = await prisma.transaction.findMany({
-      where: {
-        accountId: id,
-      },
-      orderBy: {
-        date: 'desc',
-      },
-      include: {
-        account: { // Include account details for display
-          select: { name: true, currency: true },
-        },
-      },
+    // Delete related transactions and holdings first due to foreign key constraints
+    await prisma.transaction.deleteMany({
+      where: { accountId: id },
     })
-    return NextResponse.json(transactions)
+    await prisma.holding.deleteMany({
+      where: { accountId: id },
+    })
+
+    // Now delete the account
+    await prisma.account.delete({
+      where: { id: id },
+    })
+
+    return NextResponse.json({ message: 'Account deleted successfully' }, { status: 200 })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Failed to fetch transactions' }, { status: 500 })
+    return NextResponse.json({ error: error.message || 'Failed to delete account' }, { status: 500 })
   }
 }
