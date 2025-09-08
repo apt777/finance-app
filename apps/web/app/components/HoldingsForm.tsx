@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useAccounts } from '../hooks/useAccounts' // Import the useAccounts hook
 
 interface HoldingFormData {
   accountId: string;
@@ -32,6 +33,7 @@ const createHolding = async (holdingData: HoldingFormData) => {
 
 const HoldingsForm = () => {
   const queryClient = useQueryClient()
+  const { data: accounts, isLoading: isLoadingAccounts, error: accountsError } = useAccounts()
   const [formData, setFormData] = useState<HoldingFormData>({
     accountId: '',
     symbol: '',
@@ -44,6 +46,7 @@ const HoldingsForm = () => {
     mutationFn: createHolding,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['holdings'] })
+      queryClient.invalidateQueries({ queryKey: ['accounts'] })
       setFormData({ accountId: '', symbol: '', shares: '', costBasis: '', currency: '' }) // Clear form
     },
   })
@@ -71,15 +74,24 @@ const HoldingsForm = () => {
       <h2 className="text-xl font-semibold mb-2">Add New Holding</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="accountId" className="block text-sm font-medium text-gray-700">Account ID (Placeholder)</label>
-          <input
-            type="text"
+          <label htmlFor="accountId" className="block text-sm font-medium text-gray-700">Account</label>
+          <select
             name="accountId"
             id="accountId"
             value={formData.accountId}
             onChange={handleChange}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-          />
+            disabled={isLoadingAccounts}
+            required
+          >
+            <option value="" disabled>Select an Account</option>
+            {accountsError && <option value="" disabled>Error loading accounts</option>}
+            {!accountsError && accounts?.map(account => (
+              <option key={account.id} value={account.id}>
+                {account.name} ({account.balance.toFixed(2)} {account.currency})
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <label htmlFor="symbol" className="block text-sm font-medium text-gray-700">Symbol</label>
@@ -90,6 +102,7 @@ const HoldingsForm = () => {
             value={formData.symbol}
             onChange={handleChange}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            required
           />
         </div>
         <div>
@@ -101,6 +114,7 @@ const HoldingsForm = () => {
             value={formData.shares}
             onChange={handleChange}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            required
           />
         </div>
         <div>
@@ -112,6 +126,7 @@ const HoldingsForm = () => {
             value={formData.costBasis}
             onChange={handleChange}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            required
           />
         </div>
         <div>
@@ -123,12 +138,13 @@ const HoldingsForm = () => {
             value={formData.currency}
             onChange={handleChange}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            required
           />
         </div>
         <button
           type="submit"
           className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-          disabled={mutation.isPending}
+          disabled={mutation.isPending || isLoadingAccounts}
         >
           {mutation.isPending ? 'Adding...' : 'Add Holding'}
         </button>

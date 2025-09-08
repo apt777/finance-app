@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useAccounts } from '../hooks/useAccounts' // Import the useAccounts hook
 
 interface TransactionFormData {
   accountId: string;
@@ -31,6 +32,7 @@ const createTransaction = async (transactionData: TransactionFormData) => {
 
 const TransactionForm = () => {
   const queryClient = useQueryClient()
+  const { data: accounts, isLoading: isLoadingAccounts, error: accountsError } = useAccounts()
   const [formData, setFormData] = useState<TransactionFormData>({
     accountId: '',
     date: '',
@@ -43,6 +45,7 @@ const TransactionForm = () => {
     mutationFn: createTransaction,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
+      queryClient.invalidateQueries({ queryKey: ['accounts'] }) // Invalidate accounts query on new transaction
       setFormData({ accountId: '', date: '', description: '', amount: '', currency: '' }) // Clear form
     },
   })
@@ -71,15 +74,24 @@ const TransactionForm = () => {
       <h2 className="text-xl font-semibold mb-2">Add New Transaction</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="accountId" className="block text-sm font-medium text-gray-700">Account ID (Placeholder)</label>
-          <input
-            type="text"
+          <label htmlFor="accountId" className="block text-sm font-medium text-gray-700">Account</label>
+          <select
             name="accountId"
             id="accountId"
             value={formData.accountId}
             onChange={handleChange}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-          />
+            disabled={isLoadingAccounts}
+            required
+          >
+            <option value="" disabled>Select an Account</option>
+            {accountsError && <option value="" disabled>Error loading accounts</option>}
+            {!accountsError && accounts?.map(account => (
+              <option key={account.id} value={account.id}>
+                {account.name} ({account.balance.toFixed(2)} {account.currency})
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <label htmlFor="date" className="block text-sm font-medium text-gray-700">Date</label>
@@ -90,6 +102,7 @@ const TransactionForm = () => {
             value={formData.date}
             onChange={handleChange}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            required
           />
         </div>
         <div>
@@ -101,6 +114,7 @@ const TransactionForm = () => {
             value={formData.description}
             onChange={handleChange}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            required
           />
         </div>
         <div>
@@ -112,6 +126,7 @@ const TransactionForm = () => {
             value={formData.amount}
             onChange={handleChange}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            required
           />
         </div>
         <div>
@@ -123,12 +138,13 @@ const TransactionForm = () => {
             value={formData.currency}
             onChange={handleChange}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            required
           />
         </div>
         <button
           type="submit"
           className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-          disabled={mutation.isPending}
+          disabled={mutation.isPending || isLoadingAccounts}
         >
           {mutation.isPending ? 'Adding...' : 'Add Transaction'}
         </button>

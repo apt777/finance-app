@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server'
-import prisma from '../../../../../lib/prisma' // Adjust path as needed
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
+import prisma from '../../../../../lib/prisma'
 
+// Note: We are omitting userId from this interface as it will be handled by the session
 interface AccountData {
-  userId: string;
   name: string;
   type: string;
   balance: number;
@@ -10,23 +12,58 @@ interface AccountData {
 }
 
 export async function GET(request: Request) {
+  const supabase = createRouteHandlerClient({ cookies })
   try {
-    // In a real app, you'd filter by user ID
-    const accounts = await prisma.account.findMany()
+    const { data: { session } } = await supabase.auth.getSession()
+
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // TODO: Re-enable user-specific filtering once data seeding is corrected
+    const accounts = await prisma.account.findMany({
+      orderBy: {
+        name: 'asc'
+      }
+    })
     return NextResponse.json(accounts)
-  } catch (error: any) { // Cast error to any for now
+  } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed to fetch accounts' }, { status: 500 })
   }
 }
 
 export async function POST(request: Request) {
+  const supabase = createRouteHandlerClient({ cookies })
   try {
-    const { userId, name, type, balance, currency }: AccountData = await request.json()
+    const { data: { session } } = await supabase.auth.getSession()
+
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Ensure a user record exists in the public schema
+    await prisma.user.upsert({
+      where: { id: session.user.id },
+      update: {},
+      create: {
+        id: session.user.id,
+        email: session.user.email!, // email is guaranteed to exist for a logged in user
+      },
+    });
+
+    const { name, type, balance, currency }: AccountData = await request.json()
+
     const newAccount = await prisma.account.create({
-      data: { userId, name, type, balance, currency },
+      data: {
+        userId: session.user.id, // Use the ID from the session
+        name,
+        type,
+        balance,
+        currency,
+      },
     })
     return NextResponse.json(newAccount, { status: 201 })
-  } catch (error: any) { // Cast error to any for now
+  } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed to create account' }, { status: 500 })
   }
 }

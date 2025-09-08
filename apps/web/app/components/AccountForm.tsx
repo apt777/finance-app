@@ -3,15 +3,15 @@
 import React, { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
+// userId is no longer needed from the form
 interface AccountFormData {
-  userId: string;
   name: string;
   type: string;
   balance: number | string;
   currency: string;
 }
 
-const createAccount = async (accountData: AccountFormData) => {
+const createAccount = async (accountData: Omit<AccountFormData, 'userId'>) => {
   const res = await fetch('/api/accounts', {
     method: 'POST',
     headers: {
@@ -32,7 +32,6 @@ const createAccount = async (accountData: AccountFormData) => {
 const AccountForm = () => {
   const queryClient = useQueryClient()
   const [formData, setFormData] = useState<AccountFormData>({
-    userId: '',
     name: '',
     type: '',
     balance: '',
@@ -43,7 +42,7 @@ const AccountForm = () => {
     mutationFn: createAccount,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
-      setFormData({ userId: '', name: '', type: '', balance: '', currency: '' }) // Clear form
+      setFormData({ name: '', type: '', balance: '', currency: '' }) // Clear form
     },
   })
 
@@ -54,7 +53,7 @@ const AccountForm = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.userId || !formData.name || !formData.type || !formData.balance || !formData.currency) {
+    if (!formData.name || !formData.type || !formData.balance || !formData.currency) {
       alert('Please fill in all fields')
       return
     }
@@ -69,17 +68,7 @@ const AccountForm = () => {
     <div className="bg-white p-4 rounded shadow mt-4">
       <h2 className="text-xl font-semibold mb-2">Add New Account</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="userId" className="block text-sm font-medium text-gray-700">User ID (Placeholder)</label>
-          <input
-            type="text"
-            name="userId"
-            id="userId"
-            value={formData.userId}
-            onChange={handleChange}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-          />
-        </div>
+        {/* User ID input is removed */}
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-gray-700">Account Name</label>
           <input
@@ -89,6 +78,7 @@ const AccountForm = () => {
             value={formData.name}
             onChange={handleChange}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            required
           />
         </div>
         <div>
@@ -100,6 +90,7 @@ const AccountForm = () => {
             value={formData.type}
             onChange={handleChange}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            required
           />
         </div>
         <div>
@@ -111,6 +102,7 @@ const AccountForm = () => {
             value={formData.balance}
             onChange={handleChange}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            required
           />
         </div>
         <div>
@@ -122,6 +114,7 @@ const AccountForm = () => {
             value={formData.currency}
             onChange={handleChange}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            required
           />
         </div>
         <button
