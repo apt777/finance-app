@@ -159,3 +159,28 @@ Learn more about the power of Turborepo:
     - `npm run seed` 명령을 실행하여 초기 데이터를 데이터베이스에 성공적으로 채웠습니다.
 
 위 과정을 통해 모든 문제가 해결되었고 애플리케이션이 정상적으로 동작함을 확인했습니다.
+
+### 4. 추가 수정 및 개선 (Additional Fixes and Improvements)
+
+- **Hydration 오류 수정**:
+  - **증상**: `In HTML, whitespace text nodes cannot be a child of <tr>.` 오류가 콘솔에 계속 발생.
+  - **원인**: `<table>`의 `<thead>`와 `<tbody>` 태그 사이에 줄바꿈(whitespace)이 있어 React 렌더링 시 hydration 불일치 발생.
+  - **해결**: `AccountList.tsx`, `HoldingsList.tsx`, `TransactionList.tsx` 파일에서 `<thead>`와 `<tbody>` 사이의 공백을 제거하여 해결.
+
+- **트랜잭션 생성 로직 개선**:
+  - **증상**: 새 트랜잭션을 추가해도 계좌(Account)의 잔액이 업데이트되지 않음.
+  - **원인**: API 라우트 (`/api/transactions`)가 트랜잭션 레코드만 생성하고, 연결된 계좌의 잔액을 수정하지 않았음.
+  - **해결**: `prisma.$transaction`을 사용하여 트랜잭션 생성과 계좌 잔액 업데이트가 원자적(atomic)으로 동시에 일어나도록 API 로직을 수정.
+
+- **트랜잭션 폼 기능 개선**:
+  - **요구사항**: 트랜잭션 추가 시, 선택된 계좌의 통화(currency)가 자동으로 폼에 설정되고 변경 불가능하도록 수정.
+  - **해결**: `TransactionForm.tsx`에서 계좌 선택 시 해당 계좌의 통화를 읽어와 `currency` 필드를 자동으로 채우고 `readOnly` 속성을 추가함.
+
+- **API 권한 오류 수정**:
+  - **증상**: 트랜잭션 추가 시 `Error: Unauthorized` 오류 발생.
+  - **원인**: API가 현재 로그인한 사용자의 계좌만 필터링하지 않고, 모든 사용자의 계좌 목록을 불러오고 있었음. 이로 인해 다른 사용자의 계좌에 트랜잭션을 추가하려는 시도가 발생하여 권한 오류로 이어짐.
+  - **해결**: `GET /api/accounts` API 라우트에 현재 로그인한 사용자의 `userId`로 필터링하는 로직을 추가하여, 사용자가 자신의 계좌만 보고 상호작용할 수 있도록 수정.
+
+- **개발 환경 가이드**:
+  - **문제**: Supabase의 이메일 인증 기능 때문에 테스트용 계정 생성이 어려움.
+  - **해결**: Supabase 대시보드에서 일시적으로 이메일 인증 기능을 비활성화하는 방법을 안내하여 원활한 테스트 환경을 구축하도록 지원.
