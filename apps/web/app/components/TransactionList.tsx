@@ -39,9 +39,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account</th>
             </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {transactions.map((transaction: Transaction) => (
+          </thead><tbody className="bg-white divide-y divide-gray-200">{transactions.map((transaction: Transaction) => (
               <tr key={transaction.id}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{new Date(transaction.date).toLocaleDateString()}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{transaction.description}</td>

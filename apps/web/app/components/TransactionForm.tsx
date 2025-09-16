@@ -54,7 +54,21 @@ const TransactionForm = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+
+    if (name === 'accountId') {
+      const selectedAccount = accounts?.find(acc => acc.id === value);
+      if (selectedAccount) {
+        setFormData({
+          ...formData,
+          accountId: value,
+          currency: selectedAccount.currency, // Set currency from selected account
+        });
+      } else {
+        setFormData({ ...formData, accountId: value, currency: '' });
+      }
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -155,8 +169,9 @@ const TransactionForm = () => {
             id="currency"
             value={formData.currency}
             onChange={handleChange}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-gray-100" // Style to indicate it's read-only
             required
+            readOnly // Make the input read-only
           />
         </div>
         <button

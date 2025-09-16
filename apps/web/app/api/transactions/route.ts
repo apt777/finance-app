@@ -13,7 +13,8 @@ interface TransactionData {
 }
 
 export async function GET(request: Request) {
-  const supabase = createRouteHandlerClient({ cookies })
+  const cookieStore = cookies()
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
   try {
     const { data: { session } } = await supabase.auth.getSession()
 
@@ -44,7 +45,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const supabase = createRouteHandlerClient({ cookies })
+  const cookieStore = cookies()
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
   try {
     const { data: { session } } = await supabase.auth.getSession()
 
@@ -54,19 +56,50 @@ export async function POST(request: Request) {
 
     const { accountId, date, description, type, amount, currency }: TransactionData = await request.json()
 
-    // TODO: Re-enable account ownership check once user-account linking is properly handled
-    // For now, allow adding transactions to any account for testing/seeding purposes
+    // 1. Find the account to ensure it exists and get its current balance
+    const account = await prisma.account.findUnique({
+      where: { id: accountId },
+    });
 
-    const newTransaction = await prisma.transaction.create({
-      data: {
-        accountId,
-        date: new Date(date),
-        description,
-        type,
-        amount,
-        currency,
-      },
-    })
+    if (!account) {
+      return NextResponse.json({ error: 'Account not found' }, { status: 404 });
+    }
+    
+    if (account.userId !== session.user.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
+    // 2. Calculate the new balance
+    let newBalance;
+    const transactionAmount = Number(amount);
+    if (type === 'income') {
+      newBalance = account.balance + transactionAmount;
+    } else if (type === 'expense') {
+      newBalance = account.balance - transactionAmount;
+    } else {
+      // For 'transfer' or other types, we might need more complex logic,
+      // but for now, let's assume they don't affect the balance in this simple model.
+      newBalance = account.balance;
+    }
+
+    // 3. Use a Prisma transaction to update the account and create the transaction
+    const [updatedAccount, newTransaction] = await prisma.$transaction([
+      prisma.account.update({
+        where: { id: accountId },
+        data: { balance: newBalance },
+      }),
+      prisma.transaction.create({
+        data: {
+          accountId,
+          date: new Date(date),
+          description,
+          type,
+          amount: transactionAmount,
+          currency,
+        },
+      }),
+    ]);
+
     return NextResponse.json(newTransaction, { status: 201 })
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed to create transaction' }, { status: 500 })

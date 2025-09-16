@@ -12,7 +12,8 @@ interface AccountData {
 }
 
 export async function GET(request: Request) {
-  const supabase = createRouteHandlerClient({ cookies })
+  const cookieStore = cookies()
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
   try {
     const { data: { session } } = await supabase.auth.getSession()
 
@@ -20,8 +21,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // TODO: Re-enable user-specific filtering once data seeding is corrected
     const accounts = await prisma.account.findMany({
+      where: {
+        userId: session.user.id,
+      },
       orderBy: {
         name: 'asc'
       }
@@ -33,7 +36,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const supabase = createRouteHandlerClient({ cookies })
+  const cookieStore = cookies()
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
   try {
     const { data: { session } } = await supabase.auth.getSession()
 
