@@ -1,0 +1,258 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// User & Authentication Models
+// ============================================================================
+
+model User {
+  id        String    @id
+  email     String    @unique
+  name      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relations
+  accounts         Account[]
+  transactions     Transaction[]
+  holdings         Holding[]
+  goals            Goal[]
+  settings         UserSetting[]
+  exchangeRates    ExchangeRate[]
+  nisaAccounts     NISAAccount[]
+
+  @@index([email])
+}
+
+// ============================================================================
+// User Settings & Configuration Models
+// ============================================================================
+
+model UserSetting {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key       String
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, key])
+  @@index([userId])
+}
+
+// ============================================================================
+// Currency & Exchange Rate Models
+// ============================================================================
+
+model Currency {
+  id        String   @id @default(cuid())
+  code      String   @unique // JPY, KRW, USD, CNY, etc.
+  name      String   // Japanese Yen, Korean Won, US Dollar, etc.
+  symbol    String   // ¥, ₩, $, ¥, etc.
+  createdAt DateTime @default(now())
+
+  @@index([code])
+}
+
+model ExchangeRate {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fromCurrency String // e.g., "JPY"
+  toCurrency   String // e.g., "KRW"
+  rate      Float    // Exchange rate value
+  source    String   @default("manual") // "manual" or "api"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, fromCurrency, toCurrency])
+  @@index([userId])
+  @@index([fromCurrency])
+  @@index([toCurrency])
+}
+
+// ============================================================================
+// Account Models
+// ============================================================================
+
+model AccountType {
+  id        String   @id @default(cuid())
+  name      String   // e.g., "Checking", "Savings", "Credit Card", "Investment", "NISA"
+  key       String   @unique // e.g., "checking", "savings", "credit_card", "investment", "nisa"
+  createdAt DateTime @default(now())
+
+  @@index([key])
+}
+
+model Account {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String    // e.g., "My Checking Account", "Savings for Travel"
+  type            String    // References AccountType.key
+  currency        String    // JPY, KRW, USD, etc.
+  balance         Float     @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  transactions    Transaction[] @relation("AccountTransactions")
+  fromTransactions Transaction[] @relation("FromAccountTransactions")
+  toTransactions  Transaction[] @relation("ToAccountTransactions")
+  holdings        Holding[]
+  nisaAccount     NISAAccount?
+
+  @@index([userId])
+  @@index([type])
+  @@index([currency])
+}
+
+// ============================================================================
+// Transaction Models
+// ============================================================================
+
+model TransactionCategory {
+  id        String   @id @default(cuid())
+  name      String   // e.g., "Food", "Transportation", "Entertainment"
+  key       String   @unique // e.g., "food", "transportation", "entertainment"
+  icon      String?  // Icon name or emoji
+  createdAt DateTime @default(now())
+
+  @@index([key])
+}
+
+model Transaction {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // For income/expense transactions
+  accountId       String?
+  account         Account?  @relation("AccountTransactions", fields: [accountId], references: [id], onDelete: SetNull)
+  
+  // For transfer transactions
+  fromAccountId   String?
+  fromAccount     Account?  @relation("FromAccountTransactions", fields: [fromAccountId], references: [id], onDelete: SetNull)
+  toAccountId     String?
+  toAccount       Account?  @relation("ToAccountTransactions", fields: [toAccountId], references: [id], onDelete: SetNull)
+  
+  date            DateTime
+  description     String
+  amount          Float
+  currency        String
+  type            String    // "income", "expense", "transfer"
+  categoryKey     String?   // References TransactionCategory.key
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([accountId])
+  @@index([fromAccountId])
+  @@index([toAccountId])
+  @@index([date])
+  @@index([type])
+}
+
+// ============================================================================
+// Investment & Holding Models
+// ============================================================================
+
+model Holding {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId       String
+  account         Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  
+  symbol          String    // e.g., "AAPL", "9984" (Softbank)
+  name            String?   // e.g., "Apple Inc.", "SoftBank Group Corp."
+  shares          Float
+  costBasis       Float     // Cost per share
+  currency        String    // Currency of the investment
+  marketPrice     Float?    // Current market price (optional, for future real-time updates)
+  
+  // Investment type
+  investmentType  String    // "stock", "etf", "bond", "crypto", etc.
+  region          String?   // "JP" (Japan), "US" (United States), "CN" (China), etc.
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([accountId])
+  @@index([symbol])
+  @@index([investmentType])
+}
+
+// ============================================================================
+// NISA Account Models (Japan-specific)
+// ============================================================================
+
+model NISAAccount {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId       String    @unique
+  account         Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  
+  nisaType        String    // "general" (一般NISA) or "growth" (成長投資枠)
+  annualLimit     Float     @default(1200000) // 120万円 for general NISA
+  usedAmount      Float     @default(0)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+  @@unique([userId, nisaType])
+}
+
+// ============================================================================
+// Goal Models
+// ============================================================================
+
+model Goal {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name            String    // e.g., "Vacation Fund", "House Down Payment"
+  description     String?
+  targetAmount    Float
+  currentAmount   Float     @default(0)
+  targetCurrency  String    // Currency of the goal
+  targetDate      DateTime?
+  priority        Int       @default(0) // 0 = low, 1 = medium, 2 = high
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([targetDate])
+}
+
+// ============================================================================
+// System Models (for future use)
+// ============================================================================
+
+model SystemLog {
+  id        String   @id @default(cuid())
+  action    String   // e.g., "user_created", "transaction_added"
+  userId    String?
+  details   String?  // JSON string for detailed information
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}

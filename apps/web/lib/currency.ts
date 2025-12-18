@@ -1,0 +1,205 @@
+/**
+ * 복수 통화 관리 유틸리티
+ * JPY (일본 엔화), KRW (한국 원화), USD (미국 달러) 지원
+ */
+
+export type Currency = 'JPY' | 'KRW' | 'USD'
+
+export interface ExchangeRate {
+  from: Currency
+  to: Currency
+  rate: number
+  lastUpdated: Date
+}
+
+export interface CurrencySymbol {
+  [key: string]: string
+}
+
+export interface CurrencyName {
+  [key: string]: string
+}
+
+// 통화 심볼
+export const CURRENCY_SYMBOLS: CurrencySymbol = {
+  JPY: '¥',
+  KRW: '₩',
+  USD: '$',
+}
+
+// 통화 이름
+export const CURRENCY_NAMES: CurrencyName = {
+  JPY: '일본 엔',
+  KRW: '한국 원',
+  USD: '미국 달러',
+}
+
+// 기본 환율 (수동 설정용)
+export const DEFAULT_EXCHANGE_RATES: ExchangeRate[] = [
+  { from: 'JPY', to: 'KRW', rate: 10.5, lastUpdated: new Date() },
+  { from: 'JPY', to: 'USD', rate: 0.0067, lastUpdated: new Date() },
+  { from: 'KRW', to: 'JPY', rate: 0.095, lastUpdated: new Date() },
+  { from: 'KRW', to: 'USD', rate: 0.00077, lastUpdated: new Date() },
+  { from: 'USD', to: 'JPY', rate: 149.25, lastUpdated: new Date() },
+  { from: 'USD', to: 'KRW', rate: 1298.5, lastUpdated: new Date() },
+]
+
+/**
+ * 환율을 이용한 통화 변환
+ * @param amount 변환할 금액
+ * @param fromCurrency 원래 통화
+ * @param toCurrency 변환할 통화
+ * @param exchangeRates 환율 정보
+ * @returns 변환된 금액
+ */
+export function convertCurrency(
+  amount: number,
+  fromCurrency: Currency,
+  toCurrency: Currency,
+  exchangeRates: ExchangeRate[]
+): number {
+  if (fromCurrency === toCurrency) {
+    return amount
+  }
+
+  const rate = exchangeRates.find(
+    (r) => r.from === fromCurrency && r.to === toCurrency
+  )
+
+  if (!rate) {
+    console.warn(
+      `환율을 찾을 수 없습니다: ${fromCurrency} -> ${toCurrency}`
+    )
+    return amount
+  }
+
+  return amount * rate.rate
+}
+
+/**
+ * 여러 통화의 금액을 기본 통화로 변환
+ * @param amounts 통화별 금액 맵
+ * @param baseCurrency 기본 통화
+ * @param exchangeRates 환율 정보
+ * @returns 기본 통화로 변환된 총액
+ */
+export function convertToBaseCurrency(
+  amounts: { [key in Currency]?: number },
+  baseCurrency: Currency,
+  exchangeRates: ExchangeRate[]
+): number {
+  let total = 0
+
+  for (const [currency, amount] of Object.entries(amounts)) {
+    if (amount && currency !== baseCurrency) {
+      total += convertCurrency(
+        amount,
+        currency as Currency,
+        baseCurrency,
+        exchangeRates
+      )
+    } else if (amount && currency === baseCurrency) {
+      total += amount
+    }
+  }
+
+  return total
+}
+
+/**
+ * 환율 업데이트 (수동 설정)
+ * @param exchangeRates 기존 환율 정보
+ * @param from 출발 통화
+ * @param to 도착 통화
+ * @param newRate 새로운 환율
+ * @returns 업데이트된 환율 정보
+ */
+export function updateExchangeRate(
+  exchangeRates: ExchangeRate[],
+  from: Currency,
+  to: Currency,
+  newRate: number
+): ExchangeRate[] {
+  const updatedRates = [...exchangeRates]
+  const index = updatedRates.findIndex((r) => r.from === from && r.to === to)
+
+  if (index !== -1) {
+    updatedRates[index] = {
+      ...updatedRates[index],
+      rate: newRate,
+      lastUpdated: new Date(),
+    }
+  } else {
+    updatedRates.push({
+      from,
+      to,
+      rate: newRate,
+      lastUpdated: new Date(),
+    })
+  }
+
+  return updatedRates
+}
+
+/**
+ * 역방향 환율 계산
+ * @param rate 원래 환율
+ * @returns 역방향 환율
+ */
+export function getReverseRate(rate: number): number {
+  return 1 / rate
+}
+
+/**
+ * 통화 포맷팅
+ * @param amount 금액
+ * @param currency 통화
+ * @param locale 로케일 (기본값: 'ko-KR')
+ * @returns 포맷된 통화 문자열
+ */
+export function formatCurrency(
+  amount: number,
+  currency: Currency,
+  locale: string = 'ko-KR'
+): string {
+  const formatter = new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency: currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })
+
+  return formatter.format(amount)
+}
+
+/**
+ * 통화 심볼 가져오기
+ * @param currency 통화
+ * @returns 통화 심볼
+ */
+export function getCurrencySymbol(currency: Currency): string {
+  return CURRENCY_SYMBOLS[currency] || currency
+}
+
+/**
+ * 통화 이름 가져오기
+ * @param currency 통화
+ * @returns 통화 이름
+ */
+export function getCurrencyName(currency: Currency): string {
+  return CURRENCY_NAMES[currency] || currency
+}
+
+/**
+ * 모든 지원 통화 목록
+ */
+export const SUPPORTED_CURRENCIES: Currency[] = ['JPY', 'KRW', 'USD']
+
+/**
+ * 통화가 지원되는지 확인
+ * @param currency 통화
+ * @returns 지원 여부
+ */
+export function isSupportedCurrency(currency: string): currency is Currency {
+  return SUPPORTED_CURRENCIES.includes(currency as Currency)
+}
