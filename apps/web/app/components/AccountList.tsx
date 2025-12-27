@@ -145,7 +145,7 @@ const AccountList = () => {
               id="currencyFilter"
               value={filterCurrency}
               onChange={(e) => setFilterCurrency(e.target.value)}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white text-slate-900 appearance-none pr-8"
             >
               <option value="">모든 통화</option>
               {uniqueCurrencies.map((currency: string) => (
@@ -163,7 +163,7 @@ const AccountList = () => {
               id="typeFilter"
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white text-slate-900 appearance-none pr-8"
             >
               <option value="">모든 종류</option>
               {uniqueTypes.map((type: string) => (

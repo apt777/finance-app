@@ -191,7 +191,7 @@ export default function SetupPage() {
                         value={account.name}
                         onChange={(e) => handleAccountChange(index, 'name', e.target.value)}
                         placeholder="예: 메인 계좌"
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-900 placeholder-slate-400"
                       />
                     </div>
 
@@ -201,7 +201,7 @@ export default function SetupPage() {
                       <select
                         value={account.type}
                         onChange={(e) => handleAccountChange(index, 'type', e.target.value)}
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-900 appearance-none pr-8"
                       >
                         {accountTypes.map((type) => (
                           <option key={type.key} value={type.key}>
@@ -217,7 +217,7 @@ export default function SetupPage() {
                       <select
                         value={account.currency}
                         onChange={(e) => handleAccountChange(index, 'currency', e.target.value)}
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-900 appearance-none pr-8"
                       >
                         {currencies.map((curr) => (
                           <option key={curr.code} value={curr.code}>
@@ -235,7 +235,7 @@ export default function SetupPage() {
                         value={account.balance}
                         onChange={(e) => handleAccountChange(index, 'balance', parseFloat(e.target.value) || 0)}
                         placeholder="0"
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-900 placeholder-slate-400"
                       />
                     </div>
                   </div>
@@ -293,7 +293,7 @@ export default function SetupPage() {
                       <select
                         value={rate.fromCurrency}
                         onChange={(e) => handleExchangeRateChange(index, 'fromCurrency', e.target.value)}
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-900 appearance-none pr-8"
                       >
                         {currencies.map((curr) => (
                           <option key={curr.code} value={curr.code}>
@@ -314,7 +314,7 @@ export default function SetupPage() {
                       <select
                         value={rate.toCurrency}
                         onChange={(e) => handleExchangeRateChange(index, 'toCurrency', e.target.value)}
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-900 appearance-none pr-8"
                       >
                         {currencies.map((curr) => (
                           <option key={curr.code} value={curr.code}>
@@ -337,7 +337,7 @@ export default function SetupPage() {
                         onChange={(e) => handleExchangeRateChange(index, 'rate', parseFloat(e.target.value) || 0)}
                         placeholder="0.00"
                         step="0.01"
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-900 placeholder-slate-400"
                       />
                     </div>
 

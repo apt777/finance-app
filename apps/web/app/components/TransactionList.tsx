@@ -156,7 +156,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
               id="sortBy"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as 'date' | 'amount')}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white text-slate-900 appearance-none pr-8"
             >
               <option value="date">최신순</option>
               <option value="amount">금액순</option>
@@ -170,7 +170,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
               id="filterType"
               value={filterType}
               onChange={(e) => setFilterType(e.target.value as 'all' | 'income' | 'expense')}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white text-slate-900 appearance-none pr-8"
             >
               <option value="all">모두</option>
               <option value="income">수입만</option>

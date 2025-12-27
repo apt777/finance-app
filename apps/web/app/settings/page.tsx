@@ -78,7 +78,7 @@ export default function SettingsPage() {
                     <input
                       id="current-password"
                       type="password"
-                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white text-slate-900 placeholder-slate-400"
                       placeholder="현재 비밀번호 입력"
                     />
                   </div>
@@ -89,7 +89,7 @@ export default function SettingsPage() {
                     <input
                       id="new-password"
                       type="password"
-                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white text-slate-900 placeholder-slate-400"
                       placeholder="새 비밀번호 입력"
                     />
                   </div>
@@ -100,7 +100,7 @@ export default function SettingsPage() {
                     <input
                       id="confirm-password"
                       type="password"
-                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white text-slate-900 placeholder-slate-400"
                       placeholder="비밀번호 다시 입력"
                     />
                   </div>

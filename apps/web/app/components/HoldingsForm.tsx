@@ -118,7 +118,7 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
               id="accountId"
               value={formData.accountId}
               onChange={handleChange}
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white appearance-none pr-8"
               disabled={isLoadingAccounts}
               required
             >
@@ -144,7 +144,7 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
                 id="symbol"
                 value={formData.symbol}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all uppercase"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400 uppercase"
                 placeholder="예: AAPL, MSFT, 9984"
                 required
               />
@@ -160,7 +160,7 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
                 id="shares"
                 value={formData.shares}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
                 placeholder="0"
                 step="0.01"
                 required

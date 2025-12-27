@@ -165,7 +165,7 @@ const ExchangeRateManager = () => {
                   id="from"
                   value={formData.from}
                   onChange={(e) => setFormData({ ...formData, from: e.target.value })}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white text-slate-900 appearance-none pr-8"
                 >
                   {SUPPORTED_CURRENCIES.map((currency) => (
                     <option key={currency} value={currency}>
@@ -196,7 +196,7 @@ const ExchangeRateManager = () => {
                   id="to"
                   value={formData.to}
                   onChange={(e) => setFormData({ ...formData, to: e.target.value })}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white text-slate-900 appearance-none pr-8"
                 >
                   {SUPPORTED_CURRENCIES.map((currency) => (
                     <option key={currency} value={currency}>
@@ -218,7 +218,7 @@ const ExchangeRateManager = () => {
                 step="0.0001"
                 value={formData.rate}
                 onChange={(e) => setFormData({ ...formData, rate: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white text-slate-900 placeholder-slate-400"
                 placeholder="예: 10.5"
                 required
               />
