@@ -20,7 +20,7 @@ export async function POST(request: Request) {
   try {
     const { from, to, rate }: ExchangeRateData = await request.json()
     const newExchangeRate = await prisma.exchangeRate.create({
-      data: { from, to, rate },
+      data: { fromCurrency: from, toCurrency: to, rate },
     })
     return NextResponse.json(newExchangeRate, { status: 201 })
   } catch (error: any) { // Cast error to any for now
