@@ -1,13 +1,19 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Settings, Globe, Lock, Bell } from 'lucide-react'
+import { Settings, Globe, Lock, Bell, Languages } from 'lucide-react'
 import ExchangeRateManager from '../components/ExchangeRateManager'
+import LanguageSwitcher from '../components/LanguageSwitcher'
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState('exchange-rates')
+  const [activeTab, setActiveTab] = useState('language')
 
   const tabs = [
+    {
+      id: 'language',
+      label: '언어',
+      icon: Languages,
+    },
     {
       id: 'exchange-rates',
       label: '환율 관리',
@@ -62,6 +68,51 @@ export default function SettingsPage() {
 
         {/* Tab Content */}
         <div className="p-6">
+          {activeTab === 'language' && (
+            <div className="space-y-6">
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
+                <h3 className="text-lg font-bold text-slate-800 mb-2">언어 설정</h3>
+                <p className="text-slate-600 text-sm mb-6">애플리케이션의 언어를 선택하세요. 변경 후 페이지가 새로고침됩니다.</p>
+                <div className="flex justify-start">
+                  <LanguageSwitcher />
+                </div>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                <h3 className="text-lg font-bold text-slate-800 mb-4">지원 언어</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-3 p-4 bg-white rounded-lg border border-slate-200">
+                    <span className="text-3xl">🇰🇷</span>
+                    <div>
+                      <p className="font-semibold text-slate-800">한국어</p>
+                      <p className="text-xs text-slate-500">Korean</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3 p-4 bg-white rounded-lg border border-slate-200">
+                    <span className="text-3xl">🇯🇵</span>
+                    <div>
+                      <p className="font-semibold text-slate-800">日本語</p>
+                      <p className="text-xs text-slate-500">Japanese</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3 p-4 bg-white rounded-lg border border-slate-200">
+                    <span className="text-3xl">🇺🇸</span>
+                    <div>
+                      <p className="font-semibold text-slate-800">English</p>
+                      <p className="text-xs text-slate-500">English</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3 p-4 bg-white rounded-lg border border-slate-200">
+                    <span className="text-3xl">🇨🇳</span>
+                    <div>
+                      <p className="font-semibold text-slate-800">中文</p>
+                      <p className="text-xs text-slate-500">Chinese</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'exchange-rates' && (
             <ExchangeRateManager />
           )}
