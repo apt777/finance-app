@@ -10,6 +10,7 @@ interface GoalFormData {
   targetAmount: number | string;
   currentAmount: number | string;
   targetDate: string;
+  targetCurrency: string;
 }
 
 const createGoal = async (goalData: GoalFormData) => {
@@ -40,6 +41,7 @@ const GoalForm = () => {
     targetAmount: '',
     currentAmount: '',
     targetDate: '',
+    targetCurrency: 'JPY',
   })
   const [formError, setFormError] = useState<string | null>(null)
 
@@ -47,7 +49,7 @@ const GoalForm = () => {
     mutationFn: createGoal,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] })
-      setFormData({ userId: '', name: '', targetAmount: '', currentAmount: '', targetDate: '' })
+      setFormData({ userId: '', name: '', targetAmount: '', currentAmount: '', targetDate: '', targetCurrency: 'JPY' })
       setFormError(null)
     },
   })
@@ -62,7 +64,7 @@ const GoalForm = () => {
     e.preventDefault()
     setFormError(null)
 
-    if (!formData.userId || !formData.name || !formData.targetAmount || !formData.currentAmount) {
+    if (!formData.userId || !formData.name || !formData.targetAmount || !formData.currentAmount || !formData.targetCurrency) {
       setFormError('모든 필수 필드를 입력해 주세요.')
       return
     }
@@ -79,10 +81,16 @@ const GoalForm = () => {
 
     mutation.mutate(formData)
   }
-
+  
   const progress = formData.targetAmount && formData.currentAmount
     ? (Number(formData.currentAmount) / Number(formData.targetAmount)) * 100
     : 0
+    
+  const currencies = [
+    { value: 'JPY', label: '일본 엔 (¥)' },
+    { value: 'KRW', label: '한국 원 (₩)' },
+    { value: 'USD', label: '미국 달러 ($)' },
+  ]
 
   return (
     <div className="space-y-6">
@@ -134,14 +142,14 @@ const GoalForm = () => {
             />
           </div>
 
-          {/* Target Amount and Current Amount */}
+          {/* Target Amount and Currency */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="targetAmount" className="block text-sm font-semibold text-slate-800 mb-2">
                 목표 금액 <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-3 text-slate-500 font-medium">₩</span>
+                <span className="absolute left-4 top-3 text-slate-500 font-medium">{currencies.find(c => c.value === formData.targetCurrency)?.label.split('(')[1].replace(')','')}</span>
                 <input
                   type="number"
                   name="targetAmount"
@@ -154,13 +162,32 @@ const GoalForm = () => {
                 />
               </div>
             </div>
-
             <div>
+              <label htmlFor="targetCurrency" className="block text-sm font-semibold text-slate-800 mb-2">
+                통화 <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="targetCurrency"
+                id="targetCurrency"
+                value={formData.targetCurrency}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 appearance-none pr-8"
+                required
+              >
+                {currencies.map(curr => (
+                  <option key={curr.value} value={curr.value}>{curr.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          
+          {/* Current Amount */}
+          <div>
               <label htmlFor="currentAmount" className="block text-sm font-semibold text-slate-800 mb-2">
                 현재 금액 <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-3 text-slate-500 font-medium">₩</span>
+                <span className="absolute left-4 top-3 text-slate-500 font-medium">{currencies.find(c => c.value === formData.targetCurrency)?.label.split('(')[1].replace(')','')}</span>
                 <input
                   type="number"
                   name="currentAmount"
@@ -173,7 +200,6 @@ const GoalForm = () => {
                 />
               </div>
             </div>
-          </div>
 
           {/* Progress Preview */}
           {formData.targetAmount && formData.currentAmount && (
