@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { parse } from 'csv-parse/sync'
 import prisma from '@lib/prisma'
@@ -35,7 +35,17 @@ const decodeBuffer = (buffer: Buffer): string => {
 
 export async function POST(request: Request) {
   const cookieStore = cookies()
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+      },
+    }
+  )
 
   try {
     const { data: { session } } = await supabase.auth.getSession()
