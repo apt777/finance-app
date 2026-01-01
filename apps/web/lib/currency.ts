@@ -6,10 +6,22 @@
 export type Currency = 'JPY' | 'KRW' | 'USD'
 
 export interface ExchangeRate {
+  id?: string
+  userId?: string
+  fromCurrency: Currency
+  toCurrency: Currency
+  rate: number
+  source?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+// Legacy interface for backward compatibility
+export interface LegacyExchangeRate {
   from: Currency
   to: Currency
   rate: number
-  lastUpdated: Date
+  lastUpdated?: Date
 }
 
 export interface CurrencySymbol {
@@ -36,12 +48,12 @@ export const CURRENCY_NAMES: CurrencyName = {
 
 // 기본 환율 (수동 설정용)
 export const DEFAULT_EXCHANGE_RATES: ExchangeRate[] = [
-  { from: 'JPY', to: 'KRW', rate: 10.5, lastUpdated: new Date() },
-  { from: 'JPY', to: 'USD', rate: 0.0067, lastUpdated: new Date() },
-  { from: 'KRW', to: 'JPY', rate: 0.095, lastUpdated: new Date() },
-  { from: 'KRW', to: 'USD', rate: 0.00077, lastUpdated: new Date() },
-  { from: 'USD', to: 'JPY', rate: 149.25, lastUpdated: new Date() },
-  { from: 'USD', to: 'KRW', rate: 1298.5, lastUpdated: new Date() },
+  { fromCurrency: 'JPY', toCurrency: 'KRW', rate: 10.5 },
+  { fromCurrency: 'JPY', toCurrency: 'USD', rate: 0.0067 },
+  { fromCurrency: 'KRW', toCurrency: 'JPY', rate: 0.095 },
+  { fromCurrency: 'KRW', toCurrency: 'USD', rate: 0.00077 },
+  { fromCurrency: 'USD', toCurrency: 'JPY', rate: 149.25 },
+  { fromCurrency: 'USD', toCurrency: 'KRW', rate: 1298.5 },
 ]
 
 /**
@@ -54,21 +66,21 @@ export const DEFAULT_EXCHANGE_RATES: ExchangeRate[] = [
  */
 export function convertCurrency(
   amount: number,
-  fromCurrency: Currency,
-  toCurrency: Currency,
+  from: Currency,
+  to: Currency,
   exchangeRates: ExchangeRate[]
 ): number {
-  if (fromCurrency === toCurrency) {
+  if (from === to) {
     return amount
   }
 
   const rate = exchangeRates.find(
-    (r) => r.from === fromCurrency && r.to === toCurrency
+    (r) => r.fromCurrency === from && r.toCurrency === to
   )
 
   if (!rate) {
     console.warn(
-      `환율을 찾을 수 없습니다: ${fromCurrency} -> ${toCurrency}`
+      `환율을 찾을 수 없습니다: ${from} -> ${to}`
     )
     return amount
   }
@@ -121,20 +133,18 @@ export function updateExchangeRate(
   newRate: number
 ): ExchangeRate[] {
   const updatedRates = [...exchangeRates]
-  const index = updatedRates.findIndex((r) => r.from === from && r.to === to)
+  const index = updatedRates.findIndex((r) => r.fromCurrency === from && r.toCurrency === to)
 
   if (index !== -1) {
     updatedRates[index] = {
       ...updatedRates[index],
       rate: newRate,
-      lastUpdated: new Date(),
     }
   } else {
     updatedRates.push({
-      from,
-      to,
+      fromCurrency: from,
+      toCurrency: to,
       rate: newRate,
-      lastUpdated: new Date(),
     })
   }
 

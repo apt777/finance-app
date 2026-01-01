@@ -4,7 +4,7 @@ import React, { useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useOverviewData } from '../hooks/useOverviewData'
-import { useExchangeRates } from '../hooks/useExchangeRates'
+import { useExchangeRates, ExchangeRate } from '../hooks/useExchangeRates'
 import { Home, Wallet, TrendingUp, Target, Settings, LogOut, User, LogIn, DollarSign, Receipt } from 'lucide-react'
 import { useAuth } from '../context/AuthProviderClient'
 
@@ -26,12 +26,6 @@ interface Holding {
   currency: string;
 }
 
-interface ExchangeRate {
-  from: string;
-  to: string;
-  rate: number;
-}
-
 interface NavLink {
   name: string;
   href: string;
@@ -49,13 +43,13 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   // Type assertions for data from hooks
   const accounts: Account[] = (data?.accounts as Account[]) || []
   const holdings: Holding[] = (data?.holdings as Holding[]) || []
-  const rates: ExchangeRate[] = (exchangeRates as ExchangeRate[]) || []
+  const rates: ExchangeRate[] = exchangeRates || []
 
   const BASE_CURRENCY = 'JPY'
 
   const convertToBaseCurrency = (amount: number, currency: string): number => {
     if (currency === BASE_CURRENCY) return amount
-    const rate = rates.find((r) => r.from === currency && r.to === BASE_CURRENCY)?.rate
+    const rate = rates.find((r) => r.fromCurrency === currency && r.toCurrency === BASE_CURRENCY)?.rate
     return rate ? amount * rate : amount
   }
 

@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { useOverviewData } from '../hooks/useOverviewData'
-import { useExchangeRates } from '../hooks/useExchangeRates'
+import { useExchangeRates, ExchangeRate } from '../hooks/useExchangeRates'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
 import Link from 'next/link'
 import { TrendingUp, TrendingDown, Wallet, Target, PlusCircle, ArrowUpRight } from 'lucide-react'
@@ -43,11 +43,7 @@ interface Goal {
   targetDate?: string;
 }
 
-interface ExchangeRate {
-  from: string;
-  to: string;
-  rate: number;
-}
+// ExchangeRate interface is imported from useExchangeRates hook
 
 interface OverviewData {
   accounts: Account[];
@@ -91,13 +87,13 @@ const Overview = () => {
   const goals: Goal[] = overviewData.goals || []
   const transactions: Transaction[] = overviewData.transactions || []
 
-  const rates: ExchangeRate[] = (exchangeRates as ExchangeRate[]) || []
+  const rates: ExchangeRate[] = exchangeRates || []
 
   const BASE_CURRENCY = 'JPY'
 
   const convertToBaseCurrency = (amount: number, currency: string): number => {
     if (currency === BASE_CURRENCY) return amount
-    const rate = rates.find((r) => r.from === currency && r.to === BASE_CURRENCY)?.rate
+    const rate = rates.find((r) => r.fromCurrency === currency && r.toCurrency === BASE_CURRENCY)?.rate
     return rate ? amount * rate : 0
   }
 
@@ -148,7 +144,7 @@ const Overview = () => {
   }
 
   // Calculate total positive assets in KRW
-  const rateJPYToKRW = rates.find(r => r.from === 'JPY' && r.to === 'KRW')?.rate || 0;
+  const rateJPYToKRW = rates.find(r => r.fromCurrency === 'JPY' && r.toCurrency === 'KRW')?.rate || 0;
   const totalPositiveAssetsKRW = totalPositiveAssetsBaseCurrency * rateJPYToKRW;
 
   // Calculate goal progress percentage

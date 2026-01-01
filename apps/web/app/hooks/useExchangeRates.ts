@@ -1,10 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 
 export interface ExchangeRate {
-  from: string;
-  to: string;
+  id: string;
+  userId: string;
+  fromCurrency: string;
+  toCurrency: string;
   rate: number;
-  lastUpdated?: string;
+  source: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const fetchExchangeRates = async (): Promise<ExchangeRate[]> => {

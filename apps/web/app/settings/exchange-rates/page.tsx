@@ -1,17 +1,10 @@
 'use client'
 
 import React from 'react';
-import { useExchangeRates } from '../../hooks/useExchangeRates';
+import { useExchangeRates, ExchangeRate } from '../../hooks/useExchangeRates';
 import ExchangeRateForm from '../../components/ExchangeRateForm';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Trash2, TrendingUp, AlertCircle, Loader } from 'lucide-react';
-
-interface ExchangeRate {
-  id: string;
-  from: string;
-  to: string;
-  rate: number;
-}
 
 const deleteExchangeRate = async (rateId: string) => {
   const res = await fetch(`/api/exchange-rates/${rateId}`, {
@@ -41,7 +34,7 @@ const ExchangeRateManagementPage = () => {
     }
   };
 
-  const rates: ExchangeRate[] = (exchangeRates as ExchangeRate[]) || [];
+  const rates: ExchangeRate[] = exchangeRates || [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8 px-4">
@@ -113,11 +106,11 @@ const ExchangeRateManagementPage = () => {
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <span className="text-sm font-bold text-blue-600">{rate.from}</span>
+                        <span className="text-sm font-bold text-blue-600">{rate.fromCurrency}</span>
                       </div>
                       <span className="text-slate-400">→</span>
                       <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
-                        <span className="text-sm font-bold text-emerald-600">{rate.to}</span>
+                        <span className="text-sm font-bold text-emerald-600">{rate.toCurrency}</span>
                       </div>
                     </div>
                     <button
@@ -137,7 +130,7 @@ const ExchangeRateManagementPage = () => {
                       {rate.rate.toFixed(4)}
                     </p>
                     <p className="text-xs text-slate-500 mt-2">
-                      1 {rate.from} = {rate.rate.toFixed(4)} {rate.to}
+                      1 {rate.fromCurrency} = {rate.rate.toFixed(4)} {rate.toCurrency}
                     </p>
                   </div>
                 </div>

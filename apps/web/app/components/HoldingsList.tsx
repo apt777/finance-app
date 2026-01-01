@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { useHoldings } from '../hooks/useHoldings'
 import { useAccounts } from '../hooks/useAccounts'
-import { useExchangeRates } from '../hooks/useExchangeRates'
+import { useExchangeRates, ExchangeRate } from '../hooks/useExchangeRates'
 import { TrendingUp, TrendingDown, Filter } from 'lucide-react'
 
 interface Account {
@@ -23,11 +23,7 @@ interface Holding {
   currency: string;
 }
 
-interface ExchangeRate {
-  from: string;
-  to: string;
-  rate: number;
-}
+// ExchangeRate interface is imported from useExchangeRates hook
 
 const HoldingsList = () => {
   const { data: holdingsData, error: holdingsError, isLoading: holdingsLoading } = useHoldings()
@@ -57,13 +53,13 @@ const HoldingsList = () => {
 
   const holdings: Holding[] = (holdingsData as Holding[]) || []
   const accounts: Account[] = (accountsData as Account[]) || []
-  const exchangeRates: ExchangeRate[] = (exchangeRatesData as ExchangeRate[]) || []
+  const exchangeRates: ExchangeRate[] = exchangeRatesData || []
 
   const BASE_CURRENCY = 'JPY'
 
   const convertToBaseCurrency = (amount: number, currency: string): number => {
     if (currency === BASE_CURRENCY) return amount
-    const rate = exchangeRates.find((r) => r.from === currency && r.to === BASE_CURRENCY)?.rate
+    const rate = exchangeRates.find((r) => r.fromCurrency === currency && r.toCurrency === BASE_CURRENCY)?.rate
     return rate ? amount * rate : amount
   }
 
