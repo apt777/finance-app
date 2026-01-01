@@ -19,11 +19,20 @@ import {
   getReverseRate 
 } from '../lib/currency'
 
+// Interface matching Prisma schema field names
 interface ExchangeRate {
+  id: string
+  fromCurrency: string
+  toCurrency: string
+  rate: number
+  updatedAt?: string
+}
+
+// Interface for API request (uses 'from' and 'to')
+interface ExchangeRateRequest {
   from: string
   to: string
   rate: number
-  lastUpdated?: string
 }
 
 const ExchangeRateManager = () => {
@@ -38,8 +47,8 @@ const ExchangeRateManager = () => {
   })
 
   // Update exchange rate mutation
-  const updateRateMutation = useMutation<any, Error, ExchangeRate>({
-    mutationFn: async (rateData: ExchangeRate) => {
+  const updateRateMutation = useMutation<any, Error, ExchangeRateRequest>({
+    mutationFn: async (rateData: ExchangeRateRequest) => {
       const res = await fetch('/api/exchange-rates', {
         method: 'POST',
         headers: {
@@ -106,9 +115,9 @@ const ExchangeRateManager = () => {
     })
   }
 
-  const handleDelete = (from: string, to: string) => {
-    if (confirm(`${from} → ${to} 환율을 삭제하시겠습니까?`)) {
-      deleteRateMutation.mutate(`${from}-${to}`)
+  const handleDelete = (rateId: string) => {
+    if (confirm('이 환율을 삭제하시겠습니까?')) {
+      deleteRateMutation.mutate(rateId)
     }
   }
 
@@ -254,7 +263,7 @@ const ExchangeRateManager = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {exchangeRates.map((rate) => (
             <div
-              key={`${rate.from}-${rate.to}`}
+              key={rate.id}
               className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-200 card-hover"
             >
               {/* Header */}
@@ -262,16 +271,16 @@ const ExchangeRateManager = () => {
                 <div className="flex items-center space-x-2">
                   <TrendingUp className="w-5 h-5 text-blue-600" />
                   <span className="font-bold text-slate-800">
-                    {rate.from} → {rate.to}
+                    {rate.fromCurrency} → {rate.toCurrency}
                   </span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => {
-                      setEditingId(`${rate.from}-${rate.to}`)
+                      setEditingId(rate.id)
                       setFormData({
-                        from: rate.from,
-                        to: rate.to,
+                        from: rate.fromCurrency,
+                        to: rate.toCurrency,
                         rate: rate.rate.toString(),
                       })
                       setShowForm(true)
@@ -282,7 +291,7 @@ const ExchangeRateManager = () => {
                     <Edit2 className="w-4 h-4 text-slate-600" />
                   </button>
                   <button
-                    onClick={() => handleDelete(rate.from, rate.to)}
+                    onClick={() => handleDelete(rate.id)}
                     className="p-2 hover:bg-red-50 rounded-lg transition-colors"
                     title="삭제"
                   >
@@ -298,16 +307,16 @@ const ExchangeRateManager = () => {
                   {rate.rate.toFixed(6)}
                 </p>
                 <p className="text-xs text-slate-500 mt-2">
-                  1 {getCurrencySymbol(rate.from as any)} = {rate.rate.toFixed(6)} {getCurrencySymbol(rate.to as any)}
+                  1 {getCurrencySymbol(rate.fromCurrency as any)} = {rate.rate.toFixed(6)} {getCurrencySymbol(rate.toCurrency as any)}
                 </p>
               </div>
 
               {/* Last Updated */}
-              {rate.lastUpdated && (
+              {rate.updatedAt && (
                 <div className="flex items-center space-x-2 text-xs text-slate-500">
                   <Calendar className="w-4 h-4" />
                   <span>
-                    마지막 업데이트: {new Date(rate.lastUpdated).toLocaleDateString('ko-KR')}
+                    마지막 업데이트: {new Date(rate.updatedAt).toLocaleDateString('ko-KR')}
                   </span>
                 </div>
               )}
