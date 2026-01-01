@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { Briefcase, Plus } from 'lucide-react'
-import HoldingsList from '../components/HoldingsList'
+import HoldingsList from '@/components/HoldingsList'
 import Link from 'next/link'
 
 export default function HoldingsPage() {

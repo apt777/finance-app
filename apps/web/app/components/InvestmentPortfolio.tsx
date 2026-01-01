@@ -1,14 +1,14 @@
 'use client'
 
 import React, { useMemo } from 'react'
-import { useHoldings } from '../hooks/useHoldings'
+import { useHoldings } from '@/hooks/useHoldings'
 import { 
   calculatePortfolioSummary, 
   analyzePortfolioDiversification,
   getInvestmentTypeStats,
   getStockTypeStats,
   checkNISALimit 
-} from '../lib/investment'
+} from '@/lib/investment'
 import { 
   TrendingUp, 
   TrendingDown, 

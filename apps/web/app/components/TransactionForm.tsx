@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useAccounts } from '../hooks/useAccounts'
+import { useAccounts } from '@/hooks/useAccounts'
 import { ArrowUpRight, ArrowDownLeft, AlertCircle, CheckCircle } from 'lucide-react'
 
 interface TransactionFormData {

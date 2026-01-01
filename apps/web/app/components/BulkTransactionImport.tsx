@@ -3,7 +3,7 @@
 import React, { useState, useRef } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Upload, FileText, Plus, Trash2, AlertCircle, CheckCircle } from 'lucide-react'
-import { useAccounts } from '../hooks/useAccounts'
+import { useAccounts } from '@/hooks/useAccounts'
 
 interface BulkTransaction {
   date: string

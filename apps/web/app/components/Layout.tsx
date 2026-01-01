@@ -3,10 +3,10 @@
 import React, { useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useOverviewData } from '../hooks/useOverviewData'
-import { useExchangeRates, ExchangeRate } from '../hooks/useExchangeRates'
+import { useOverviewData } from '@/hooks/useOverviewData'
+import { useExchangeRates, ExchangeRate } from '@/hooks/useExchangeRates'
 import { Home, Wallet, TrendingUp, Target, Settings, LogOut, User, LogIn, DollarSign, Receipt } from 'lucide-react'
-import { useAuth } from '../context/AuthProviderClient'
+import { useAuth } from '@/context/AuthProviderClient'
 
 // Define interfaces for data structures
 interface Account {

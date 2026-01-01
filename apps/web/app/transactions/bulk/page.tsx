@@ -1,6 +1,6 @@
 'use client'
 
-import BulkTransactionImport from '../../components/BulkTransactionImport'
+import BulkTransactionImport from '@/components/BulkTransactionImport'
 
 export default function BulkImportPage() {
   return (

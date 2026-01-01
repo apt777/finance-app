@@ -1,8 +1,8 @@
 'use client'
 
 import React from 'react';
-import { useExchangeRates, ExchangeRate } from '../../hooks/useExchangeRates';
-import ExchangeRateForm from '../../components/ExchangeRateForm';
+import { useExchangeRates, ExchangeRate } from '@/hooks/useExchangeRates';
+import ExchangeRateForm from '@/components/ExchangeRateForm';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Trash2, TrendingUp, AlertCircle, Loader } from 'lucide-react';
 

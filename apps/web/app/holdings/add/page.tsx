@@ -1,6 +1,6 @@
 'use client'
 
-import HoldingsForm from '../../components/HoldingsForm'
+import HoldingsForm from '@/components/HoldingsForm'
 
 export default function AddHoldingPage() {
   return (

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { supabaseServer } from '../../../../../../lib/supabaseServer'
+import { supabaseServer } from '@lib/supabaseServer'
 import { AuthError } from '@supabase/supabase-js' // Import AuthError
 
 export async function POST(request: Request) {

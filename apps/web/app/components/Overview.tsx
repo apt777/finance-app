@@ -1,8 +1,8 @@
 'use client'
 
 import React from 'react'
-import { useOverviewData } from '../hooks/useOverviewData'
-import { useExchangeRates, ExchangeRate } from '../hooks/useExchangeRates'
+import { useOverviewData } from '@/hooks/useOverviewData'
+import { useExchangeRates, ExchangeRate } from '@/hooks/useExchangeRates'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
 import Link from 'next/link'
 import { TrendingUp, TrendingDown, Wallet, Target, PlusCircle, ArrowUpRight } from 'lucide-react'

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { useAuth } from '../context/AuthProviderClient'
+import { useAuth } from '@/context/AuthProviderClient'
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('')

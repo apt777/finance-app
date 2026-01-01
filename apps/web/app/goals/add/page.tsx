@@ -1,6 +1,6 @@
 'use client'
 
-import GoalForm from '../../components/GoalForm'
+import GoalForm from '@/components/GoalForm'
 
 export default function AddGoalPage() {
   return (

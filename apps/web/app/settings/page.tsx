@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react'
 import { Settings, Globe, Lock, Bell, Languages } from 'lucide-react'
-import ExchangeRateManager from '../components/ExchangeRateManager'
-import LanguageSwitcher from '../components/LanguageSwitcher'
+import ExchangeRateManager from '@/components/ExchangeRateManager'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('language')

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useTransactions } from '../hooks/useTransactions'
+import { useTransactions } from '@/hooks/useTransactions'
 import { ArrowUpRight, ArrowDownLeft, Filter, Download } from 'lucide-react'
 
 interface Transaction {

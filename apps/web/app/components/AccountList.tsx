@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useAccounts } from '../hooks/useAccounts'
+import { useAccounts } from '@/hooks/useAccounts'
 import Link from 'next/link'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Trash2, Edit2, Plus, Wallet, CreditCard, PiggyBank, TrendingUp, Filter } from 'lucide-react'

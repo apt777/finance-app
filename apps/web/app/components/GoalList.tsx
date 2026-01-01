@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { useGoals } from '../hooks/useGoals'
+import { useGoals } from '@/hooks/useGoals'
 import { Target, Calendar, TrendingUp } from 'lucide-react'
 
 interface Goal {

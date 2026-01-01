@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useAuth } from '../context/AuthProviderClient'
+import { useAuth } from '@/context/AuthProviderClient'
 import { Mail, Lock, Eye, EyeOff, Wallet, ArrowRight, CheckCircle } from 'lucide-react'
 
 export default function Register() {

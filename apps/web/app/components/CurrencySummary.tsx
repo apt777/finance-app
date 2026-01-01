@@ -1,15 +1,9 @@
 'use client'
 
 import React, { useMemo } from 'react'
-import { useAccounts } from '../hooks/useAccounts'
-import { useExchangeRates } from '../hooks/useExchangeRates'
-import { 
-  convertToBaseCurrency, 
-  getCurrencySymbol, 
-  getCurrencyName,
-  SUPPORTED_CURRENCIES 
-} from '../lib/currency'
-import { Wallet, TrendingUp, PieChart } from 'lucide-react'
+import { useAccounts } from '@/hooks/useAccounts'
+import { useExchangeRates } from '@/hooks/useExchangeRates'
+import { getCurrencySymbol } from '@/lib/currency'import { Wallet, TrendingUp, PieChart } from 'lucide-react'
 
 interface CurrencyBalance {
   currency: string

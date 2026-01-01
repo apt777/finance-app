@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { useExchangeRates } from '../hooks/useExchangeRates'
+import { useExchangeRates } from '@/hooks/useExchangeRates'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { 
   TrendingUp, 
@@ -17,7 +17,7 @@ import {
   getCurrencySymbol, 
   getCurrencyName,
   getReverseRate 
-} from '../lib/currency'
+} from '@/lib/currency'
 
 // Interface matching Prisma schema field names
 interface ExchangeRate {

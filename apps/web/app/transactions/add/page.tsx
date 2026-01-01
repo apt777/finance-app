@@ -1,6 +1,6 @@
 'use client'
 
-import TransactionForm from '../../components/TransactionForm'
+import TransactionForm from '@/components/TransactionForm'
 
 export default function AddTransactionPage() {
   return (

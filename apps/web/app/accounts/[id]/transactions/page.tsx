@@ -1,7 +1,7 @@
 'use client'
 
 import { useParams } from 'next/navigation'
-import TransactionList from '../../../components/TransactionList'
+import TransactionList from '@/components/TransactionList'
 
 export default function AccountTransactionsPage() {
   const params = useParams()

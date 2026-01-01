@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { Target, Plus } from 'lucide-react'
-import GoalList from '../components/GoalList'
+import GoalList from '@/components/GoalList'
 import Link from 'next/link'
 
 export default function GoalsPage() {

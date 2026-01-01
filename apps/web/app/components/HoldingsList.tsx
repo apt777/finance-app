@@ -1,9 +1,9 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useHoldings } from '../hooks/useHoldings'
-import { useAccounts } from '../hooks/useAccounts'
-import { useExchangeRates, ExchangeRate } from '../hooks/useExchangeRates'
+import { useHoldings } from '@/hooks/useHoldings'
+import { useAccounts } from '@/hooks/useAccounts'
+import { useExchangeRates, ExchangeRate } from '@/hooks/useExchangeRates'
 import { TrendingUp, TrendingDown, Filter } from 'lucide-react'
 
 interface Account {
