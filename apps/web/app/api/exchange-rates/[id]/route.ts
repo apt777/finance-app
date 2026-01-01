@@ -15,13 +15,18 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
 
     const { id } = params;
 
-    // Check if the exchange rate exists
+    // Check if the exchange rate exists and belongs to the current user
     const existingRate = await prisma.exchangeRate.findUnique({
       where: { id: id },
     });
 
     if (!existingRate) {
       return NextResponse.json({ error: 'Exchange rate not found' }, { status: 404 });
+    }
+
+    // Verify ownership - prevent users from deleting other users' exchange rates
+    if (existingRate.userId !== session.user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Delete the exchange rate
