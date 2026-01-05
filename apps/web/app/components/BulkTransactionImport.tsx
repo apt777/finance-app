@@ -90,7 +90,7 @@ const BulkTransactionImport = () => {
       return false
     }
 
-    if (!txn.amount || isNaN(txn.amount)) {
+    if (txn.amount === undefined || isNaN(txn.amount)) {
       newErrors[index] = '유효한 금액을 입력해 주세요.'
       return false
     }
@@ -113,7 +113,7 @@ const BulkTransactionImport = () => {
     }
 
     const newTxn: BulkTransaction = {
-      date: formData.date as string,
+      date: formData.date,
       description: formData.description,
       amount: parseFloat(formData.amount) * (formData.type === 'expense' ? -1 : 1),
       type: formData.type,
@@ -156,12 +156,17 @@ const BulkTransactionImport = () => {
             .map((col) => col.trim())
 
           // Find account by name
-          const account = (accounts as any[])?.find(
+          const account = accountName ? (accounts as any[])?.find(
             (acc) => acc.name.toLowerCase() === accountName.toLowerCase()
-          )
+          ) : undefined;
 
           if (!account) {
             newErrors[index] = `계좌를 찾을 수 없습니다: ${accountName}`
+            return
+          }
+          
+          if(!date || !description || !amount || !type) {
+            newErrors[index] = '필수 CSV 필드가 누락되었습니다.'
             return
           }
 
@@ -209,8 +214,6 @@ const BulkTransactionImport = () => {
 
     // Validate all
     let hasErrors = false
-    const newErrors: { [key: number]: string } = {}
-
     transactions.forEach((txn, index) => {
       if (!validateTransaction(txn, index)) {
         hasErrors = true
@@ -246,11 +249,7 @@ const BulkTransactionImport = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <button
             onClick={() => setImportMethod('manual')}
-            className={`p-4 rounded-xl border-2 transition-all ${
-              importMethod === 'manual'
-                ? 'border-blue-600 bg-blue-50'
-                : 'border-slate-200 hover:border-slate-300'
-            }`}
+            className={`p-4 rounded-xl border-2 transition-all ${importMethod === 'manual' ? 'border-blue-600 bg-blue-50' : 'border-slate-200 hover:border-slate-300'}`}
           >
             <Plus className="w-6 h-6 mb-2" />
             <p className="font-semibold text-slate-800">수동 입력</p>
@@ -258,11 +257,7 @@ const BulkTransactionImport = () => {
           </button>
           <button
             onClick={() => setImportMethod('csv')}
-            className={`p-4 rounded-xl border-2 transition-all ${
-              importMethod === 'csv'
-                ? 'border-blue-600 bg-blue-50'
-                : 'border-slate-200 hover:border-slate-300'
-            }`}
+            className={`p-4 rounded-xl border-2 transition-all ${importMethod === 'csv' ? 'border-blue-600 bg-blue-50' : 'border-slate-200 hover:border-slate-300'}`}
           >
             <FileText className="w-6 h-6 mb-2" />
             <p className="font-semibold text-slate-800">CSV 업로드</p>
@@ -284,7 +279,7 @@ const BulkTransactionImport = () => {
                 type="date"
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-900 placeholder-slate-400"
               />
             </div>
             <div>
@@ -294,7 +289,7 @@ const BulkTransactionImport = () => {
               <select
                 value={formData.accountId}
                 onChange={(e) => setFormData({ ...formData, accountId: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-900 appearance-none pr-8"
               >
                 <option value="">계좌 선택</option>
                 {accountsList.map((account) => (
@@ -314,7 +309,7 @@ const BulkTransactionImport = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
                 }
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-900 placeholder-slate-400"
                 placeholder="예: 점심 식사"
               />
             </div>
@@ -327,7 +322,7 @@ const BulkTransactionImport = () => {
                 step="0.01"
                 value={formData.amount}
                 onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-900 placeholder-slate-400"
                 placeholder="0.00"
               />
             </div>
@@ -338,7 +333,7 @@ const BulkTransactionImport = () => {
               <select
                 value={formData.type}
                 onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-900 appearance-none pr-8"
               >
                 <option value="expense">지출</option>
                 <option value="income">수입</option>
@@ -402,11 +397,7 @@ const BulkTransactionImport = () => {
             {transactions.map((txn, index) => (
               <div
                 key={index}
-                className={`p-4 rounded-lg border ${
-                  errors[index]
-                    ? 'bg-red-50 border-red-200'
-                    : 'bg-slate-50 border-slate-200'
-                }`}
+                className={`p-4 rounded-lg border ${errors[index] ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200'}`}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -415,11 +406,7 @@ const BulkTransactionImport = () => {
                         {txn.description}
                       </span>
                       <span
-                        className={`text-xs px-2 py-1 rounded ${
-                          txn.amount > 0
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-red-100 text-red-700'
-                        }`}
+                        className={`text-xs px-2 py-1 rounded ${txn.amount > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
                       >
                         {txn.amount > 0 ? '+' : '-'}
                         {Math.abs(txn.amount).toFixed(2)}

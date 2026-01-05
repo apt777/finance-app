@@ -3,7 +3,8 @@
 import React, { useMemo } from 'react'
 import { useAccounts } from '@/hooks/useAccounts'
 import { useExchangeRates } from '@/hooks/useExchangeRates'
-import { getCurrencySymbol } from '@/lib/currency'import { Wallet, TrendingUp, PieChart } from 'lucide-react'
+import { getCurrencySymbol, getCurrencyName, convertToBaseCurrency } from '@/lib/currency'
+import { Wallet, TrendingUp, PieChart } from 'lucide-react'
 
 interface CurrencyBalance {
   currency: string
@@ -16,23 +17,29 @@ const CurrencySummary = ({ baseCurrency = 'JPY' }: { baseCurrency?: string }) =>
   const { data: exchangeRates, isLoading: ratesLoading } = useExchangeRates()
 
   const summary = useMemo(() => {
+    const emptySummary = {
+      byCurrency: {},
+      totalInBaseCurrency: 0,
+      currencyBreakdown: [],
+    };
+
     if (!accounts || !exchangeRates) {
-      return {
-        byCurrency: {},
-        totalInBaseCurrency: 0,
-        currencyBreakdown: [],
-      }
+      return emptySummary;
     }
 
     const accountsList = Array.isArray(accounts) ? accounts : []
     const ratesList = Array.isArray(exchangeRates) ? exchangeRates : []
+
+    if (accountsList.length === 0) {
+      return emptySummary;
+    }
 
     // Group by currency
     const byCurrency: { [key: string]: CurrencyBalance } = {}
 
     accountsList.forEach((account: any) => {
       const currency = account.currency || 'KRW'
-      if (!byurrency[currency]) {
+      if (!byCurrency[currency]) {
         byCurrency[currency] = {
           currency,
           balance: 0,
@@ -44,31 +51,21 @@ const CurrencySummary = ({ baseCurrency = 'JPY' }: { baseCurrency?: string }) =>
     })
 
     // Convert to base currency
-    const amounts: { [key: string]: number } = {}
-    Object.values(byurrency).forEach((item) => {
-      amounts[item.currency] = item.balance
-    })
-
-    const totalInBaseCurrency = convertToBaseCurrency(
-      amounts as any,
-      baseCurrency as any,
-      ratesList
-    )
+    const totalInBaseCurrency = Object.values(byCurrency).reduce((sum, item) => {
+        return sum + convertToBaseCurrency(item.balance, item.currency, ratesList)
+    }, 0);
 
     // Calculate breakdown percentages
-    const currencyBreakdown = Object.values(byurrency).map((item) => ({
-      ...item,
-      percentage: totalInBaseCurrency > 0 
-        ? (convertToBaseCurrency(
-            { [item.currency]: item.balance },
-            baseCurrency as any,
-            ratesList
-          ) / totalInBaseCurrency) * 100
-        : 0,
-    }))
+    const currencyBreakdown = Object.values(byCurrency).map((item: CurrencyBalance) => {
+        const valueInBase = convertToBaseCurrency(item.balance, item.currency, ratesList);
+        return {
+          ...item,
+          percentage: totalInBaseCurrency > 0 ? (valueInBase / totalInBaseCurrency) * 100 : 0,
+        }
+    });
 
     return {
-      byurrency,
+      byCurrency,
       totalInBaseCurrency,
       currencyBreakdown,
     }
@@ -101,13 +98,13 @@ const CurrencySummary = ({ baseCurrency = 'JPY' }: { baseCurrency?: string }) =>
           </div>
         </div>
         <p className="text-blue-100 text-sm">
-          {getCurrencySymbol(baseCurrency as any)} {baseCurrency}
+          {getCurrencySymbol(baseCurrency)} {baseCurrency}
         </p>
       </div>
 
       {/* Currency Breakdown */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {summary.currencyBreakdown.map((item) => (
+        {summary.currencyBreakdown.map((item: CurrencyBalance & { percentage: number }) => (
           <div
             key={item.currency}
             className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-200"
@@ -116,11 +113,11 @@ const CurrencySummary = ({ baseCurrency = 'JPY' }: { baseCurrency?: string }) =>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white text-lg font-bold">
-                  {getCurrencySymbol(item.currency as any)}
+                  {getCurrencySymbol(item.currency)}
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-800">{item.currency}</h3>
-                  <p className="text-xs text-slate-500">{getCurrencyName(item.currency as any)}</p>
+                  <p className="text-xs text-slate-500">{getCurrencyName(item.currency)}</p>
                 </div>
               </div>
               <Wallet className="w-5 h-5 text-slate-400" />
@@ -171,7 +168,7 @@ const CurrencySummary = ({ baseCurrency = 'JPY' }: { baseCurrency?: string }) =>
           </div>
 
           <div className="space-y-4">
-            {summary.currencyBreakdown.map((item) => (
+            {summary.currencyBreakdown.map((item: CurrencyBalance & { percentage: number }) => (
               <div key={item.currency} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-slate-800">{item.currency}</span>

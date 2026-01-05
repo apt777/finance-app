@@ -16,8 +16,8 @@ export interface Holding {
   currency: string
   type: InvestmentType
   stockType: StockType
-  purchaseDate: Date
-  lastUpdated: Date
+  purchaseDate: string
+  lastUpdated: string
   notes?: string
 }
 
