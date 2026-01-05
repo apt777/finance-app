@@ -6,9 +6,12 @@ import prisma from '@lib/prisma'
 interface HoldingData {
   accountId: string;
   symbol: string;
+  name?: string;
   shares: number;
   costBasis: number;
   currency: string;
+  investmentType?: string;
+  region?: string;
 }
 
 export async function GET(request: Request) {
@@ -88,7 +91,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { accountId, symbol, shares, costBasis, currency }: HoldingData = await request.json()
+    const { accountId, symbol, name, shares, costBasis, currency, investmentType, region }: HoldingData = await request.json()
 
     // Verify the account belongs to the user
     const account = await prisma.account.findFirst({
@@ -103,7 +106,17 @@ export async function POST(request: Request) {
     }
 
     const newHolding = await prisma.holding.create({
-      data: { accountId, symbol, shares, costBasis, currency },
+      data: { 
+        userId: session.user.id,
+        accountId, 
+        symbol,
+        name,
+        shares, 
+        costBasis, 
+        currency,
+        investmentType: investmentType || 'stock',
+        region
+      },
     })
     return NextResponse.json(newHolding, { status: 201 })
   } catch (error: any) {
