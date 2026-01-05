@@ -129,6 +129,7 @@ export async function POST(request: Request) {
       }),
       prisma.transaction.create({
         data: {
+          userId: session.user.id,
           accountId,
           date: new Date(date),
           description,

@@ -118,6 +118,7 @@ export async function POST(request: Request) {
           description: record.description,
           amount: parseFloat(record.amount),
           currency: record.currency,
+          type: parseFloat(record.amount) >= 0 ? 'income' : 'expense',
         }
       })
 

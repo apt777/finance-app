@@ -83,6 +83,7 @@ export async function POST(request: Request) {
           for (const transaction of account.transactions) {
             await tx.transaction.create({
               data: {
+                userId,
                 accountId: createdAccount.id,
                 date: new Date(transaction.date),
                 description: transaction.description,
