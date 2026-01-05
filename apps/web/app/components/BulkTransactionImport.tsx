@@ -113,12 +113,12 @@ const BulkTransactionImport = () => {
     }
 
     const newTxn: BulkTransaction = {
-      date: formData.date,
+      date: formData.date || new Date().toISOString().split('T')[0],
       description: formData.description,
       amount: parseFloat(formData.amount) * (formData.type === 'expense' ? -1 : 1),
       type: formData.type,
       accountId: formData.accountId,
-      currency: formData.currency,
+      currency: formData.currency || 'JPY',
     }
 
     if (validateTransaction(newTxn, transactions.length)) {
