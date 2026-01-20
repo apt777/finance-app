@@ -65,7 +65,8 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
     setFormError(null)
 
     if (name === 'accountId') {
-      const selectedAccount = accounts?.find(acc => acc.id === value);
+      const accountsList = (accounts as any[]) || []
+      const selectedAccount = accountsList.find(acc => acc.id === value);
       if (selectedAccount) {
         setFormData({
           ...formData,
@@ -97,7 +98,8 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
     mutation.mutate(formData)
   }
 
-  const selectedAccount = accounts?.find(acc => acc.id === formData.accountId)
+  const accountsList = (accounts as any[]) || []
+  const selectedAccount = accountsList.find(acc => acc.id === formData.accountId)
 
   return (
     <div className="space-y-6">
@@ -135,7 +137,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
             >
               <option value="">계좌 선택</option>
               {accountsError && <option value="" disabled>계좌 로딩 오류</option>}
-              {!accountsError && accounts?.map(account => (
+              {!accountsError && accountsList.map(account => (
                 <option key={account.id} value={account.id}>
                   {account.name} ({Math.round(account.balance).toLocaleString()} {account.currency})
                 </option>

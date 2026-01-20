@@ -3,13 +3,13 @@
  * JPY (일본 엔화), KRW (한국 원화), USD (미국 달러) 지원
  */
 
-export type Currency = 'JPY' | 'KRW' | 'USD'
+export type Currency = 'JPY' | 'KRW' | 'USD' | 'CNY' | 'EUR' | 'GBP'
 
 export interface ExchangeRate {
   id?: string
   userId?: string
-  fromCurrency: Currency
-  toCurrency: Currency
+  fromCurrency: string
+  toCurrency: string
   rate: number
   source?: string
   createdAt?: string
@@ -18,8 +18,8 @@ export interface ExchangeRate {
 
 // Legacy interface for backward compatibility
 export interface LegacyExchangeRate {
-  from: Currency
-  to: Currency
+  from: string
+  to: string
   rate: number
   lastUpdated?: Date
 }
@@ -37,6 +37,9 @@ export const CURRENCY_SYMBOLS: CurrencySymbol = {
   JPY: '¥',
   KRW: '₩',
   USD: '$',
+  CNY: '¥',
+  EUR: '€',
+  GBP: '£',
 }
 
 // 통화 이름
@@ -44,6 +47,9 @@ export const CURRENCY_NAMES: CurrencyName = {
   JPY: '일본 엔',
   KRW: '한국 원',
   USD: '미국 달러',
+  CNY: '중국 위안',
+  EUR: '유로',
+  GBP: '영국 파운드',
 }
 
 // 기본 환율 (수동 설정용)
@@ -59,15 +65,15 @@ export const DEFAULT_EXCHANGE_RATES: ExchangeRate[] = [
 /**
  * 환율을 이용한 통화 변환
  * @param amount 변환할 금액
- * @param fromCurrency 원래 통화
- * @param toCurrency 변환할 통화
+ * @param from 원래 통화
+ * @param to 변환할 통화
  * @param exchangeRates 환율 정보
  * @returns 변환된 금액
  */
 export function convertCurrency(
   amount: number,
-  from: Currency,
-  to: Currency,
+  from: string,
+  to: string,
   exchangeRates: ExchangeRate[]
 ): number {
   if (from === to) {
@@ -79,6 +85,14 @@ export function convertCurrency(
   )
 
   if (!rate) {
+    // Try inverse rate
+    const inverseRate = exchangeRates.find(
+      (r) => r.fromCurrency === to && r.toCurrency === from
+    )
+    if (inverseRate && inverseRate.rate !== 0) {
+        return amount / inverseRate.rate
+    }
+
     console.warn(
       `환율을 찾을 수 없습니다: ${from} -> ${to}`
     )
@@ -96,21 +110,21 @@ export function convertCurrency(
  * @returns 기본 통화로 변환된 총액
  */
 export function convertToBaseCurrency(
-  amounts: { [key in Currency]?: number },
-  baseCurrency: Currency,
+  amounts: { [key: string]: number | undefined },
+  baseCurrency: string,
   exchangeRates: ExchangeRate[]
 ): number {
   let total = 0
 
   for (const [currency, amount] of Object.entries(amounts)) {
-    if (amount && currency !== baseCurrency) {
+    if (amount !== undefined && currency !== baseCurrency) {
       total += convertCurrency(
         amount,
-        currency as Currency,
+        currency,
         baseCurrency,
         exchangeRates
       )
-    } else if (amount && currency === baseCurrency) {
+    } else if (amount !== undefined && currency === baseCurrency) {
       total += amount
     }
   }
@@ -128,8 +142,8 @@ export function convertToBaseCurrency(
  */
 export function updateExchangeRate(
   exchangeRates: ExchangeRate[],
-  from: Currency,
-  to: Currency,
+  from: string,
+  to: string,
   newRate: number
 ): ExchangeRate[] {
   const updatedRates = [...exchangeRates]
@@ -169,7 +183,7 @@ export function getReverseRate(rate: number): number {
  */
 export function formatCurrency(
   amount: number,
-  currency: Currency,
+  currency: string,
   locale: string = 'ko-KR'
 ): string {
   const formatter = new Intl.NumberFormat(locale, {
@@ -187,7 +201,7 @@ export function formatCurrency(
  * @param currency 통화
  * @returns 통화 심볼
  */
-export function getCurrencySymbol(currency: Currency): string {
+export function getCurrencySymbol(currency: string): string {
   return CURRENCY_SYMBOLS[currency] || currency
 }
 
@@ -196,20 +210,20 @@ export function getCurrencySymbol(currency: Currency): string {
  * @param currency 통화
  * @returns 통화 이름
  */
-export function getCurrencyName(currency: Currency): string {
+export function getCurrencyName(currency: string): string {
   return CURRENCY_NAMES[currency] || currency
 }
 
 /**
  * 모든 지원 통화 목록
  */
-export const SUPPORTED_CURRENCIES: Currency[] = ['JPY', 'KRW', 'USD']
+export const SUPPORTED_CURRENCIES: string[] = ['JPY', 'KRW', 'USD', 'CNY', 'EUR', 'GBP']
 
 /**
  * 통화가 지원되는지 확인
  * @param currency 통화
  * @returns 지원 여부
  */
-export function isSupportedCurrency(currency: string): currency is Currency {
-  return SUPPORTED_CURRENCIES.includes(currency as Currency)
+export function isSupportedCurrency(currency: string): boolean {
+  return SUPPORTED_CURRENCIES.includes(currency)
 }

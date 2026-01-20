@@ -1,10 +1,10 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useHoldings } from '@/hooks/useHoldings'
+import { useHoldings, Holding as HookHolding } from '@/hooks/useHoldings'
 import { useAccounts } from '@/hooks/useAccounts'
 import { useExchangeRates, ExchangeRate } from '@/hooks/useExchangeRates'
-import { TrendingUp, TrendingDown, Filter } from 'lucide-react'
+import { TrendingUp, Filter } from 'lucide-react'
 
 interface Account {
   id: string;
@@ -22,8 +22,6 @@ interface Holding {
   costBasis: number;
   currency: string;
 }
-
-// ExchangeRate interface is imported from useExchangeRates hook
 
 const HoldingsList = () => {
   const { data: holdingsData, error: holdingsError, isLoading: holdingsLoading } = useHoldings()
@@ -51,7 +49,16 @@ const HoldingsList = () => {
     )
   }
 
-  const holdings: Holding[] = (holdingsData as Holding[]) || []
+  const rawHoldings = (holdingsData as any[]) || []
+  const holdings: Holding[] = rawHoldings.map(h => ({
+    id: h.id,
+    accountId: h.accountId || '',
+    symbol: h.symbol,
+    shares: h.shares,
+    costBasis: h.costBasis,
+    currency: h.currency
+  }))
+
   const accounts: Account[] = (accountsData as Account[]) || []
   const exchangeRates: ExchangeRate[] = exchangeRatesData || []
 

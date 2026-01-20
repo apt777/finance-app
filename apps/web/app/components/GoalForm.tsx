@@ -92,6 +92,9 @@ const GoalForm = () => {
     { value: 'USD', label: '미국 달러 ($)' },
   ]
 
+  const currentCurrencyLabel = currencies.find(c => c.value === formData.targetCurrency)?.label || 'JPY'
+  const symbol = currentCurrencyLabel.split('(')[1]?.replace(')','') || '¥'
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -149,7 +152,7 @@ const GoalForm = () => {
                 목표 금액 <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-3 text-slate-500 font-medium">{currencies.find(c => c.value === formData.targetCurrency)?.label.split('(')[1].replace(')','')}</span>
+                <span className="absolute left-4 top-3 text-slate-500 font-medium">{symbol}</span>
                 <input
                   type="number"
                   name="targetAmount"
@@ -187,7 +190,7 @@ const GoalForm = () => {
                 현재 금액 <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-3 text-slate-500 font-medium">{currencies.find(c => c.value === formData.targetCurrency)?.label.split('(')[1].replace(')','')}</span>
+                <span className="absolute left-4 top-3 text-slate-500 font-medium">{symbol}</span>
                 <input
                   type="number"
                   name="currentAmount"
