@@ -14,6 +14,15 @@ interface BulkTransaction {
   currency?: string
 }
 
+interface FormData {
+  date: string
+  description: string
+  amount: string
+  type: string
+  accountId: string
+  currency: string
+}
+
 const BulkTransactionImport = () => {
   const queryClient = useQueryClient()
   const { data: accounts } = useAccounts()
@@ -24,8 +33,8 @@ const BulkTransactionImport = () => {
   const [errors, setErrors] = useState<{ [key: number]: string }>({})
   const [successMessage, setSuccessMessage] = useState('')
 
-  // Manual form state
-  const [formData, setFormData] = useState({
+  // Manual form state with explicit types
+  const [formData, setFormData] = useState<FormData>({
     date: new Date().toISOString().split('T')[0],
     description: '',
     amount: '',
@@ -107,8 +116,13 @@ const BulkTransactionImport = () => {
       return
     }
 
+    // Ensure date is always a string
+    const dateValue: string = formData.date && formData.date.length > 0 
+      ? formData.date 
+      : new Date().toISOString().split('T')[0]
+
     const newTxn: BulkTransaction = {
-      date: formData.date || new Date().toISOString().split('T')[0],
+      date: dateValue,
       description: formData.description,
       amount: parseFloat(formData.amount) * (formData.type === 'expense' ? -1 : 1),
       type: formData.type,
