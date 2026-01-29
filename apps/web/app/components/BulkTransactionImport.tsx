@@ -23,6 +23,15 @@ interface FormData {
   currency: string
 }
 
+// Helper function to get today's date as string
+const getTodayDateString = (): string => {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 const BulkTransactionImport = () => {
   const queryClient = useQueryClient()
   const { data: accounts } = useAccounts()
@@ -33,9 +42,9 @@ const BulkTransactionImport = () => {
   const [errors, setErrors] = useState<{ [key: number]: string }>({})
   const [successMessage, setSuccessMessage] = useState('')
 
-  // Manual form state with explicit types
+  // Manual form state with explicit types - use helper function to ensure string
   const [formData, setFormData] = useState<FormData>({
-    date: new Date().toISOString().split('T')[0],
+    date: getTodayDateString(),
     description: '',
     amount: '',
     type: 'expense',
@@ -64,7 +73,7 @@ const BulkTransactionImport = () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
       setTransactions([])
       setFormData({
-        date: new Date().toISOString().split('T')[0],
+        date: getTodayDateString(),
         description: '',
         amount: '',
         type: 'expense',
@@ -80,25 +89,25 @@ const BulkTransactionImport = () => {
   const validateTransaction = (txn: BulkTransaction, index: number): boolean => {
     const newErrors = { ...errors }
 
-    if (!txn.date) {
+    if (!txn.date || txn.date.length === 0) {
       newErrors[index] = '날짜를 입력해 주세요.'
       setErrors(newErrors)
       return false
     }
 
-    if (!txn.description) {
+    if (!txn.description || txn.description.length === 0) {
       newErrors[index] = '설명을 입력해 주세요.'
       setErrors(newErrors)
       return false
     }
 
-    if (txn.amount === undefined || isNaN(txn.amount)) {
+    if (typeof txn.amount !== 'number' || isNaN(txn.amount)) {
       newErrors[index] = '유효한 금액을 입력해 주세요.'
       setErrors(newErrors)
       return false
     }
 
-    if (!txn.accountId) {
+    if (!txn.accountId || txn.accountId.length === 0) {
       newErrors[index] = '계좌를 선택해 주세요.'
       setErrors(newErrors)
       return false
@@ -116,10 +125,8 @@ const BulkTransactionImport = () => {
       return
     }
 
-    // Ensure date is always a string
-    const dateValue: string = formData.date && formData.date.length > 0 
-      ? formData.date 
-      : new Date().toISOString().split('T')[0]
+    // Ensure date is always a valid string
+    const dateValue: string = formData.date.length > 0 ? formData.date : getTodayDateString()
 
     const newTxn: BulkTransaction = {
       date: dateValue,
@@ -133,7 +140,7 @@ const BulkTransactionImport = () => {
     if (validateTransaction(newTxn, transactions.length)) {
       setTransactions([...transactions, newTxn])
       setFormData({
-        date: new Date().toISOString().split('T')[0],
+        date: getTodayDateString(),
         description: '',
         amount: '',
         type: 'expense',
@@ -185,7 +192,7 @@ const BulkTransactionImport = () => {
             amount: parseFloat(amount) * (type.toLowerCase() === 'expense' ? -1 : 1),
             type,
             accountId: account.id,
-            currency: currency || account.currency,
+            currency: currency || account.currency || 'JPY',
           }
 
           if (validateTransaction(txn, index)) {
