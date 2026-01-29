@@ -39,7 +39,7 @@ const BulkTransactionImport = () => {
 
   const [importMethod, setImportMethod] = useState<'csv' | 'manual'>('manual')
   const [transactions, setTransactions] = useState<BulkTransaction[]>([])
-  const [errors, setErrors] = useState<{ [key: number]: string }>({})
+  const [errors, setErrors] = useState<Record<number, string>>({})
   const [successMessage, setSuccessMessage] = useState('')
 
   // Manual form state with explicit types - use helper function to ensure string
@@ -87,7 +87,7 @@ const BulkTransactionImport = () => {
 
   // Validate transaction
   const validateTransaction = (txn: BulkTransaction, index: number): boolean => {
-    const newErrors = { ...errors }
+    const newErrors: Record<number, string> = { ...errors }
 
     if (!txn.date || txn.date.length === 0) {
       newErrors[index] = '날짜를 입력해 주세요.'

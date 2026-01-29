@@ -71,8 +71,10 @@ export default function SetupPage() {
 
   const handleAccountChange = (index: number, field: keyof Account, value: any) => {
     const newAccounts = [...accounts]
-    newAccounts[index][field] = value
-    setAccounts(newAccounts)
+    if (newAccounts[index]) {
+      newAccounts[index][field] = value
+      setAccounts(newAccounts)
+    }
   }
 
   // ============================================================================
@@ -89,8 +91,10 @@ export default function SetupPage() {
 
   const handleExchangeRateChange = (index: number, field: keyof ExchangeRate, value: any) => {
     const newRates = [...exchangeRates]
-    newRates[index][field] = value
-    setExchangeRates(newRates)
+    if (newRates[index]) {
+      newRates[index][field] = value
+      setExchangeRates(newRates)
+    }
   }
 
   // ============================================================================
