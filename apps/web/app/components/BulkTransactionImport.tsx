@@ -73,21 +73,25 @@ const BulkTransactionImport = () => {
 
     if (!txn.date) {
       newErrors[index] = '날짜를 입력해 주세요.'
+      setErrors(newErrors)
       return false
     }
 
     if (!txn.description) {
       newErrors[index] = '설명을 입력해 주세요.'
+      setErrors(newErrors)
       return false
     }
 
     if (txn.amount === undefined || isNaN(txn.amount)) {
       newErrors[index] = '유효한 금액을 입력해 주세요.'
+      setErrors(newErrors)
       return false
     }
 
     if (!txn.accountId) {
       newErrors[index] = '계좌를 선택해 주세요.'
+      setErrors(newErrors)
       return false
     }
 
@@ -312,7 +316,7 @@ const BulkTransactionImport = () => {
                 <select
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  className="w-32 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-900 appearance-none pr-8"
+                  className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-900 appearance-none pr-8"
                 >
                   <option value="expense">지출</option>
                   <option value="income">수입</option>
@@ -329,31 +333,36 @@ const BulkTransactionImport = () => {
           </div>
           <button
             onClick={handleAddTransaction}
-            className="w-full py-3 bg-slate-800 text-white font-semibold rounded-lg hover:bg-slate-900 transition-all flex items-center justify-center space-x-2"
+            className="w-full py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-all"
           >
-            <Plus className="w-5 h-5" />
-            <span>목록에 추가</span>
+            목록에 추가
           </button>
         </div>
       )}
 
-      {/* CSV Upload */}
+      {/* CSV Upload Form */}
       {importMethod === 'csv' && (
-        <div className="bg-white rounded-2xl p-8 shadow-lg border border-slate-200 text-center">
-          <input
-            type="file"
-            accept=".csv"
-            onChange={handleCSVUpload}
-            ref={fileInputRef}
-            className="hidden"
-          />
+        <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200">
+          <h3 className="text-lg font-bold text-slate-800 mb-4">CSV 파일 업로드</h3>
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-slate-300 rounded-2xl p-12 hover:border-blue-500 hover:bg-blue-50 transition-all cursor-pointer group"
+            className="border-2 border-dashed border-slate-300 rounded-xl p-10 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
           >
-            <Upload className="w-12 h-12 text-slate-400 mx-auto mb-4 group-hover:text-blue-500" />
-            <p className="text-lg font-semibold text-slate-800">CSV 파일을 선택하거나 드래그하세요</p>
-            <p className="text-sm text-slate-500 mt-2">날짜, 설명, 유형, 금액, 계좌명, 통화 순서의 CSV 파일</p>
+            <Upload className="w-10 h-10 text-slate-400 mb-4" />
+            <p className="text-slate-800 font-semibold">파일을 선택하거나 드래그하세요</p>
+            <p className="text-slate-500 text-sm mt-1">CSV 형식만 지원됩니다</p>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleCSVUpload}
+              accept=".csv"
+              className="hidden"
+            />
+          </div>
+          <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <p className="text-xs font-bold text-slate-700 mb-2">CSV 형식 가이드:</p>
+            <p className="text-xs text-slate-600">날짜, 설명, 유형(income/expense), 금액, 계좌명, 통화</p>
+            <p className="text-xs text-slate-500 mt-1">예: 2024-01-01, 스타벅스, expense, 500, 생활비계좌, JPY</p>
           </div>
         </div>
       )}
@@ -362,40 +371,40 @@ const BulkTransactionImport = () => {
       {transactions.length > 0 && (
         <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
           <div className="p-6 border-b border-slate-200 flex items-center justify-between">
-            <h3 className="text-lg font-bold text-slate-800">입력 예정 거래 ({transactions.length}건)</h3>
+            <h3 className="text-lg font-bold text-slate-800">입력 예정 거래 목록 ({transactions.length})</h3>
             <button
               onClick={() => setTransactions([])}
-              className="text-sm text-red-600 hover:text-red-700 font-medium"
+              className="text-sm text-red-600 hover:text-red-700 font-semibold"
             >
               전체 삭제
             </button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
-              <thead className="bg-slate-50 text-slate-600 text-sm uppercase font-semibold">
+              <thead className="bg-slate-50 text-slate-600 text-xs uppercase font-bold">
                 <tr>
                   <th className="px-6 py-4">날짜</th>
                   <th className="px-6 py-4">설명</th>
+                  <th className="px-6 py-4">금액</th>
                   <th className="px-6 py-4">계좌</th>
-                  <th className="px-6 py-4 text-right">금액</th>
                   <th className="px-6 py-4"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-200">
                 {transactions.map((txn, index) => (
-                  <tr key={index} className="hover:bg-slate-50 transition-all">
-                    <td className="px-6 py-4 text-slate-800">{txn.date}</td>
-                    <td className="px-6 py-4 text-slate-800 font-medium">{txn.description}</td>
-                    <td className="px-6 py-4 text-slate-600">
-                      {accountsList.find(a => a.id === txn.accountId)?.name || '알 수 없음'}
-                    </td>
-                    <td className={`px-6 py-4 text-right font-bold ${txn.amount < 0 ? 'text-red-500' : 'text-emerald-500'}`}>
+                  <tr key={index} className={errors[index] ? 'bg-red-50' : ''}>
+                    <td className="px-6 py-4 text-sm text-slate-800">{txn.date}</td>
+                    <td className="px-6 py-4 text-sm text-slate-800">{txn.description}</td>
+                    <td className={`px-6 py-4 text-sm font-bold ${txn.amount > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                       {txn.amount.toLocaleString()} {txn.currency}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-800">
+                      {accountsList.find(a => a.id === txn.accountId)?.name || '알 수 없음'}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button
                         onClick={() => handleRemoveTransaction(index)}
-                        className="text-slate-400 hover:text-red-500 transition-all"
+                        className="text-slate-400 hover:text-red-600 transition-all"
                       >
                         <Trash2 className="w-5 h-5" />
                       </button>
@@ -406,46 +415,26 @@ const BulkTransactionImport = () => {
             </table>
           </div>
           <div className="p-6 bg-slate-50 border-t border-slate-200">
+            {successMessage && (
+              <div className="mb-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center space-x-3 text-emerald-700">
+                <CheckCircle className="w-5 h-5" />
+                <span className="text-sm font-semibold">{successMessage}</span>
+              </div>
+            )}
+            {Object.keys(errors).length > 0 && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center space-x-3 text-red-700">
+                <AlertCircle className="w-5 h-5" />
+                <span className="text-sm font-semibold">오류가 있는 거래 내역이 있습니다. 수정해 주세요.</span>
+              </div>
+            )}
             <button
               onClick={handleSubmit}
               disabled={importMutation.isPending}
-              className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg hover:from-blue-700 hover:to-indigo-700 transition-all disabled:opacity-50 flex items-center justify-center space-x-2"
+              className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg hover:from-blue-700 hover:to-indigo-700 transition-all disabled:opacity-50"
             >
-              {importMutation.isPending ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  <span>처리 중...</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="w-5 h-5" />
-                  <span>{transactions.length}건의 거래 내역 입력하기</span>
-                </>
-              )}
+              {importMutation.isPending ? '입력 중...' : `${transactions.length}개의 거래 내역 일괄 입력`}
             </button>
           </div>
-        </div>
-      )}
-
-      {/* Messages */}
-      {successMessage && (
-        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center space-x-3 text-emerald-700">
-          <CheckCircle className="w-5 h-5" />
-          <p className="font-medium">{successMessage}</p>
-        </div>
-      )}
-
-      {Object.keys(errors).length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-2">
-          <div className="flex items-center space-x-3 text-red-700 mb-2">
-            <AlertCircle className="w-5 h-5" />
-            <p className="font-bold">입력 오류 발생</p>
-          </div>
-          <ul className="list-disc list-inside text-sm text-red-600 space-y-1">
-            {Object.entries(errors).map(([index, error]) => (
-              <li key={index}>행 {parseInt(index) + 1}: {error}</li>
-            ))}
-          </ul>
         </div>
       )}
     </div>
