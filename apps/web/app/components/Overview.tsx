@@ -139,8 +139,12 @@ const Overview = () => {
   const expensesLast30Days: { [key: string]: number } = transactions
     .filter((t: Transaction) => t.date && new Date(t.date) >= thirtyDaysAgo && t.amount < 0)
     .reduce((acc: { [key: string]: number }, t: Transaction) => {
-      const date = new Date(t.date).toISOString().split('T')[0]
-      if (date) {
+      const dateObj = new Date(t.date)
+      const year = dateObj.getFullYear()
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+      const day = String(dateObj.getDate()).padStart(2, '0')
+      const date = `${year}-${month}-${day}`
+      if (date && date.length > 0) {
         acc[date] = (acc[date] || 0) + convertToBaseCurrency(Math.abs(t.amount), t.currency)
       }
       return acc

@@ -81,7 +81,12 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `transactions_${new Date().toISOString().split('T')[0]}.csv`
+    const today = new Date()
+    const year = today.getFullYear()
+    const month = String(today.getMonth() + 1).padStart(2, '0')
+    const day = String(today.getDate()).padStart(2, '0')
+    const dateString = `${year}-${month}-${day}`
+    a.download = `transactions_${dateString}.csv`
     a.click()
   }
 

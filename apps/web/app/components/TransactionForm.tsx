@@ -5,6 +5,15 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAccounts } from '@/hooks/useAccounts'
 import { ArrowUpRight, ArrowDownLeft, AlertCircle, CheckCircle } from 'lucide-react'
 
+// Helper function to get today's date as string
+const getTodayDateString = (): string => {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 interface TransactionFormData {
   accountId: string;
   date: string;
@@ -42,7 +51,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
   const [formError, setFormError] = useState<string | null>(null);
   const [formData, setFormData] = useState<TransactionFormData>({
     accountId: '',
-    date: new Date().toISOString().split('T')[0],
+    date: getTodayDateString(),
     description: '',
     type: 'expense',
     amount: '',
@@ -54,7 +63,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
-      setFormData({ accountId: '', date: new Date().toISOString().split('T')[0], description: '', type: 'expense', amount: '', currency: '' })
+      setFormData({ accountId: '', date: getTodayDateString(), description: '', type: 'expense', amount: '', currency: '' })
       setFormError(null)
       onTransactionAdded?.();
     },
