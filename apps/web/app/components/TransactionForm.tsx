@@ -2,17 +2,8 @@
 
 import React, { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useAccounts } from '@/hooks/useAccounts'
+import { useAccounts } from '../hooks/useAccounts'
 import { ArrowUpRight, ArrowDownLeft, AlertCircle, CheckCircle } from 'lucide-react'
-
-// Helper function to get today's date as string
-const getTodayDateString = (): string => {
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = String(today.getMonth() + 1).padStart(2, '0')
-  const day = String(today.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
 
 interface TransactionFormData {
   accountId: string;
@@ -51,7 +42,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
   const [formError, setFormError] = useState<string | null>(null);
   const [formData, setFormData] = useState<TransactionFormData>({
     accountId: '',
-    date: getTodayDateString(),
+    date: new Date().toISOString().split('T')[0] ?? '',
     description: '',
     type: 'expense',
     amount: '',
@@ -63,7 +54,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
-      setFormData({ accountId: '', date: getTodayDateString(), description: '', type: 'expense', amount: '', currency: '' })
+      setFormData({ accountId: '', date: new Date().toISOString().split('T')[0] ?? '', description: '', type: 'expense', amount: '', currency: '' })
       setFormError(null)
       onTransactionAdded?.();
     },
@@ -74,8 +65,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
     setFormError(null)
 
     if (name === 'accountId') {
-      const accountsList = (accounts as any[]) || []
-      const selectedAccount = accountsList.find(acc => acc.id === value);
+      const selectedAccount = accounts?.find(acc => acc.id === value);
       if (selectedAccount) {
         setFormData({
           ...formData,
@@ -107,8 +97,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
     mutation.mutate(formData)
   }
 
-  const accountsList = (accounts as any[]) || []
-  const selectedAccount = accountsList.find(acc => acc.id === formData.accountId)
+  const selectedAccount = accounts?.find(acc => acc.id === formData.accountId)
 
   return (
     <div className="space-y-6">
@@ -146,7 +135,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
             >
               <option value="">계좌 선택</option>
               {accountsError && <option value="" disabled>계좌 로딩 오류</option>}
-              {!accountsError && accountsList.map(account => (
+              {!accountsError && accounts?.map(account => (
                 <option key={account.id} value={account.id}>
                   {account.name} ({Math.round(account.balance).toLocaleString()} {account.currency})
                 </option>

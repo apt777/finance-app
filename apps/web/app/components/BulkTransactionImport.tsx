@@ -3,7 +3,7 @@
 import React, { useState, useRef } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Upload, FileText, Plus, Trash2, AlertCircle, CheckCircle } from 'lucide-react'
-import { useAccounts } from '@/hooks/useAccounts'
+import { useAccounts } from '../hooks/useAccounts'
 
 interface BulkTransaction {
   date: string
@@ -14,22 +14,13 @@ interface BulkTransaction {
   currency?: string
 }
 
-interface FormData {
+interface ParsedRow {
   date: string
   description: string
   amount: string
   type: string
-  accountId: string
-  currency: string
-}
-
-// Helper function to get today's date as string
-const getTodayDateString = (): string => {
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = String(today.getMonth() + 1).padStart(2, '0')
-  const day = String(today.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+  account: string
+  currency?: string
 }
 
 const BulkTransactionImport = () => {
@@ -39,12 +30,21 @@ const BulkTransactionImport = () => {
 
   const [importMethod, setImportMethod] = useState<'csv' | 'manual'>('manual')
   const [transactions, setTransactions] = useState<BulkTransaction[]>([])
-  const [errors, setErrors] = useState<Record<number, string>>({})
+  const [errors, setErrors] = useState<{ [key: number]: string }>({})
   const [successMessage, setSuccessMessage] = useState('')
 
-  // Manual form state with explicit types - use helper function to ensure string
-  const [formData, setFormData] = useState<FormData>({
-    date: getTodayDateString(),
+  interface TransactionFormData {
+    date: string
+    description: string
+    amount: string
+    type: string
+    accountId: string
+    currency: string
+  }
+
+  // Manual form state
+  const [formData, setFormData] = useState<TransactionFormData>({
+    date: new Date().toISOString().split('T')[0] ?? '',
     description: '',
     amount: '',
     type: 'expense',
@@ -73,7 +73,7 @@ const BulkTransactionImport = () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
       setTransactions([])
       setFormData({
-        date: getTodayDateString(),
+        date: new Date().toISOString().split('T')[0] ?? '',
         description: '',
         amount: '',
         type: 'expense',
@@ -87,29 +87,25 @@ const BulkTransactionImport = () => {
 
   // Validate transaction
   const validateTransaction = (txn: BulkTransaction, index: number): boolean => {
-    const newErrors: Record<number, string> = { ...errors }
+    const newErrors = { ...errors }
 
-    if (!txn.date || txn.date.length === 0) {
+    if (!txn.date) {
       newErrors[index] = '날짜를 입력해 주세요.'
-      setErrors(newErrors)
       return false
     }
 
-    if (!txn.description || txn.description.length === 0) {
+    if (!txn.description) {
       newErrors[index] = '설명을 입력해 주세요.'
-      setErrors(newErrors)
       return false
     }
 
-    if (typeof txn.amount !== 'number' || isNaN(txn.amount)) {
+    if (!txn.amount || isNaN(txn.amount)) {
       newErrors[index] = '유효한 금액을 입력해 주세요.'
-      setErrors(newErrors)
       return false
     }
 
-    if (!txn.accountId || txn.accountId.length === 0) {
+    if (!txn.accountId) {
       newErrors[index] = '계좌를 선택해 주세요.'
-      setErrors(newErrors)
       return false
     }
 
@@ -125,11 +121,8 @@ const BulkTransactionImport = () => {
       return
     }
 
-    // Ensure date is always a valid string
-    const dateValue: string = formData.date.length > 0 ? formData.date : getTodayDateString()
-
     const newTxn: BulkTransaction = {
-      date: dateValue,
+      date: formData.date,
       description: formData.description,
       amount: parseFloat(formData.amount) * (formData.type === 'expense' ? -1 : 1),
       type: formData.type,
@@ -140,7 +133,7 @@ const BulkTransactionImport = () => {
     if (validateTransaction(newTxn, transactions.length)) {
       setTransactions([...transactions, newTxn])
       setFormData({
-        date: getTodayDateString(),
+        date: new Date().toISOString().split('T')[0] ?? '',
         description: '',
         amount: '',
         type: 'expense',
@@ -172,27 +165,22 @@ const BulkTransactionImport = () => {
             .map((col) => col.trim())
 
           // Find account by name
-          const account = accountName ? (accounts as any[])?.find(
-            (acc) => acc.name.toLowerCase() === accountName.toLowerCase()
-          ) : undefined;
+          const account = (accounts as any[])?.find(
+            (acc) => acc.name.toLowerCase() === accountName?.toLowerCase()
+          )
 
           if (!account) {
             newErrors[index] = `계좌를 찾을 수 없습니다: ${accountName}`
             return
           }
-          
-          if(!date || !description || !amount || !type) {
-            newErrors[index] = '필수 CSV 필드가 누락되었습니다.'
-            return
-          }
 
           const txn: BulkTransaction = {
-            date,
-            description,
-            amount: parseFloat(amount) * (type.toLowerCase() === 'expense' ? -1 : 1),
-            type,
+            date: date ?? '',
+            description: description ?? '',
+            amount: parseFloat(amount ?? '0') * (type?.toLowerCase() === 'expense' ? -1 : 1),
+            type: type ?? 'expense',
             accountId: account.id,
-            currency: currency || account.currency || 'JPY',
+            currency: currency || account.currency,
           }
 
           if (validateTransaction(txn, index)) {
@@ -230,6 +218,8 @@ const BulkTransactionImport = () => {
 
     // Validate all
     let hasErrors = false
+    const newErrors: { [key: number]: string } = {}
+
     transactions.forEach((txn, index) => {
       if (!validateTransaction(txn, index)) {
         hasErrors = true
@@ -265,7 +255,11 @@ const BulkTransactionImport = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <button
             onClick={() => setImportMethod('manual')}
-            className={`p-4 rounded-xl border-2 transition-all ${importMethod === 'manual' ? 'border-blue-600 bg-blue-50' : 'border-slate-200 hover:border-slate-300'}`}
+            className={`p-4 rounded-xl border-2 transition-all ${
+              importMethod === 'manual'
+                ? 'border-blue-600 bg-blue-50'
+                : 'border-slate-200 hover:border-slate-300'
+            }`}
           >
             <Plus className="w-6 h-6 mb-2" />
             <p className="font-semibold text-slate-800">수동 입력</p>
@@ -273,7 +267,11 @@ const BulkTransactionImport = () => {
           </button>
           <button
             onClick={() => setImportMethod('csv')}
-            className={`p-4 rounded-xl border-2 transition-all ${importMethod === 'csv' ? 'border-blue-600 bg-blue-50' : 'border-slate-200 hover:border-slate-300'}`}
+            className={`p-4 rounded-xl border-2 transition-all ${
+              importMethod === 'csv'
+                ? 'border-blue-600 bg-blue-50'
+                : 'border-slate-200 hover:border-slate-300'
+            }`}
           >
             <FileText className="w-6 h-6 mb-2" />
             <p className="font-semibold text-slate-800">CSV 업로드</p>
@@ -295,7 +293,7 @@ const BulkTransactionImport = () => {
                 type="date"
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-900 placeholder-slate-400"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
@@ -305,7 +303,7 @@ const BulkTransactionImport = () => {
               <select
                 value={formData.accountId}
                 onChange={(e) => setFormData({ ...formData, accountId: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-900 appearance-none pr-8"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">계좌 선택</option>
                 {accountsList.map((account) => (
@@ -325,7 +323,7 @@ const BulkTransactionImport = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
                 }
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-900 placeholder-slate-400"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="예: 점심 식사"
               />
             </div>
@@ -333,30 +331,35 @@ const BulkTransactionImport = () => {
               <label className="block text-sm font-medium text-slate-700 mb-2">
                 금액
               </label>
-              <div className="flex space-x-2">
-                <select
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-900 appearance-none pr-8"
-                >
-                  <option value="expense">지출</option>
-                  <option value="income">수입</option>
-                </select>
-                <input
-                  type="number"
-                  value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                  className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-900 placeholder-slate-400"
-                  placeholder="0"
-                />
-              </div>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.amount}
+                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="0.00"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                유형
+              </label>
+              <select
+                value={formData.type}
+                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="expense">지출</option>
+                <option value="income">수입</option>
+                <option value="transfer">이체</option>
+              </select>
             </div>
           </div>
           <button
             onClick={handleAddTransaction}
-            className="w-full py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-all"
+            className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
           >
-            목록에 추가
+            거래 추가
           </button>
         </div>
       )}
@@ -365,97 +368,135 @@ const BulkTransactionImport = () => {
       {importMethod === 'csv' && (
         <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200">
           <h3 className="text-lg font-bold text-slate-800 mb-4">CSV 파일 업로드</h3>
-          <div
-            onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-slate-300 rounded-xl p-10 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
-          >
-            <Upload className="w-10 h-10 text-slate-400 mb-4" />
-            <p className="text-slate-800 font-semibold">파일을 선택하거나 드래그하세요</p>
-            <p className="text-slate-500 text-sm mt-1">CSV 형식만 지원됩니다</p>
+          <div className="space-y-4">
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="border-2 border-dashed border-blue-300 rounded-xl p-8 text-center cursor-pointer hover:border-blue-500 transition-colors"
+            >
+              <Upload className="w-12 h-12 text-blue-400 mx-auto mb-2" />
+              <p className="font-semibold text-slate-800">CSV 파일을 여기에 드래그하거나 클릭</p>
+              <p className="text-xs text-slate-600 mt-1">
+                형식: 날짜, 설명, 유형, 금액, 계좌명, 통화
+              </p>
+            </div>
             <input
-              type="file"
               ref={fileInputRef}
-              onChange={handleCSVUpload}
+              type="file"
               accept=".csv"
+              onChange={handleCSVUpload}
               className="hidden"
             />
-          </div>
-          <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
-            <p className="text-xs font-bold text-slate-700 mb-2">CSV 형식 가이드:</p>
-            <p className="text-xs text-slate-600">날짜, 설명, 유형(income/expense), 금액, 계좌명, 통화</p>
-            <p className="text-xs text-slate-500 mt-1">예: 2024-01-01, 스타벅스, expense, 500, 생활비계좌, JPY</p>
+
+            {/* CSV Format Example */}
+            <div className="bg-slate-50 rounded-lg p-4">
+              <p className="text-sm font-medium text-slate-800 mb-2">CSV 형식 예시:</p>
+              <pre className="text-xs text-slate-600 overflow-x-auto">
+{`날짜,설명,유형,금액,계좌명,통화
+2024-12-16,점심 식사,expense,5000,일본 통장,JPY
+2024-12-15,급여,income,1000000,한국 통장,KRW
+2024-12-14,온라인 쇼핑,expense,50,미국 계좌,USD`}
+              </pre>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Transaction List */}
+      {/* Transactions List */}
       {transactions.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-          <div className="p-6 border-b border-slate-200 flex items-center justify-between">
-            <h3 className="text-lg font-bold text-slate-800">입력 예정 거래 목록 ({transactions.length})</h3>
-            <button
-              onClick={() => setTransactions([])}
-              className="text-sm text-red-600 hover:text-red-700 font-semibold"
-            >
-              전체 삭제
-            </button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-slate-50 text-slate-600 text-xs uppercase font-bold">
-                <tr>
-                  <th className="px-6 py-4">날짜</th>
-                  <th className="px-6 py-4">설명</th>
-                  <th className="px-6 py-4">금액</th>
-                  <th className="px-6 py-4">계좌</th>
-                  <th className="px-6 py-4"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {transactions.map((txn, index) => (
-                  <tr key={index} className={errors[index] ? 'bg-red-50' : ''}>
-                    <td className="px-6 py-4 text-sm text-slate-800">{txn.date}</td>
-                    <td className="px-6 py-4 text-sm text-slate-800">{txn.description}</td>
-                    <td className={`px-6 py-4 text-sm font-bold ${txn.amount > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                      {txn.amount.toLocaleString()} {txn.currency}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-800">
-                      {accountsList.find(a => a.id === txn.accountId)?.name || '알 수 없음'}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => handleRemoveTransaction(index)}
-                        className="text-slate-400 hover:text-red-600 transition-all"
+        <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200">
+          <h3 className="text-lg font-bold text-slate-800 mb-4">
+            입력 예정 거래 ({transactions.length}개)
+          </h3>
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {transactions.map((txn, index) => (
+              <div
+                key={index}
+                className={`p-4 rounded-lg border ${
+                  errors[index]
+                    ? 'bg-red-50 border-red-200'
+                    : 'bg-slate-50 border-slate-200'
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <span className="font-semibold text-slate-800">
+                        {txn.description}
+                      </span>
+                      <span
+                        className={`text-xs px-2 py-1 rounded ${
+                          txn.amount > 0
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-red-100 text-red-700'
+                        }`}
                       >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                        {txn.amount > 0 ? '+' : '-'}
+                        {Math.abs(txn.amount).toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="text-xs text-slate-600 space-y-1">
+                      <p>날짜: {txn.date}</p>
+                      <p>
+                        계좌:{' '}
+                        {
+                          accountsList.find((acc) => acc.id === txn.accountId)
+                            ?.name
+                        }
+                      </p>
+                      <p>유형: {txn.type}</p>
+                    </div>
+                    {errors[index] && (
+                      <div className="flex items-start space-x-2 mt-2 text-red-600 text-xs">
+                        <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                        <span>{errors[index]}</span>
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleRemoveTransaction(index)}
+                    className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-500" />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
-          <div className="p-6 bg-slate-50 border-t border-slate-200">
-            {successMessage && (
-              <div className="mb-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center space-x-3 text-emerald-700">
+
+          {/* Submit Button */}
+          <button
+            onClick={handleSubmit}
+            disabled={importMutation.isPending}
+            className="w-full mt-4 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 text-white font-semibold rounded-lg transition-colors flex items-center justify-center space-x-2"
+          >
+            {importMutation.isPending ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <span>입력 중...</span>
+              </>
+            ) : (
+              <>
                 <CheckCircle className="w-5 h-5" />
-                <span className="text-sm font-semibold">{successMessage}</span>
-              </div>
+                <span>거래 내역 입력 ({transactions.length}개)</span>
+              </>
             )}
-            {Object.keys(errors).length > 0 && (
-              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center space-x-3 text-red-700">
-                <AlertCircle className="w-5 h-5" />
-                <span className="text-sm font-semibold">오류가 있는 거래 내역이 있습니다. 수정해 주세요.</span>
-              </div>
-            )}
-            <button
-              onClick={handleSubmit}
-              disabled={importMutation.isPending}
-              className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg hover:from-blue-700 hover:to-indigo-700 transition-all disabled:opacity-50"
-            >
-              {importMutation.isPending ? '입력 중...' : `${transactions.length}개의 거래 내역 일괄 입력`}
-            </button>
-          </div>
+          </button>
+        </div>
+      )}
+
+      {/* Success Message */}
+      {successMessage && (
+        <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-green-600 text-sm flex items-center space-x-2">
+          <CheckCircle className="w-5 h-5" />
+          <span>{successMessage}</span>
+        </div>
+      )}
+
+      {/* Error Message */}
+      {importMutation.isError && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-600 text-sm">
+          <p className="font-medium">거래 내역 입력 오류</p>
+          <p className="text-xs mt-1">{importMutation.error.message}</p>
         </div>
       )}
     </div>

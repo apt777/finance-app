@@ -72,7 +72,7 @@ export default function SetupPage() {
   const handleAccountChange = (index: number, field: keyof Account, value: any) => {
     const newAccounts = [...accounts]
     if (newAccounts[index]) {
-      newAccounts[index][field] = value
+      (newAccounts[index] as any)[field] = value
       setAccounts(newAccounts)
     }
   }
@@ -92,7 +92,7 @@ export default function SetupPage() {
   const handleExchangeRateChange = (index: number, field: keyof ExchangeRate, value: any) => {
     const newRates = [...exchangeRates]
     if (newRates[index]) {
-      newRates[index][field] = value
+      (newRates[index] as any)[field] = value
       setExchangeRates(newRates)
     }
   }

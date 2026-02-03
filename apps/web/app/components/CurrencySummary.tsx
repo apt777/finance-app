@@ -1,9 +1,14 @@
 'use client'
 
 import React, { useMemo } from 'react'
-import { useAccounts } from '@/hooks/useAccounts'
-import { useExchangeRates, ExchangeRate } from '@/hooks/useExchangeRates'
-import { getCurrencySymbol, getCurrencyName, convertToBaseCurrency } from '@/lib/currency'
+import { useAccounts } from '../hooks/useAccounts'
+import { useExchangeRates } from '../hooks/useExchangeRates'
+import { 
+  convertToBaseCurrency, 
+  getCurrencySymbol, 
+  getCurrencyName,
+  SUPPORTED_CURRENCIES 
+} from '@/lib/currency'
 import { Wallet, TrendingUp, PieChart } from 'lucide-react'
 
 interface CurrencyBalance {
@@ -17,22 +22,16 @@ const CurrencySummary = ({ baseCurrency = 'JPY' }: { baseCurrency?: string }) =>
   const { data: exchangeRates, isLoading: ratesLoading } = useExchangeRates()
 
   const summary = useMemo(() => {
-    const emptySummary = {
-      byCurrency: {} as { [key: string]: CurrencyBalance },
-      totalInBaseCurrency: 0,
-      currencyBreakdown: [] as (CurrencyBalance & { percentage: number })[],
-    };
-
     if (!accounts || !exchangeRates) {
-      return emptySummary;
+      return {
+        byCurrency: {},
+        totalInBaseCurrency: 0,
+        currencyBreakdown: [],
+      }
     }
 
     const accountsList = Array.isArray(accounts) ? accounts : []
     const ratesList = Array.isArray(exchangeRates) ? exchangeRates : []
-
-    if (accountsList.length === 0) {
-      return emptySummary;
-    }
 
     // Group by currency
     const byCurrency: { [key: string]: CurrencyBalance } = {}
@@ -51,20 +50,28 @@ const CurrencySummary = ({ baseCurrency = 'JPY' }: { baseCurrency?: string }) =>
     })
 
     // Convert to base currency
-    const totalInBaseCurrency = Object.values(byCurrency).reduce((sum, item) => {
-        const amounts: any = { [item.currency]: item.balance };
-        return sum + convertToBaseCurrency(amounts, baseCurrency as any, ratesList as any)
-    }, 0);
+    const amounts: { [key: string]: number } = {}
+    Object.values(byCurrency).forEach((item) => {
+      amounts[item.currency] = item.balance
+    })
+
+    const totalInBaseCurrency = convertToBaseCurrency(
+      amounts as any,
+      baseCurrency as any,
+      ratesList as any
+    )
 
     // Calculate breakdown percentages
-    const currencyBreakdown = Object.values(byCurrency).map((item: CurrencyBalance) => {
-        const amounts: any = { [item.currency]: item.balance };
-        const valueInBase = convertToBaseCurrency(amounts, baseCurrency as any, ratesList as any);
-        return {
-          ...item,
-          percentage: totalInBaseCurrency > 0 ? (valueInBase / totalInBaseCurrency) * 100 : 0,
-        }
-    });
+    const currencyBreakdown = Object.values(byCurrency).map((item) => ({
+      ...item,
+      percentage: totalInBaseCurrency > 0 
+        ? (convertToBaseCurrency(
+            { [item.currency]: item.balance },
+            baseCurrency as any,
+            ratesList as any
+          ) / totalInBaseCurrency) * 100
+        : 0,
+    }))
 
     return {
       byCurrency,

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import prisma from '@lib/prisma' // Adjust path as needed
+import prisma from '../../../../../lib/prisma' // Adjust path as needed
 
 interface GoalData {
   userId: string;
@@ -7,7 +7,7 @@ interface GoalData {
   targetAmount: number;
   currentAmount: number;
   targetDate?: string;
-  targetCurrency: string;
+  targetCurrency?: string;
 }
 
 export async function GET(request: Request) {
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
         targetAmount,
         currentAmount,
         targetDate: targetDate ? new Date(targetDate) : null,
-        targetCurrency,
+        targetCurrency: targetCurrency || 'JPY',
       },
     })
     return NextResponse.json(newGoal, { status: 201 })

@@ -27,12 +27,12 @@ const InvestmentPortfolio = () => {
       return null
     }
 
-    const summary = calculatePortfolioSummary(holdings)
-    const diversification = analyzePortfolioDiversification(holdings)
-    const investmentTypeStats = getInvestmentTypeStats(holdings)
-    const stockTypeStats = getStockTypeStats(holdings)
+    const summary = calculatePortfolioSummary(holdings as any)
+    const diversification = analyzePortfolioDiversification(holdings as any)
+    const investmentTypeStats = getInvestmentTypeStats(holdings as any)
+    const stockTypeStats = getStockTypeStats(holdings as any)
     const nisaHoldings = holdings.filter((h: any) => h.type === 'nisa')
-    const nisaLimit = checkNISALimit(nisaHoldings)
+    const nisaLimit = checkNISALimit(nisaHoldings as any)
 
     return {
       summary,

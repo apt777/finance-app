@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { parse } from 'csv-parse/sync'
 import prisma from '@lib/prisma'
@@ -35,23 +35,7 @@ const decodeBuffer = (buffer: Buffer): string => {
 
 export async function POST(request: Request) {
   const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          cookieStore.set({ name, value, ...options })
-        },
-        remove(name: string, options: CookieOptions) {
-          cookieStore.set({ name, value: '', ...options })
-        },
-      },
-    }
-  )
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore as any })
 
   try {
     const { data: { session } } = await supabase.auth.getSession()
@@ -111,14 +95,15 @@ export async function POST(request: Request) {
           // and return them to the user instead of throwing.
           throw new Error(`Account with name "${record.account_name}" not found for one of the transactions.`)
         }
+        const amount = parseFloat(record.amount)
         return {
           userId,
           accountId,
           date: new Date(record.date),
           description: record.description,
-          amount: parseFloat(record.amount),
+          amount,
           currency: record.currency,
-          type: parseFloat(record.amount) >= 0 ? 'income' : 'expense',
+          type: amount >= 0 ? 'income' : 'expense',
         }
       })
 
