@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { useTransactions } from '@/hooks/useTransactions'
-import { ArrowUpRight, ArrowDownLeft, Filter, Download } from 'lucide-react'
+import { ArrowUpRight, ArrowDownLeft, Filter, Download, Calendar, Search } from 'lucide-react'
 
 interface Transaction {
   id: string;
@@ -22,6 +22,8 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
   const { data, error, isLoading } = useTransactions(accountId)
   const [sortBy, setSortBy] = useState<'date' | 'amount'>('date')
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [showFilters, setShowFilters] = useState(false)
 
   if (isLoading) {
     return (
@@ -46,9 +48,10 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
 
   // Filter transactions
   const filteredTransactions = transactions.filter((t) => {
-    if (filterType === 'income') return t.amount > 0
-    if (filterType === 'expense') return t.amount < 0
-    return true
+    const matchesType = filterType === 'all' || (filterType === 'income' ? t.amount > 0 : t.amount < 0)
+    const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         (t.account?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
+    return matchesType && matchesSearch
   })
 
   // Sort transactions
@@ -91,135 +94,144 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 pb-20 md:pb-0">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between px-1">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">거래 내역</h2>
-          <p className="text-slate-600 text-sm mt-1">총 {transactions.length}개의 거래</p>
+          <h2 className="text-xl md:text-2xl font-bold text-slate-800">거래 내역</h2>
+          <p className="text-slate-500 text-xs md:text-sm mt-0.5">총 {transactions.length}개의 거래</p>
         </div>
-        <button
-          onClick={handleExportCSV}
-          className="flex items-center space-x-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition-colors"
-        >
-          <Download className="w-5 h-5" />
-          <span>CSV 다운로드</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportCSV}
+            className="p-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all"
+            title="CSV 다운로드"
+          >
+            <Download className="w-5 h-5" />
+          </button>
+          <button 
+            onClick={() => setShowFilters(!showFilters)}
+            className={`p-2 rounded-xl border transition-all ${showFilters ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-slate-200 text-slate-600'}`}
+          >
+            <Filter className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
-      {/* Summary Cards */}
+      {/* Summary Cards - Horizontal scroll on mobile */}
       {transactions.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200">
+        <div className="flex overflow-x-auto pb-2 gap-4 snap-x no-scrollbar -mx-1 px-1">
+          <div className="min-w-[160px] flex-1 bg-white rounded-2xl p-4 shadow-sm border border-slate-100 snap-start">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-slate-600">총 수입</p>
-              <ArrowDownLeft className="w-5 h-5 text-green-500" />
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">총 수입</p>
+              <ArrowDownLeft className="w-4 h-4 text-emerald-500" />
             </div>
-            <p className="text-2xl font-bold text-green-600">
+            <p className="text-lg font-black text-emerald-600">
               +{Math.round(totalIncome).toLocaleString()}
             </p>
           </div>
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200">
+          <div className="min-w-[160px] flex-1 bg-white rounded-2xl p-4 shadow-sm border border-slate-100 snap-start">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-slate-600">총 지출</p>
-              <ArrowUpRight className="w-5 h-5 text-red-500" />
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">총 지출</p>
+              <ArrowUpRight className="w-4 h-4 text-rose-500" />
             </div>
-            <p className="text-2xl font-bold text-red-600">
+            <p className="text-lg font-black text-rose-600">
               -{Math.round(totalExpense).toLocaleString()}
             </p>
           </div>
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200">
+          <div className="min-w-[160px] flex-1 bg-white rounded-2xl p-4 shadow-sm border border-slate-100 snap-start">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-slate-600">순 변화</p>
-              <div className={`w-5 h-5 ${totalIncome - totalExpense >= 0 ? 'text-blue-500' : 'text-red-500'}`}>
-                {totalIncome - totalExpense >= 0 ? (
-                  <ArrowDownLeft className="w-5 h-5" />
-                ) : (
-                  <ArrowUpRight className="w-5 h-5" />
-                )}
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">순 변화</p>
+              <div className={`w-4 h-4 ${totalIncome - totalExpense >= 0 ? 'text-blue-500' : 'text-rose-500'}`}>
+                {totalIncome - totalExpense >= 0 ? <ArrowDownLeft /> : <ArrowUpRight />}
               </div>
             </div>
-            <p className={`text-2xl font-bold ${totalIncome - totalExpense >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+            <p className={`text-lg font-black ${totalIncome - totalExpense >= 0 ? 'text-blue-600' : 'text-rose-600'}`}>
               {Math.round(totalIncome - totalExpense).toLocaleString()}
             </p>
           </div>
         </div>
       )}
 
-      {/* Controls */}
-      <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200">
-        <div className="flex items-center space-x-4 mb-4">
-          <Filter className="w-5 h-5 text-slate-600" />
-          <h3 className="font-semibold text-slate-800">정렬 및 필터</h3>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="sortBy" className="block text-sm font-medium text-slate-700 mb-2">
-              정렬
-            </label>
-            <select
-              id="sortBy"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as 'date' | 'amount')}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white text-slate-900 appearance-none pr-8"
-            >
-              <option value="date">최신순</option>
-              <option value="amount">금액순</option>
-            </select>
+      {/* Search and Filters */}
+      {showFilters && (
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input 
+              type="text"
+              placeholder="거래 내용 또는 계좌 검색..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 text-sm"
+            />
           </div>
-          <div>
-            <label htmlFor="filterType" className="block text-sm font-medium text-slate-700 mb-2">
-              유형 필터
-            </label>
-            <select
-              id="filterType"
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value as 'all' | 'income' | 'expense')}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white text-slate-900 appearance-none pr-8"
-            >
-              <option value="all">모두</option>
-              <option value="income">수입만</option>
-              <option value="expense">지출만</option>
-            </select>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1.5 ml-1">정렬</label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as 'date' | 'amount')}
+                className="w-full px-3 py-2 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 text-sm"
+              >
+                <option value="date">최신순</option>
+                <option value="amount">금액순</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1.5 ml-1">유형</label>
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value as 'all' | 'income' | 'expense')}
+                className="w-full px-3 py-2 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 text-sm"
+              >
+                <option value="all">모두</option>
+                <option value="income">수입만</option>
+                <option value="expense">지출만</option>
+              </select>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Transactions List */}
       {sortedTransactions.length > 0 ? (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {sortedTransactions.map((transaction: Transaction) => (
             <div
               key={transaction.id}
-              className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 hover:shadow-md transition-all duration-200 flex items-center justify-between"
+              className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 hover:border-blue-100 transition-all duration-200 flex items-center justify-between group"
             >
-              <div className="flex items-center space-x-4 flex-1">
+              <div className="flex items-center space-x-3 flex-1 min-w-0">
                 {/* Icon */}
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
                   transaction.amount > 0 
-                    ? 'bg-green-100' 
-                    : 'bg-red-100'
+                    ? 'bg-emerald-50 text-emerald-600' 
+                    : 'bg-rose-50 text-rose-600'
                 }`}>
                   {transaction.amount > 0 ? (
-                    <ArrowDownLeft className={`w-5 h-5 text-green-600`} />
+                    <ArrowDownLeft className="w-5 h-5" />
                   ) : (
-                    <ArrowUpRight className={`w-5 h-5 text-red-600`} />
+                    <ArrowUpRight className="w-5 h-5" />
                   )}
                 </div>
 
                 {/* Details */}
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-slate-800 truncate">
+                  <p className="font-bold text-slate-800 text-sm md:text-base truncate group-hover:text-blue-600 transition-colors">
                     {transaction.description}
                   </p>
-                  <div className="flex items-center space-x-2 text-xs text-slate-500 mt-1">
-                    <span>{new Date(transaction.date).toLocaleDateString()}</span>
+                  <div className="flex items-center gap-2 text-[10px] md:text-xs text-slate-400 mt-0.5">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      {new Date(transaction.date).toLocaleDateString()}
+                    </span>
                     <span>•</span>
-                    <span>{transaction.type}</span>
+                    <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">{transaction.type}</span>
                     {transaction.account && (
                       <>
                         <span>•</span>
-                        <span>{transaction.account.name}</span>
+                        <span className="truncate max-w-[80px]">{transaction.account.name}</span>
                       </>
                     )}
                   </div>
@@ -227,16 +239,16 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
               </div>
 
               {/* Amount */}
-              <div className="text-right">
-                <p className={`text-lg font-bold ${
+              <div className="text-right ml-3">
+                <p className={`text-base md:text-lg font-black ${
                   transaction.amount > 0 
-                    ? 'text-green-600' 
-                    : 'text-red-600'
+                    ? 'text-emerald-600' 
+                    : 'text-rose-600'
                 }`}>
                   {transaction.amount > 0 ? '+' : '-'}
                   {Math.abs(transaction.amount).toLocaleString()}
                 </p>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-[10px] font-bold text-slate-400">
                   {transaction.currency}
                 </p>
               </div>
@@ -244,9 +256,11 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-2xl p-12 shadow-lg border border-slate-200 text-center">
-          <ArrowUpRight className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-600 font-medium">거래 내역이 없습니다.</p>
+        <div className="bg-white rounded-2xl p-12 shadow-sm border border-slate-100 text-center">
+          <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Search className="w-8 h-8 text-slate-200" />
+          </div>
+          <p className="text-slate-500 font-medium">거래 내역이 없습니다.</p>
         </div>
       )}
     </div>

@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { useAccounts } from '@/hooks/useAccounts'
 import Link from 'next/link'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Trash2, Edit2, Plus, Wallet, CreditCard, PiggyBank, TrendingUp, Filter } from 'lucide-react'
+import { Trash2, Plus, Wallet, CreditCard, PiggyBank, TrendingUp, Filter, ChevronRight } from 'lucide-react'
 
 interface Account {
   id: string;
@@ -19,6 +19,7 @@ const AccountList = () => {
   const { data, error, isLoading } = useAccounts()
   const [filterCurrency, setFilterCurrency] = useState('')
   const [filterType, setFilterType] = useState('')
+  const [showFilters, setShowFilters] = useState(false)
 
   // Mutation for deleting an account
   const deleteAccountMutation = useMutation<any, Error, string>({
@@ -39,7 +40,9 @@ const AccountList = () => {
     },
   })
 
-  const handleDelete = (accountId: string, accountName: string) => {
+  const handleDelete = (e: React.MouseEvent, accountId: string, accountName: string) => {
+    e.preventDefault()
+    e.stopPropagation()
     if (confirm(`"${accountName}" 계좌를 정말 삭제하시겠습니까?\n이 계좌에 연결된 모든 거래 내역과 투자 정보도 함께 삭제됩니다.`)) {
       deleteAccountMutation.mutate(accountId)
     }
@@ -114,166 +117,135 @@ const AccountList = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 pb-20 md:pb-0">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between px-1">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">계좌 관리</h2>
-          <p className="text-slate-600 text-sm mt-1">총 {accounts.length}개의 계좌</p>
+          <h2 className="text-xl md:text-2xl font-bold text-slate-800">계좌 관리</h2>
+          <p className="text-slate-500 text-xs md:text-sm mt-0.5">총 {accounts.length}개의 계좌</p>
         </div>
-        <Link
-          href="/accounts/add"
-          className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-        >
-          <Plus className="w-5 h-5" />
-          <span>새 계좌 추가</span>
-        </Link>
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200">
-        <div className="flex items-center space-x-4 mb-4">
-          <Filter className="w-5 h-5 text-slate-600" />
-          <h3 className="font-semibold text-slate-800">필터</h3>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="currencyFilter" className="block text-sm font-medium text-slate-700 mb-2">
-              통화별 필터
-            </label>
-            <select
-              id="currencyFilter"
-              value={filterCurrency}
-              onChange={(e) => setFilterCurrency(e.target.value)}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white text-slate-900 appearance-none pr-8"
-            >
-              <option value="">모든 통화</option>
-              {uniqueCurrencies.map((currency: string) => (
-                <option key={currency} value={currency}>
-                  {currency} ({getCurrencySymbol(currency)})
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="typeFilter" className="block text-sm font-medium text-slate-700 mb-2">
-              계좌 종류별 필터
-            </label>
-            <select
-              id="typeFilter"
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white text-slate-900 appearance-none pr-8"
-            >
-              <option value="">모든 종류</option>
-              {uniqueTypes.map((type: string) => (
-                <option key={type} value={type}>
-                  {getAccountTypeLabel(type)}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => setShowFilters(!showFilters)}
+            className={`p-2 rounded-xl border transition-all ${showFilters ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-slate-200 text-slate-600'}`}
+          >
+            <Filter className="w-5 h-5" />
+          </button>
+          <Link
+            href="/accounts/add"
+            className="flex items-center justify-center w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2 bg-blue-600 text-white font-semibold rounded-xl shadow-md hover:bg-blue-700 transition-all"
+          >
+            <Plus className="w-5 h-5" />
+            <span className="hidden md:inline ml-2">새 계좌 추가</span>
+          </Link>
         </div>
       </div>
 
-      {/* Accounts Grid */}
+      {/* Filters - Collapsible on mobile */}
+      {showFilters && (
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1.5 ml-1">
+                통화별
+              </label>
+              <select
+                value={filterCurrency}
+                onChange={(e) => setFilterCurrency(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 text-sm text-slate-700"
+              >
+                <option value="">모든 통화</option>
+                {uniqueCurrencies.map((currency: string) => (
+                  <option key={currency} value={currency}>
+                    {currency} ({getCurrencySymbol(currency)})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1.5 ml-1">
+                종류별
+              </label>
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 text-sm text-slate-700"
+              >
+                <option value="">모든 종류</option>
+                {uniqueTypes.map((type: string) => (
+                  <option key={type} value={type}>
+                    {getAccountTypeLabel(type)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Accounts List/Grid */}
       {filteredAccounts.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredAccounts.map((account: Account) => (
-            <div
+            <Link
               key={account.id}
-              className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-200 card-hover"
+              href={`/accounts/${account.id}/transactions`}
+              className="group bg-white rounded-2xl p-4 shadow-sm border border-slate-100 hover:border-blue-200 hover:shadow-md transition-all duration-200 relative overflow-hidden"
             >
-              {/* Account Header */}
-              <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center justify-between relative z-10">
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white">
+                  <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
                     {getAccountIcon(account.type)}
                   </div>
                   <div>
-                    <h3 className="font-bold text-slate-800">{account.name}</h3>
-                    <p className="text-xs text-slate-500">{getAccountTypeLabel(account.type)}</p>
+                    <h3 className="font-bold text-slate-800 text-sm md:text-base">{account.name}</h3>
+                    <p className="text-[10px] md:text-xs text-slate-500">{getAccountTypeLabel(account.type)}</p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Link
-                    href={`/accounts/${account.id}/transactions`}
-                    className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                    title="거래 내역 보기"
-                  >
-                    <Edit2 className="w-4 h-4 text-slate-600" />
-                  </Link>
+                <div className="flex items-center gap-1">
                   <button
-                    onClick={() => handleDelete(account.id, account.name)}
-                    className="p-2 hover:bg-red-50 rounded-lg transition-colors"
-                    disabled={deleteAccountMutation.isPending}
-                    title="계좌 삭제"
+                    onClick={(e) => handleDelete(e, account.id, account.name)}
+                    className="p-2 text-slate-300 hover:text-red-500 transition-colors"
                   >
-                    <Trash2 className="w-4 h-4 text-red-500" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
+                  <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-blue-500 transition-colors" />
                 </div>
               </div>
 
-              {/* Account Balance */}
-              <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-4 mb-4">
-                <p className="text-xs text-slate-600 mb-1">잔액</p>
-                <div className="flex items-baseline space-x-2">
-                  <span className="text-2xl font-bold text-slate-800">
-                    {Math.round(account.balance).toLocaleString()}
-                  </span>
-                  <span className="text-sm font-semibold text-slate-600">
-                    {getCurrencySymbol(account.currency)} {account.currency}
-                  </span>
+              <div className="mt-4 flex items-end justify-between relative z-10">
+                <div>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-0.5">현재 잔액</p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-lg md:text-xl font-black text-slate-900">
+                      {Math.round(account.balance).toLocaleString()}
+                    </span>
+                    <span className="text-xs font-bold text-slate-500">
+                      {account.currency}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-[10px] font-bold px-2 py-1 bg-slate-100 text-slate-500 rounded-lg">
+                  {getCurrencySymbol(account.currency)}
                 </div>
               </div>
-
-              {/* Account Info */}
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-600">계좌 종류</span>
-                  <span className="font-medium text-slate-800">{getAccountTypeLabel(account.type)}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-600">통화</span>
-                  <span className="font-medium text-slate-800">{account.currency}</span>
-                </div>
-              </div>
-
-              {/* Action Link */}
-              <Link
-                href={`/accounts/${account.id}/transactions`}
-                className="mt-4 w-full py-2 px-4 bg-blue-50 hover:bg-blue-100 text-blue-600 font-medium rounded-lg transition-colors text-center text-sm"
-              >
-                거래 내역 보기
-              </Link>
-            </div>
+              
+              {/* Decorative background element */}
+              <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-slate-50 rounded-full opacity-50 group-hover:bg-blue-50 transition-colors z-0"></div>
+            </Link>
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-2xl p-12 shadow-lg border border-slate-200 text-center">
-          <Wallet className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-600 font-medium mb-4">필터와 일치하는 계좌가 없습니다.</p>
+        <div className="bg-white rounded-2xl p-12 shadow-sm border border-slate-100 text-center">
+          <Wallet className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+          <p className="text-slate-500 text-sm mb-6">표시할 계좌가 없습니다.</p>
           <Link
             href="/accounts/add"
-            className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+            className="inline-flex items-center px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all"
           >
-            <Plus className="w-5 h-5" />
-            <span>첫 계좌 추가하기</span>
+            <Plus className="w-5 h-5 mr-2" />
+            <span>첫 계좌 추가</span>
           </Link>
-        </div>
-      )}
-
-      {/* Error Messages */}
-      {deleteAccountMutation.isError && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-600 text-sm">
-          <p className="font-medium">계좌 삭제 오류</p>
-          <p className="text-xs mt-1">{deleteAccountMutation.error.message}</p>
-        </div>
-      )}
-
-      {deleteAccountMutation.isSuccess && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-green-600 text-sm">
-          <p className="font-medium">계좌가 성공적으로 삭제되었습니다!</p>
         </div>
       )}
     </div>
