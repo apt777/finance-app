@@ -51,8 +51,8 @@ const HoldingsList = () => {
     )
   }
 
-  const holdings: Holding[] = (holdingsData as Holding[]) || []
-  const accounts: Account[] = (accountsData as Account[]) || []
+  const holdings: Holding[] = (holdingsData as unknown as Holding[]) || []
+  const accounts: Account[] = (accountsData as unknown as Account[]) || []
   const exchangeRates: ExchangeRate[] = exchangeRatesData || []
 
   const BASE_CURRENCY = 'JPY'

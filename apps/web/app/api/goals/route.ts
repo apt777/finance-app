@@ -7,6 +7,7 @@ interface GoalData {
   targetAmount: number;
   currentAmount: number;
   targetDate?: string;
+  targetCurrency?: string;
 }
 
 export async function GET(request: Request) {
@@ -21,7 +22,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { userId, name, targetAmount, currentAmount, targetDate }: GoalData = await request.json()
+    const { userId, name, targetAmount, currentAmount, targetDate, targetCurrency }: GoalData = await request.json()
     const newGoal = await prisma.goal.create({
       data: {
         userId,
@@ -29,6 +30,7 @@ export async function POST(request: Request) {
         targetAmount,
         currentAmount,
         targetDate: targetDate ? new Date(targetDate) : null,
+        targetCurrency: targetCurrency || 'JPY',
       },
     })
     return NextResponse.json(newGoal, { status: 201 })

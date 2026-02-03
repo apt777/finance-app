@@ -4,8 +4,8 @@ import { cookies } from 'next/headers'
 
 export async function POST(request: Request) {
   const { email } = await request.json()
-  const cookieStore = cookies()
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+  const cookieStore = await cookies()
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore as any })
 
   if (!email) {
     return NextResponse.json({ error: 'Email is required' }, { status: 400 })

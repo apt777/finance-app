@@ -17,7 +17,7 @@ import {
   getCurrencySymbol, 
   getCurrencyName,
   getReverseRate 
-} from '../lib/currency'
+} from '@/lib/currency'
 
 // Interface matching Prisma schema field names
 interface ExchangeRate {

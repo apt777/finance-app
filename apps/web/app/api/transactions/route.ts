@@ -14,7 +14,7 @@ interface TransactionData {
 
 export async function GET(request: Request) {
   const cookieStore = await cookies()
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore as any })
   try {
     const { data: { session } } = await supabase.auth.getSession()
 
@@ -46,7 +46,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const cookieStore = await cookies()
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore as any })
   try {
     const { data: { session } } = await supabase.auth.getSession()
 
@@ -97,6 +97,7 @@ export async function POST(request: Request) {
       }),
       prisma.transaction.create({
         data: {
+          userId: session.user.id,
           accountId,
           date: new Date(date),
           description,

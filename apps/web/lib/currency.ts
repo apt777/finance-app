@@ -136,9 +136,12 @@ export function updateExchangeRate(
   const index = updatedRates.findIndex((r) => r.fromCurrency === from && r.toCurrency === to)
 
   if (index !== -1) {
-    updatedRates[index] = {
-      ...updatedRates[index],
-      rate: newRate,
+    const existing = updatedRates[index]
+    if (existing) {
+      updatedRates[index] = {
+        ...existing,
+        rate: newRate,
+      }
     }
   } else {
     updatedRates.push({

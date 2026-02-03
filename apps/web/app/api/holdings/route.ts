@@ -9,11 +9,12 @@ interface HoldingData {
   shares: number;
   costBasis: number;
   currency: string;
+  investmentType?: string;
 }
 
 export async function GET(request: Request) {
   const cookieStore = await cookies()
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore as any })
   try {
     const { data: { session } } = await supabase.auth.getSession()
 
@@ -48,7 +49,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const cookieStore = await cookies()
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore as any })
   try {
     const { data: { session } } = await supabase.auth.getSession()
 
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { accountId, symbol, shares, costBasis, currency }: HoldingData = await request.json()
+    const { accountId, symbol, shares, costBasis, currency, investmentType }: HoldingData = await request.json()
 
     // Verify the account belongs to the user
     const account = await prisma.account.findFirst({
@@ -71,7 +72,15 @@ export async function POST(request: Request) {
     }
 
     const newHolding = await prisma.holding.create({
-      data: { accountId, symbol, shares, costBasis, currency },
+      data: { 
+        userId: session.user.id,
+        accountId, 
+        symbol, 
+        shares, 
+        costBasis, 
+        currency,
+        investmentType: investmentType || 'stock'
+      },
     })
     return NextResponse.json(newHolding, { status: 201 })
   } catch (error: any) {

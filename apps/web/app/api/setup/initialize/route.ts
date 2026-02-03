@@ -8,8 +8,8 @@ const prisma = new PrismaClient()
 export async function POST(request: NextRequest) {
   try {
     const { accounts, exchangeRates } = await request.json()
-    const cookieStore = cookies()
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+    const cookieStore = await cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore as any })
 
     const {
       data: { session },

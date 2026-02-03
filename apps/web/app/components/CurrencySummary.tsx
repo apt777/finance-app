@@ -8,7 +8,7 @@ import {
   getCurrencySymbol, 
   getCurrencyName,
   SUPPORTED_CURRENCIES 
-} from '../lib/currency'
+} from '@/lib/currency'
 import { Wallet, TrendingUp, PieChart } from 'lucide-react'
 
 interface CurrencyBalance {
@@ -38,7 +38,7 @@ const CurrencySummary = ({ baseCurrency = 'JPY' }: { baseCurrency?: string }) =>
 
     accountsList.forEach((account: any) => {
       const currency = account.currency || 'KRW'
-      if (!byurrency[currency]) {
+      if (!byCurrency[currency]) {
         byCurrency[currency] = {
           currency,
           balance: 0,
@@ -51,30 +51,30 @@ const CurrencySummary = ({ baseCurrency = 'JPY' }: { baseCurrency?: string }) =>
 
     // Convert to base currency
     const amounts: { [key: string]: number } = {}
-    Object.values(byurrency).forEach((item) => {
+    Object.values(byCurrency).forEach((item) => {
       amounts[item.currency] = item.balance
     })
 
     const totalInBaseCurrency = convertToBaseCurrency(
       amounts as any,
       baseCurrency as any,
-      ratesList
+      ratesList as any
     )
 
     // Calculate breakdown percentages
-    const currencyBreakdown = Object.values(byurrency).map((item) => ({
+    const currencyBreakdown = Object.values(byCurrency).map((item) => ({
       ...item,
       percentage: totalInBaseCurrency > 0 
         ? (convertToBaseCurrency(
             { [item.currency]: item.balance },
             baseCurrency as any,
-            ratesList
+            ratesList as any
           ) / totalInBaseCurrency) * 100
         : 0,
     }))
 
     return {
-      byurrency,
+      byCurrency,
       totalInBaseCurrency,
       currencyBreakdown,
     }

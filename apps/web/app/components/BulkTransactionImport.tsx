@@ -33,9 +33,18 @@ const BulkTransactionImport = () => {
   const [errors, setErrors] = useState<{ [key: number]: string }>({})
   const [successMessage, setSuccessMessage] = useState('')
 
+  interface TransactionFormData {
+    date: string
+    description: string
+    amount: string
+    type: string
+    accountId: string
+    currency: string
+  }
+
   // Manual form state
-  const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0],
+  const [formData, setFormData] = useState<TransactionFormData>({
+    date: new Date().toISOString().split('T')[0] ?? '',
     description: '',
     amount: '',
     type: 'expense',
@@ -64,7 +73,7 @@ const BulkTransactionImport = () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
       setTransactions([])
       setFormData({
-        date: new Date().toISOString().split('T')[0],
+        date: new Date().toISOString().split('T')[0] ?? '',
         description: '',
         amount: '',
         type: 'expense',
@@ -124,7 +133,7 @@ const BulkTransactionImport = () => {
     if (validateTransaction(newTxn, transactions.length)) {
       setTransactions([...transactions, newTxn])
       setFormData({
-        date: new Date().toISOString().split('T')[0],
+        date: new Date().toISOString().split('T')[0] ?? '',
         description: '',
         amount: '',
         type: 'expense',
@@ -157,7 +166,7 @@ const BulkTransactionImport = () => {
 
           // Find account by name
           const account = (accounts as any[])?.find(
-            (acc) => acc.name.toLowerCase() === accountName.toLowerCase()
+            (acc) => acc.name.toLowerCase() === accountName?.toLowerCase()
           )
 
           if (!account) {
@@ -166,10 +175,10 @@ const BulkTransactionImport = () => {
           }
 
           const txn: BulkTransaction = {
-            date,
-            description,
-            amount: parseFloat(amount) * (type.toLowerCase() === 'expense' ? -1 : 1),
-            type,
+            date: date ?? '',
+            description: description ?? '',
+            amount: parseFloat(amount ?? '0') * (type?.toLowerCase() === 'expense' ? -1 : 1),
+            type: type ?? 'expense',
             accountId: account.id,
             currency: currency || account.currency,
           }

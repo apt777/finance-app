@@ -42,7 +42,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
   const [formError, setFormError] = useState<string | null>(null);
   const [formData, setFormData] = useState<TransactionFormData>({
     accountId: '',
-    date: new Date().toISOString().split('T')[0],
+    date: new Date().toISOString().split('T')[0] ?? '',
     description: '',
     type: 'expense',
     amount: '',
@@ -54,7 +54,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
-      setFormData({ accountId: '', date: new Date().toISOString().split('T')[0], description: '', type: 'expense', amount: '', currency: '' })
+      setFormData({ accountId: '', date: new Date().toISOString().split('T')[0] ?? '', description: '', type: 'expense', amount: '', currency: '' })
       setFormError(null)
       onTransactionAdded?.();
     },

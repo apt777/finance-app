@@ -25,7 +25,7 @@ interface SetupData {
 
 export async function POST(request: Request) {
   const cookieStore = await cookies();
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore as any });
   try {
     const { data: { session } } = await supabase.auth.getSession();
 
@@ -66,6 +66,7 @@ export async function POST(request: Request) {
           for (const transaction of account.transactions) {
             await tx.transaction.create({
               data: {
+                userId,
                 accountId: createdAccount.id,
                 date: new Date(transaction.date),
                 description: transaction.description,

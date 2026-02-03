@@ -34,8 +34,8 @@ const decodeBuffer = (buffer: Buffer): string => {
 }
 
 export async function POST(request: Request) {
-  const cookieStore = cookies()
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+  const cookieStore = await cookies()
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore as any })
 
   try {
     const { data: { session } } = await supabase.auth.getSession()
@@ -95,13 +95,15 @@ export async function POST(request: Request) {
           // and return them to the user instead of throwing.
           throw new Error(`Account with name "${record.account_name}" not found for one of the transactions.`)
         }
+        const amount = parseFloat(record.amount)
         return {
           userId,
           accountId,
           date: new Date(record.date),
           description: record.description,
-          amount: parseFloat(record.amount),
+          amount,
           currency: record.currency,
+          type: amount >= 0 ? 'income' : 'expense',
         }
       })
 

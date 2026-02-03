@@ -140,7 +140,7 @@ const Overview = () => {
   // Calculate total positive assets
   let totalPositiveAssetsBaseCurrency = 0;
   for (const currency in totalNonCreditBalancesByCurrency) {
-      totalPositiveAssetsBaseCurrency += convertToBaseCurrency(totalNonCreditBalancesByCurrency[currency], currency);
+      totalPositiveAssetsBaseCurrency += convertToBaseCurrency(totalNonCreditBalancesByCurrency[currency] || 0, currency);
   }
 
   // Calculate total positive assets in KRW
@@ -160,14 +160,14 @@ const Overview = () => {
   const expensesLast30Days: { [key: string]: number } = transactions
     .filter((t: Transaction) => new Date(t.date) >= thirtyDaysAgo && t.amount < 0)
     .reduce((acc: { [key: string]: number }, t: Transaction) => {
-      const date = new Date(t.date).toISOString().split('T')[0]
+      const date = new Date(t.date).toISOString().split('T')[0] ?? ''
       acc[date] = (acc[date] || 0) + convertToBaseCurrency(Math.abs(t.amount), t.currency)
       return acc
     }, {})
 
   const chartData: ChartData[] = Object.keys(expensesLast30Days).map((date) => ({
     date,
-    expenses: Math.round(expensesLast30Days[date]),
+    expenses: Math.round(expensesLast30Days[date] || 0),
   })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
   return (
