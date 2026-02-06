@@ -79,6 +79,18 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     });
   }
 
+  const getPageTitle = (path: string) => {
+    if (path === '/') return '대시보드';
+    if (path.startsWith('/accounts')) return '계좌';
+    if (path.startsWith('/holdings') || path.startsWith('/investments')) return '투자';
+    if (path.startsWith('/goals')) return '목표';
+    if (path.startsWith('/transactions')) return '거래 내역';
+    if (path === '/settings/exchange-rates') return '환율 관리';
+    if (path.startsWith('/settings')) return '설정';
+    if (path.startsWith('/setup')) return '초기 설정';
+    return path.substring(1).split('/')[0];
+  }
+
   const navLinks: NavLink[] = [
     { name: '대시보드', href: '/', icon: Home },
     { name: '계좌', href: '/accounts', icon: Wallet },
@@ -171,9 +183,9 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                 </div>
                 <div>
                   <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-                    Finance Boss
+                    KABLUS
                   </h1>
-                  <p className="text-xs text-slate-400">자산 관리 시스템</p>
+                  <p className="text-xs text-slate-400">개인 자산 관리 시스템</p>
                 </div>
               </div>
               <button className="md:hidden p-2 text-slate-400 hover:text-white" onClick={() => setIsSidebarOpen(false)}>
@@ -242,7 +254,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               </button>
               <div>
                 <h1 className="text-lg md:text-2xl font-bold text-slate-800 truncate max-w-[150px] md:max-w-none">
-                  {pathname === '/' ? '대시보드' : pathname?.substring(1).split('/')[0]}
+                  {getPageTitle(pathname || '')}
                 </h1>
                 <p className="hidden md:block text-sm text-slate-500 mt-0.5">
                   {pathname === '/' ? '전체 자산 현황을 확인하세요' : ''}
@@ -299,7 +311,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                   <Wallet className="w-8 h-8 md:w-10 md:h-10 text-white" />
                 </div>
                 <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-3">
-                  Finance Boss에 오신 것을 환영합니다!
+                  KABLUS에 오신 것을 환영합니다!
                 </h2>
                 <p className="text-sm md:text-base text-slate-600 mb-8">
                   아직 등록된 계좌가 없습니다. 초기 설정을 시작해서 자산 관리를 시작하세요.
@@ -322,7 +334,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         
         <footer className="hidden md:block bg-white/50 backdrop-blur-sm border-t border-slate-200 text-center py-4">
           <p className="text-sm text-slate-600">
-            &copy; 2024 Finance Boss. All rights reserved.
+            &copy; 2024 KABLUS. All rights reserved.
           </p>
         </footer>
 

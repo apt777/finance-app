@@ -151,7 +151,7 @@ export default function SetupPage() {
             </div>
           </div>
           <h1 className="text-4xl font-bold text-slate-800 mb-2">초기 설정</h1>
-          <p className="text-slate-600">Finance Boss를 시작하기 위해 기본 정보를 입력해 주세요</p>
+          <p className="text-slate-600">KABLUS를 시작하기 위해 기본 정보를 입력해 주세요</p>
         </div>
 
         {/* Progress Steps */}
@@ -236,6 +236,8 @@ export default function SetupPage() {
                       <label className="block text-sm font-semibold text-slate-800 mb-2">잔액</label>
                       <input
                         type="number"
+                        min="0"
+                        onKeyDown={(e) => (e.key === '-' || e.key === 'e') && e.preventDefault()}
                         value={account.balance}
                         onChange={(e) => handleAccountChange(index, 'balance', parseFloat(e.target.value) || 0)}
                         placeholder="0"
@@ -337,6 +339,8 @@ export default function SetupPage() {
                       </label>
                       <input
                         type="number"
+                        min="0"
+                        onKeyDown={(e) => (e.key === '-' || e.key === 'e') && e.preventDefault()}
                         value={rate.rate}
                         onChange={(e) => handleExchangeRateChange(index, 'rate', parseFloat(e.target.value) || 0)}
                         placeholder="0.00"

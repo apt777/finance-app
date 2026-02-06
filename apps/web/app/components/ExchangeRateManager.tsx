@@ -224,6 +224,8 @@ const ExchangeRateManager = () => {
               <input
                 id="rate"
                 type="number"
+                min="0"
+                onKeyDown={(e) => (e.key === '-' || e.key === 'e') && e.preventDefault()}
                 step="0.0001"
                 value={formData.rate}
                 onChange={(e) => setFormData({ ...formData, rate: e.target.value })}

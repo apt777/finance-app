@@ -17,7 +17,7 @@ import { redirect } from 'next/navigation'; // Import redirect
 // }); // Commented out
 
 export const metadata: Metadata = {
-  title: "Finance Boss",
+  title: "KABLUS",
   description: "Personal Finance Application",
 };
 

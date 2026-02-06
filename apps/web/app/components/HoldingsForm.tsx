@@ -59,10 +59,26 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
     },
   })
 
+  const currencies = [
+    { value: 'JPY', label: '일본 엔 (¥)' },
+    { value: 'KRW', label: '한국 원 (₩)' },
+    { value: 'USD', label: '미국 달러 ($)' },
+  ]
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormError(null)
-    setFormData({ ...formData, [name]: value });
+
+    if (name === 'accountId') {
+      const account = accounts?.find(acc => acc.id === value);
+      setFormData({
+        ...formData,
+        accountId: value,
+        currency: account ? account.currency : ''
+      });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -118,7 +134,7 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
               id="accountId"
               value={formData.accountId}
               onChange={handleChange}
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white appearance-none pr-8"
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 appearance-none pr-8"
               disabled={isLoadingAccounts}
               required
             >
@@ -156,6 +172,8 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
               </label>
               <input
                 type="number"
+                min="0"
+                onKeyDown={(e) => (e.key === '-' || e.key === 'e') && e.preventDefault()}
                 name="shares"
                 id="shares"
                 value={formData.shares}
@@ -180,11 +198,13 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
                 </span>
                 <input
                   type="number"
+                  min="0"
+                  onKeyDown={(e) => (e.key === '-' || e.key === 'e') && e.preventDefault()}
                   name="costBasis"
                   id="costBasis"
                   value={formData.costBasis}
                   onChange={handleChange}
-                  className="w-full pl-8 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full pl-8 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
                   placeholder="0"
                   step="0.01"
                   required
@@ -196,15 +216,19 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
               <label htmlFor="currency" className="block text-sm font-semibold text-slate-800 mb-2">
                 통화
               </label>
-              <input
-                type="text"
+              <select
                 name="currency"
                 id="currency"
                 value={formData.currency}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 font-medium"
-                readOnly
-              />
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900"
+                required
+              >
+                <option value="">통화 선택</option>
+                {currencies.map(curr => (
+                  <option key={curr.value} value={curr.value}>{curr.label}</option>
+                ))}
+              </select>
             </div>
           </div>
 

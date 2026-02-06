@@ -52,7 +52,7 @@ export default function Login() {
                 <Wallet className="w-8 h-8 text-white" />
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">Finance Boss</h1>
+            <h1 className="text-3xl font-bold text-white mb-2">KABLUS</h1>
             <p className="text-blue-200 text-sm">개인 자산 관리 시스템</p>
           </div>
 
@@ -178,7 +178,7 @@ export default function Login() {
 
         {/* Footer Info */}
         <div className="mt-8 text-center text-white/60 text-xs">
-          <p>Finance Boss © 2024 · 개인 자산 관리</p>
+          <p>KABLUS © 2024 · 개인 자산 관리</p>
         </div>
       </div>
     </div>

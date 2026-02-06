@@ -155,6 +155,8 @@ const GoalForm = () => {
                 <span className="absolute left-4 top-3 text-slate-500 font-medium">{symbol}</span>
                 <input
                   type="number"
+                  min="0"
+                  onKeyDown={(e) => (e.key === '-' || e.key === 'e') && e.preventDefault()}
                   name="targetAmount"
                   id="targetAmount"
                   value={formData.targetAmount}
@@ -193,6 +195,8 @@ const GoalForm = () => {
                 <span className="absolute left-4 top-3 text-slate-500 font-medium">{symbol}</span>
                 <input
                   type="number"
+                  min="0"
+                  onKeyDown={(e) => (e.key === '-' || e.key === 'e') && e.preventDefault()}
                   name="currentAmount"
                   id="currentAmount"
                   value={formData.currentAmount}

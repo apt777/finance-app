@@ -167,6 +167,8 @@ const AccountForm = ({ onAccountAdded }: AccountFormProps) => {
           <div className="relative">
             <input
               type="number"
+              min="0"
+              onKeyDown={(e) => (e.key === '-' || e.key === 'e') && e.preventDefault()}
               name="balance"
               id="balance"
               value={formData.balance}

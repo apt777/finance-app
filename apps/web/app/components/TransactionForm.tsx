@@ -129,7 +129,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
               id="accountId"
               value={formData.accountId}
               onChange={handleChange}
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
               disabled={isLoadingAccounts}
               required
             >
@@ -155,7 +155,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
                 id="date"
                 value={formData.date}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
                 required
               />
             </div>
@@ -169,7 +169,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
                 id="type"
                 value={formData.type}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
                 required
               >
                 <option value="expense">지출</option>
@@ -189,7 +189,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
               id="description"
               value={formData.description}
               onChange={handleChange}
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
               placeholder="예: 점심 식사, 월급"
               required
             />
@@ -207,11 +207,13 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
                 </span>
                 <input
                   type="number"
+                  min="0"
+                  onKeyDown={(e) => (e.key === '-' || e.key === 'e') && e.preventDefault()}
                   name="amount"
                   id="amount"
                   value={formData.amount}
                   onChange={handleChange}
-                  className="w-full pl-8 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full pl-8 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
                   placeholder="0"
                   step="0.01"
                   required

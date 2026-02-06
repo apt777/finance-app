@@ -84,7 +84,7 @@ const HoldingsList = () => {
         <select
           value={filterAccount}
           onChange={(e) => setFilterAccount(e.target.value)}
-          className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+          className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900"
         >
           <option value="">모든 계좌</option>
           {accounts.map((account: Account) => (
