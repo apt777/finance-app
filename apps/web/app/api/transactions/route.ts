@@ -102,7 +102,7 @@ export async function POST(request: Request) {
           date: new Date(date),
           description,
           type,
-          amount: transactionAmount,
+          amount: type === 'expense' ? -transactionAmount : transactionAmount,
           currency,
         },
       }),
@@ -111,5 +111,58 @@ export async function POST(request: Request) {
     return NextResponse.json(newTransaction, { status: 201 })
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed to create transaction' }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: Request) {
+  const cookieStore = await cookies()
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore as any })
+  
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { ids } = await request.json()
+    if (!ids || !Array.isArray(ids)) return NextResponse.json({ error: 'Invalid IDs' }, { status: 400 })
+
+    const transactionsToDelete = await prisma.transaction.findMany({
+      where: {
+        id: { in: ids },
+        userId: session.user.id
+      },
+      include: { account: true }
+    })
+
+    await prisma.$transaction(async (tx) => {
+      for (const t of transactionsToDelete) {
+        if (t.account) {
+            let newBalance = t.account.balance;
+            // Credit Card: Balance represents debt. 
+            // If we delete an expense (negative amount), debt should decrease. (Current Balance + (-1000) = Balance - 1000)
+            // If we delete an income (positive amount), debt should increase. (Current Balance + 1000)
+            if (t.account.type === 'credit_card') {
+                newBalance += t.amount;
+            } else {
+                // Regular Account: Balance represents asset.
+                // If we delete an expense (negative amount), asset should increase. (Current Balance - (-1000) = Balance + 1000)
+                // If we delete an income (positive amount), asset should decrease. (Current Balance - 1000)
+                newBalance -= t.amount;
+            }
+            
+            await tx.account.update({
+                where: { id: t.accountId! },
+                data: { balance: newBalance }
+            })
+        }
+      }
+      
+      await tx.transaction.deleteMany({
+        where: { id: { in: ids } }
+      })
+    })
+
+    return NextResponse.json({ message: 'Deleted successfully' })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

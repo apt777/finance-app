@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react'
 import { useTransactions } from '@/hooks/useTransactions'
-import { ArrowUpRight, ArrowDownLeft, Filter, Download, Calendar, Search } from 'lucide-react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { ArrowUpRight, ArrowDownLeft, Filter, Download, Calendar, Search, Trash2, X } from 'lucide-react'
 
 interface Transaction {
   id: string;
@@ -24,6 +25,50 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [showFilters, setShowFilters] = useState(false)
+  
+  const queryClient = useQueryClient()
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [isEditMode, setIsEditMode] = useState(false)
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedIds(sortedTransactions.map(t => t.id))
+    } else {
+      setSelectedIds([])
+    }
+  }
+
+  const handleSelectOne = (id: string) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter(i => i !== id))
+    } else {
+      setSelectedIds([...selectedIds, id])
+    }
+  }
+
+  const deleteTransactionsMutation = useMutation<any, Error, string[]>({
+    mutationFn: async (ids: string[]) => {
+      const res = await fetch('/api/transactions', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      })
+      if (!res.ok) throw new Error('삭제 실패')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+      queryClient.invalidateQueries({ queryKey: ['accounts'] })
+      setSelectedIds([])
+      setIsEditMode(false)
+    },
+  })
+
+  const handleDeleteSelected = () => {
+    if (confirm(`${selectedIds.length}개의 거래 내역을 삭제하시겠습니까?`)) {
+      deleteTransactionsMutation.mutate(selectedIds)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -102,13 +147,43 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
           <p className="text-slate-500 text-xs md:text-sm mt-0.5">총 {transactions.length}개의 거래</p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleExportCSV}
-            className="p-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all"
-            title="CSV 다운로드"
-          >
-            <Download className="w-5 h-5" />
-          </button>
+          {isEditMode ? (
+            <>
+              <button
+                onClick={() => { setIsEditMode(false); setSelectedIds([]); }}
+                className="p-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all"
+                title="취소"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              {selectedIds.length > 0 && (
+                <button
+                  onClick={handleDeleteSelected}
+                  className="p-2 bg-red-100 text-red-600 rounded-xl hover:bg-red-200 transition-all animate-in zoom-in duration-200"
+                  title="선택 삭제"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              <button
+                onClick={handleExportCSV}
+                className="p-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all"
+                title="CSV 다운로드"
+              >
+                <Download className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setIsEditMode(true)}
+                className="p-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all"
+                title="삭제 모드"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+            </>
+          )}
           <button 
             onClick={() => setShowFilters(!showFilters)}
             className={`p-2 rounded-xl border transition-all ${showFilters ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-slate-200 text-slate-600'}`}
@@ -197,12 +272,37 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
       {/* Transactions List */}
       {sortedTransactions.length > 0 ? (
         <div className="space-y-2">
+          {isEditMode && (
+            <div className="flex items-center px-4 py-2 animate-in slide-in-from-left duration-200">
+              <input
+                type="checkbox"
+                id="select-all"
+                checked={selectedIds.length === sortedTransactions.length && sortedTransactions.length > 0}
+                onChange={handleSelectAll}
+                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              />
+              <label htmlFor="select-all" className="ml-3 text-xs text-slate-500 font-medium cursor-pointer">
+                전체 선택 ({selectedIds.length}개)
+              </label>
+            </div>
+          )}
+
           {sortedTransactions.map((transaction: Transaction) => (
             <div
               key={transaction.id}
-              className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 hover:border-blue-100 transition-all duration-200 flex items-center justify-between group"
+              className={`bg-white rounded-2xl p-4 shadow-sm border transition-all duration-200 flex items-center justify-between group ${
+                isEditMode && selectedIds.includes(transaction.id) ? 'border-blue-300 bg-blue-50/30' : 'border-slate-100 hover:border-blue-100'
+              }`}
             >
               <div className="flex items-center space-x-3 flex-1 min-w-0">
+                {isEditMode && (
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(transaction.id)}
+                    onChange={() => handleSelectOne(transaction.id)}
+                    className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer mr-2 animate-in zoom-in duration-200"
+                  />
+                )}
                 {/* Icon */}
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
                   transaction.amount > 0 
