@@ -35,16 +35,10 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center px-4 py-12">
-      {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl"></div>
-      </div>
-
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-12">
       {/* Login Card */}
       <div className="relative w-full max-w-md">
-        <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-white/20">
+        <div className="bg-white rounded-2xl p-8 shadow-xl border border-slate-200">
           {/* Logo Section */}
           <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
@@ -52,26 +46,26 @@ export default function Login() {
                 <Wallet className="w-8 h-8 text-white" />
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">KABLUS</h1>
-            <p className="text-blue-200 text-sm">개인 자산 관리 시스템</p>
+            <h1 className="text-3xl font-bold text-slate-800 mb-2">KABLUS</h1>
+            <p className="text-slate-500 text-sm">개인 자산 관리 시스템</p>
           </div>
 
           {/* Form Section */}
           <form className="space-y-5" onSubmit={handleLogin}>
             {/* Email Input */}
             <div>
-              <label htmlFor="email-address" className="block text-sm font-medium text-white mb-2">
+              <label htmlFor="email-address" className="block text-sm font-medium text-slate-700 mb-2">
                 이메일 주소
               </label>
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-blue-300" />
+                <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
                   id="email-address"
                   name="email"
                   type="email"
                   autoComplete="email"
                   required
-                  className="w-full pl-12 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   placeholder="your@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -82,18 +76,18 @@ export default function Login() {
 
             {/* Password Input */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-white mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">
                 비밀번호
               </label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-blue-300" />
+                <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
                   id="password"
                   name="password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   required
-                  className="w-full pl-12 pr-12 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  className="w-full pl-12 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -102,7 +96,7 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-blue-300 hover:text-blue-200 transition-colors"
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                   disabled={isLoading}
                 >
                   {showPassword ? (
@@ -116,7 +110,7 @@ export default function Login() {
 
             {/* Error Message */}
             {errorMessage && (
-              <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-4 text-red-200 text-sm">
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-600 text-sm">
                 <p className="font-medium">로그인 실패</p>
                 <p className="text-xs mt-1">{errorMessage}</p>
               </div>
@@ -145,21 +139,21 @@ export default function Login() {
           {/* Divider */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/20"></div>
+              <div className="w-full border-t border-slate-200"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white/5 text-white/60">또는</span>
+              <span className="px-2 bg-white text-slate-400">또는</span>
             </div>
           </div>
 
           {/* Links Section */}
           <div className="space-y-3">
             <div className="text-center">
-              <p className="text-white/70 text-sm">
+              <p className="text-slate-600 text-sm">
                 계정이 없으신가요?{' '}
                 <Link 
                   href="/register" 
-                  className="text-blue-400 hover:text-blue-300 font-semibold transition-colors"
+                  className="text-blue-600 hover:text-blue-700 font-semibold transition-colors"
                 >
                   회원가입
                 </Link>
@@ -168,7 +162,7 @@ export default function Login() {
             <div className="text-center">
               <Link 
                 href="/forgot-password" 
-                className="text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors"
+                className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
               >
                 비밀번호를 잊으셨나요?
               </Link>
@@ -177,7 +171,7 @@ export default function Login() {
         </div>
 
         {/* Footer Info */}
-        <div className="mt-8 text-center text-white/60 text-xs">
+        <div className="mt-8 text-center text-slate-400 text-xs">
           <p>KABLUS © 2024 · 개인 자산 관리</p>
         </div>
       </div>

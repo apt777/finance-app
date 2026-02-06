@@ -158,6 +158,10 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     return null
   }
 
+  if (pathname === '/login' || pathname === '/register' || pathname === '/forgot-password' || pathname === '/reset-password') {
+    return <>{children}</>
+  }
+
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 pb-20 md:pb-0">
       {/* Sidebar (Desktop) / Drawer (Mobile) */}
