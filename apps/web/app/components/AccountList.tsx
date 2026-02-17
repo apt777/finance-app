@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { useAccounts } from '@/hooks/useAccounts'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Trash2, Plus, Wallet, CreditCard, PiggyBank, TrendingUp, Filter, ChevronRight } from 'lucide-react'
 
@@ -15,6 +16,7 @@ interface Account {
 }
 
 const AccountList = () => {
+  const router = useRouter()
   const queryClient = useQueryClient()
   const { data, error, isLoading } = useAccounts()
   const [filterCurrency, setFilterCurrency] = useState('')
@@ -187,10 +189,10 @@ const AccountList = () => {
       {filteredAccounts.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredAccounts.map((account: Account) => (
-            <Link
+            <div
               key={account.id}
-              href={`/accounts/${account.id}/transactions`}
-              className="group bg-white rounded-2xl p-4 shadow-sm border border-slate-100 hover:border-blue-200 hover:shadow-md transition-all duration-200 relative overflow-hidden"
+              onClick={() => router.push(`/accounts/${account.id}/transactions`)}
+              className="group bg-white rounded-2xl p-4 shadow-sm border border-slate-100 hover:border-blue-200 hover:shadow-md transition-all duration-200 relative overflow-hidden cursor-pointer"
             >
               <div className="flex items-center justify-between relative z-10">
                 <div className="flex items-center space-x-3">
@@ -215,12 +217,20 @@ const AccountList = () => {
 
               <div className="mt-4 flex items-end justify-between relative z-10">
                 <div>
-                  <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-0.5">현재 잔액</p>
+                  <p className={`text-[10px] uppercase tracking-wider font-bold mb-0.5 ${
+                    account.type === 'credit_card' ? 'text-rose-400' : 'text-slate-400'
+                  }`}>
+                    {account.type === 'credit_card' ? '지불 예정' : '현재 잔액'}
+                  </p>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-lg md:text-xl font-black text-slate-900">
+                    <span className={`text-lg md:text-xl font-black ${
+                      account.type === 'credit_card' ? 'text-rose-600' : 'text-slate-900'
+                    }`}>
                       {Math.round(account.balance).toLocaleString()}
                     </span>
-                    <span className="text-xs font-bold text-slate-500">
+                    <span className={`text-xs font-bold ${
+                      account.type === 'credit_card' ? 'text-rose-500' : 'text-slate-500'
+                    }`}>
                       {account.currency}
                     </span>
                   </div>
@@ -230,9 +240,23 @@ const AccountList = () => {
                 </div>
               </div>
               
+              {account.type === 'credit_card' && account.balance > 0 && (
+                <div className="mt-3 relative z-20">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/transactions/add?type=transfer&toAccountId=${account.id}&amount=${account.balance}`);
+                    }}
+                    className="flex items-center justify-center w-full py-2 bg-rose-100 text-rose-600 rounded-lg text-sm font-bold hover:bg-rose-200 transition-colors"
+                  >
+                    상환하기
+                  </button>
+                </div>
+              )}
+              
               {/* Decorative background element */}
               <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-slate-50 rounded-full opacity-50 group-hover:bg-blue-50 transition-colors z-0"></div>
-            </Link>
+            </div>
           ))}
         </div>
       ) : (

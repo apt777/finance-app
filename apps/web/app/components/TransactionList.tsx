@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { useTransactions } from '@/hooks/useTransactions'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowUpRight, ArrowDownLeft, Filter, Download, Calendar, Search, Trash2, X } from 'lucide-react'
+import { ArrowUpRight, ArrowDownLeft, Filter, Download, Calendar, Search, Trash2, X, ArrowRight } from 'lucide-react'
 
 interface Transaction {
   id: string;
@@ -17,12 +17,20 @@ interface Transaction {
     name: string;
     currency: string;
   };
+  fromAccount?: {
+    name: string;
+    currency: string;
+  };
+  toAccount?: {
+    name: string;
+    currency: string;
+  };
 }
 
 const TransactionList = ({ accountId }: { accountId?: string }) => {
   const { data, error, isLoading } = useTransactions(accountId)
   const [sortBy, setSortBy] = useState<'date' | 'amount'>('date')
-  const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all')
+  const [filterType, setFilterType] = useState<'all' | 'income' | 'expense' | 'transfer'>('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   
@@ -93,9 +101,9 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
 
   // Filter transactions
   const filteredTransactions = transactions.filter((t) => {
-    const matchesType = filterType === 'all' || (filterType === 'income' ? t.amount > 0 : t.amount < 0)
+    const matchesType = filterType === 'all' || t.type === filterType
     const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         (t.account?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
+                         (t.account?.name || t.fromAccount?.name || t.toAccount?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
     return matchesType && matchesSearch
   })
 
@@ -109,8 +117,8 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
   })
 
   // Calculate summary
-  const totalIncome = transactions.filter(t => t.amount > 0).reduce((sum, t) => sum + t.amount, 0)
-  const totalExpense = transactions.filter(t => t.amount < 0).reduce((sum, t) => sum + Math.abs(t.amount), 0)
+  const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0)
+  const totalExpense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0)
 
   // Export to CSV
   const handleExportCSV = () => {
@@ -257,12 +265,13 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
               <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1.5 ml-1">유형</label>
               <select
                 value={filterType}
-                onChange={(e) => setFilterType(e.target.value as 'all' | 'income' | 'expense')}
+                onChange={(e) => setFilterType(e.target.value as 'all' | 'income' | 'expense' | 'transfer')}
                 className="w-full px-3 py-2 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 text-sm"
               >
                 <option value="all">모두</option>
                 <option value="income">수입만</option>
                 <option value="expense">지출만</option>
+                <option value="transfer">이체만</option>
               </select>
             </div>
           </div>
@@ -305,12 +314,16 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
                 )}
                 {/* Icon */}
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                  transaction.amount > 0 
+                  transaction.type === 'income' 
                     ? 'bg-emerald-50 text-emerald-600' 
+                    : transaction.type === 'transfer'
+                    ? 'bg-blue-50 text-blue-600'
                     : 'bg-rose-50 text-rose-600'
                 }`}>
-                  {transaction.amount > 0 ? (
+                  {transaction.type === 'income' ? (
                     <ArrowDownLeft className="w-5 h-5" />
+                  ) : transaction.type === 'transfer' ? (
+                    <ArrowRight className="w-5 h-5" />
                   ) : (
                     <ArrowUpRight className="w-5 h-5" />
                   )}
@@ -327,12 +340,24 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
                       {new Date(transaction.date).toLocaleDateString()}
                     </span>
                     <span>•</span>
-                    <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">{transaction.type}</span>
-                    {transaction.account && (
+                    <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">
+                      {transaction.type === 'income' ? '수입' : transaction.type === 'expense' ? '지출' : '이체'}
+                    </span>
+                    
+                    {transaction.type === 'transfer' ? (
                       <>
                         <span>•</span>
-                        <span className="truncate max-w-[80px]">{transaction.account.name}</span>
+                        <span className="truncate max-w-[60px]">{transaction.fromAccount?.name}</span>
+                        <ArrowRight className="w-3 h-3 mx-0.5" />
+                        <span className="truncate max-w-[60px]">{transaction.toAccount?.name}</span>
                       </>
+                    ) : (
+                      transaction.account && (
+                        <>
+                          <span>•</span>
+                          <span className="truncate max-w-[80px]">{transaction.account.name}</span>
+                        </>
+                      )
                     )}
                   </div>
                 </div>
@@ -341,11 +366,13 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
               {/* Amount */}
               <div className="text-right ml-3">
                 <p className={`text-base md:text-lg font-black ${
-                  transaction.amount > 0 
+                  transaction.type === 'income' 
                     ? 'text-emerald-600' 
+                    : transaction.type === 'transfer'
+                    ? 'text-blue-600'
                     : 'text-rose-600'
                 }`}>
-                  {transaction.amount > 0 ? '+' : '-'}
+                  {transaction.type === 'income' ? '+' : transaction.type === 'transfer' ? '' : '-'}
                   {Math.abs(transaction.amount).toLocaleString()}
                 </p>
                 <p className="text-[10px] font-bold text-slate-400">

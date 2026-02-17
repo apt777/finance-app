@@ -8,13 +8,13 @@ interface Account {
   name: string
   type: string
   currency: string
-  balance: number
+  balance: number | string
 }
 
 interface ExchangeRate {
   fromCurrency: string
   toCurrency: string
-  rate: number
+  rate: number | string
 }
 
 export default function SetupPage() {
@@ -26,13 +26,13 @@ export default function SetupPage() {
 
   // Step 1: Accounts
   const [accounts, setAccounts] = useState<Account[]>([
-    { name: '', type: 'checking', currency: 'JPY', balance: 0 },
+    { name: '', type: 'checking', currency: 'JPY', balance: '' },
   ])
 
   // Step 2: Exchange Rates
   const [exchangeRates, setExchangeRates] = useState<ExchangeRate[]>([
-    { fromCurrency: 'KRW', toCurrency: 'JPY', rate: 0 },
-    { fromCurrency: 'USD', toCurrency: 'JPY', rate: 0 },
+    { fromCurrency: 'KRW', toCurrency: 'JPY', rate: '' },
+    { fromCurrency: 'USD', toCurrency: 'JPY', rate: '' },
   ])
 
   const [currencies, setCurrencies] = useState<any[]>([])
@@ -62,7 +62,7 @@ export default function SetupPage() {
   // ============================================================================
 
   const handleAddAccount = () => {
-    setAccounts([...accounts, { name: '', type: 'checking', currency: 'JPY', balance: 0 }])
+    setAccounts([...accounts, { name: '', type: 'checking', currency: 'JPY', balance: '' }])
   }
 
   const handleRemoveAccount = (index: number) => {
@@ -82,7 +82,7 @@ export default function SetupPage() {
   // ============================================================================
 
   const handleAddExchangeRate = () => {
-    setExchangeRates([...exchangeRates, { fromCurrency: 'KRW', toCurrency: 'JPY', rate: 0 }])
+    setExchangeRates([...exchangeRates, { fromCurrency: 'KRW', toCurrency: 'JPY', rate: '' }])
   }
 
   const handleRemoveExchangeRate = (index: number) => {
@@ -239,7 +239,7 @@ export default function SetupPage() {
                         min="0"
                         onKeyDown={(e) => (e.key === '-' || e.key === 'e') && e.preventDefault()}
                         value={account.balance}
-                        onChange={(e) => handleAccountChange(index, 'balance', parseFloat(e.target.value) || 0)}
+                        onChange={(e) => handleAccountChange(index, 'balance', e.target.value)}
                         placeholder="0"
                         className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-900 placeholder-slate-400"
                       />
@@ -342,7 +342,7 @@ export default function SetupPage() {
                         min="0"
                         onKeyDown={(e) => (e.key === '-' || e.key === 'e') && e.preventDefault()}
                         value={rate.rate}
-                        onChange={(e) => handleExchangeRateChange(index, 'rate', parseFloat(e.target.value) || 0)}
+                        onChange={(e) => handleExchangeRateChange(index, 'rate', e.target.value)}
                         placeholder="0.00"
                         step="0.01"
                         className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-900 placeholder-slate-400"

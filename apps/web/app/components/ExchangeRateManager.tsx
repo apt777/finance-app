@@ -318,7 +318,14 @@ const ExchangeRateManager = () => {
                 <div className="flex items-center space-x-2 text-xs text-slate-500">
                   <Calendar className="w-4 h-4" />
                   <span>
-                    마지막 업데이트: {new Date(rate.updatedAt).toLocaleDateString('ko-KR')}
+                    마지막 업데이트: {new Date(rate.updatedAt).toLocaleDateString('ko-KR', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: 'numeric',
+                      minute: 'numeric',
+                      hour12: false
+                    })}
                   </span>
                 </div>
               )}

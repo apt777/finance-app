@@ -1,12 +1,15 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useSearchParams } from 'next/navigation'
 import { useAccounts } from '../hooks/useAccounts'
-import { ArrowUpRight, ArrowDownLeft, AlertCircle, CheckCircle } from 'lucide-react'
+import { ArrowUpRight, ArrowDownLeft, AlertCircle, CheckCircle, ArrowRightLeft } from 'lucide-react'
 
 interface TransactionFormData {
-  accountId: string;
+  accountId?: string;
+  fromAccountId?: string;
+  toAccountId?: string;
   date: string;
   description: string;
   type: string;
@@ -42,6 +45,8 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
   const [formError, setFormError] = useState<string | null>(null);
   const [formData, setFormData] = useState<TransactionFormData>({
     accountId: '',
+    fromAccountId: '',
+    toAccountId: '',
     date: new Date().toISOString().split('T')[0] ?? '',
     description: '',
     type: 'expense',
@@ -49,12 +54,40 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
     currency: '',
   })
 
+  const searchParams = useSearchParams()
+  const [isFullPayment, setIsFullPayment] = useState(false)
+
+  useEffect(() => {
+    const type = searchParams.get('type')
+    const toAccountId = searchParams.get('toAccountId')
+    const amount = searchParams.get('amount')
+
+    if (type === 'transfer' && toAccountId) {
+      setFormData(prev => ({
+        ...prev,
+        type: 'transfer',
+        toAccountId,
+        amount: amount || prev.amount,
+      }))
+      if (amount) setIsFullPayment(true)
+    }
+  }, [searchParams])
+
   const mutation = useMutation<any, Error, TransactionFormData>({
     mutationFn: createTransaction,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
-      setFormData({ accountId: '', date: new Date().toISOString().split('T')[0] ?? '', description: '', type: 'expense', amount: '', currency: '' })
+      setFormData({ 
+        accountId: '', 
+        fromAccountId: '', 
+        toAccountId: '', 
+        date: new Date().toISOString().split('T')[0] ?? '', 
+        description: '', 
+        type: 'expense', 
+        amount: '', 
+        currency: '' 
+      })
       setFormError(null)
       onTransactionAdded?.();
     },
@@ -66,15 +99,18 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
 
     if (name === 'accountId') {
       const selectedAccount = accounts?.find(acc => acc.id === value);
-      if (selectedAccount) {
-        setFormData({
-          ...formData,
-          accountId: value,
-          currency: selectedAccount.currency,
-        });
-      } else {
-        setFormData({ ...formData, accountId: value, currency: '' });
-      }
+      setFormData({
+        ...formData,
+        accountId: value,
+        currency: selectedAccount ? selectedAccount.currency : '',
+      });
+    } else if (name === 'fromAccountId') {
+      const selectedAccount = accounts?.find(acc => acc.id === value);
+      setFormData({
+        ...formData,
+        fromAccountId: value,
+        currency: selectedAccount ? selectedAccount.currency : '',
+      });
     } else {
       setFormData({ ...formData, [name]: value });
     }
@@ -84,9 +120,27 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
     e.preventDefault()
     setFormError(null);
 
-    if (!formData.accountId || !formData.date || !formData.description || !formData.type || !formData.amount) {
+    const isTransfer = formData.type === 'transfer';
+
+    if (!formData.date || !formData.type || !formData.amount) {
       setFormError('모든 필수 필드를 입력해 주세요.');
       return
+    }
+
+    if (isTransfer) {
+      if (!formData.fromAccountId || !formData.toAccountId) {
+        setFormError('출금 계좌와 입금 계좌를 선택해 주세요.');
+        return;
+      }
+      if (formData.fromAccountId === formData.toAccountId) {
+        setFormError('출금 계좌와 입금 계좌는 같을 수 없습니다.');
+        return;
+      }
+    } else {
+      if (!formData.accountId) {
+        setFormError('계좌를 선택해 주세요.');
+        return;
+      }
     }
 
     if (isNaN(Number(formData.amount)) || Number(formData.amount) <= 0) {
@@ -98,6 +152,8 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
   }
 
   const selectedAccount = accounts?.find(acc => acc.id === formData.accountId)
+  const selectedToAccount = accounts?.find(acc => acc.id === formData.toAccountId)
+  const isCreditCardPayment = formData.type === 'transfer' && selectedToAccount?.type === 'credit_card'
 
   return (
     <div className="space-y-6">
@@ -106,6 +162,8 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
         <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white">
           {formData.type === 'income' ? (
             <ArrowDownLeft className="w-6 h-6" />
+          ) : formData.type === 'transfer' ? (
+            <ArrowRightLeft className="w-6 h-6" />
           ) : (
             <ArrowUpRight className="w-6 h-6" />
           )}
@@ -120,28 +178,77 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
       <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Account Selection */}
-          <div>
-            <label htmlFor="accountId" className="block text-sm font-semibold text-slate-800 mb-2">
-              계좌 <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="accountId"
-              id="accountId"
-              value={formData.accountId}
-              onChange={handleChange}
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
-              disabled={isLoadingAccounts}
-              required
-            >
-              <option value="">계좌 선택</option>
-              {accountsError && <option value="" disabled>계좌 로딩 오류</option>}
-              {!accountsError && accounts?.map(account => (
-                <option key={account.id} value={account.id}>
-                  {account.name} ({Math.round(account.balance).toLocaleString()} {account.currency})
-                </option>
-              ))}
-            </select>
-          </div>
+          {formData.type === 'transfer' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="fromAccountId" className="block text-sm font-semibold text-slate-800 mb-2">
+                  출금 계좌 <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="fromAccountId"
+                  id="fromAccountId"
+                  value={formData.fromAccountId}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
+                  disabled={isLoadingAccounts}
+                  required
+                >
+                  <option value="">계좌 선택</option>
+                  {accountsError && <option value="" disabled>계좌 로딩 오류</option>}
+                  {!accountsError && accounts?.map(account => (
+                    <option key={account.id} value={account.id}>
+                      {account.name} ({Math.round(account.balance).toLocaleString()} {account.currency})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="toAccountId" className="block text-sm font-semibold text-slate-800 mb-2">
+                  입금 계좌 <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="toAccountId"
+                  id="toAccountId"
+                  value={formData.toAccountId}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
+                  disabled={isLoadingAccounts}
+                  required
+                >
+                  <option value="">계좌 선택</option>
+                  {accountsError && <option value="" disabled>계좌 로딩 오류</option>}
+                  {!accountsError && accounts?.map(account => (
+                    <option key={account.id} value={account.id}>
+                      {account.name} ({Math.round(account.balance).toLocaleString()} {account.currency})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <label htmlFor="accountId" className="block text-sm font-semibold text-slate-800 mb-2">
+                계좌 <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="accountId"
+                id="accountId"
+                value={formData.accountId}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
+                disabled={isLoadingAccounts}
+                required
+              >
+                <option value="">계좌 선택</option>
+                {accountsError && <option value="" disabled>계좌 로딩 오류</option>}
+                {!accountsError && accounts?.map(account => (
+                  <option key={account.id} value={account.id}>
+                    {account.name} ({Math.round(account.balance).toLocaleString()} {account.currency})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Date and Type */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -174,6 +281,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
               >
                 <option value="expense">지출</option>
                 <option value="income">수입</option>
+                <option value="transfer">이체</option>
               </select>
             </div>
           </div>
@@ -198,9 +306,30 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
           {/* Amount and Currency */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="amount" className="block text-sm font-semibold text-slate-800 mb-2">
-                금액 <span className="text-red-500">*</span>
-              </label>
+              <div className="flex justify-between items-center mb-2">
+                <label htmlFor="amount" className="block text-sm font-semibold text-slate-800">
+                  금액 <span className="text-red-500">*</span>
+                </label>
+                {isCreditCardPayment && (
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="fullPayment"
+                      checked={isFullPayment}
+                      onChange={(e) => {
+                        setIsFullPayment(e.target.checked)
+                        if (e.target.checked && selectedToAccount) {
+                          setFormData(prev => ({ ...prev, amount: selectedToAccount.balance }))
+                        }
+                      }}
+                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                    />
+                    <label htmlFor="fullPayment" className="ml-2 text-xs text-slate-600 font-medium cursor-pointer">
+                      부채 전액 상환 ({Math.round(selectedToAccount?.balance || 0).toLocaleString()})
+                    </label>
+                  </div>
+                )}
+              </div>
               <div className="relative">
                 <span className="absolute left-4 top-3 text-slate-500 font-medium">
                   {formData.currency === 'JPY' ? '¥' : formData.currency === 'KRW' ? '₩' : '$'}
@@ -213,12 +342,22 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
                   id="amount"
                   value={formData.amount}
                   onChange={handleChange}
-                  className="w-full pl-8 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
+                  className={`w-full pl-8 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400 ${isFullPayment ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : ''}`}
                   placeholder="0"
                   step="0.01"
                   required
+                  readOnly={isFullPayment}
                 />
               </div>
+              {isCreditCardPayment && !isFullPayment && Number(formData.amount) > (selectedToAccount?.balance || 0) && (
+                <div className="mt-2 flex items-start space-x-2 text-amber-600 text-xs bg-amber-50 p-2 rounded-lg">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>
+                    현재 부채보다 많은 금액을 상환합니다.
+                    (예상 잔액: {Math.round((selectedToAccount?.balance || 0) - Number(formData.amount)).toLocaleString()})
+                  </span>
+                </div>
+              )}
             </div>
 
             <div>
@@ -242,6 +381,8 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
             <div className={`rounded-xl p-4 border-2 ${
               formData.type === 'income'
                 ? 'bg-green-50 border-green-200'
+                : formData.type === 'transfer'
+                ? 'bg-blue-50 border-blue-200'
                 : 'bg-red-50 border-red-200'
             }`}>
               <div className="flex items-center justify-between">
@@ -249,36 +390,30 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
                   <p className={`text-sm font-medium ${
                     formData.type === 'income'
                       ? 'text-green-700'
-                      : 'text-red-700'
+                      : formData.type === 'transfer' ? 'text-blue-700' : 'text-red-700'
                   }`}>
-                    {formData.type === 'income' ? '수입' : '지출'}
+                    {formData.type === 'income' ? '수입' : formData.type === 'transfer' ? '이체' : '지출'}
                   </p>
                   <p className={`text-2xl font-bold mt-1 ${
                     formData.type === 'income'
                       ? 'text-green-600'
-                      : 'text-red-600'
+                      : formData.type === 'transfer' ? 'text-blue-600' : 'text-red-600'
                   }`}>
-                    {formData.type === 'income' ? '+' : '-'}
+                    {formData.type === 'income' ? '+' : formData.type === 'transfer' ? '' : '-'}
                     {Number(formData.amount).toLocaleString()}
                   </p>
                 </div>
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                   formData.type === 'income'
                     ? 'bg-green-100'
-                    : 'bg-red-100'
+                    : formData.type === 'transfer' ? 'bg-blue-100' : 'bg-red-100'
                 }`}>
                   {formData.type === 'income' ? (
-                    <ArrowDownLeft className={`w-6 h-6 ${
-                      formData.type === 'income'
-                        ? 'text-green-600'
-                        : 'text-red-600'
-                    }`} />
+                    <ArrowDownLeft className="w-6 h-6 text-green-600" />
+                  ) : formData.type === 'transfer' ? (
+                    <ArrowRightLeft className="w-6 h-6 text-blue-600" />
                   ) : (
-                    <ArrowUpRight className={`w-6 h-6 ${
-                      formData.type === 'income'
-                        ? 'text-green-600'
-                        : 'text-red-600'
-                    }`} />
+                    <ArrowUpRight className="w-6 h-6 text-red-600" />
                   )}
                 </div>
               </div>

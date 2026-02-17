@@ -4,10 +4,12 @@ import { cookies } from 'next/headers'
 import prisma from '@lib/prisma'
 
 interface TransactionData {
-  accountId: string;
+  accountId?: string;
+  fromAccountId?: string;
+  toAccountId?: string;
   date: string;
   description: string;
-  type: string; // Added type
+  type: string;
   amount: number;
   currency: string;
 }
@@ -22,20 +24,18 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Fetch all transactions for the logged-in user
+    // Fetch all transactions for the logged-in user, including transfers
     const transactions = await prisma.transaction.findMany({
       where: {
-        account: {
-          userId: session.user.id,
-        },
+        userId: session.user.id,
       },
       orderBy: {
         date: 'desc',
       },
       include: {
-        account: { // Include account details for display
-          select: { name: true, currency: true },
-        },
+        account: { select: { name: true, currency: true } },
+        fromAccount: { select: { name: true, currency: true } },
+        toAccount: { select: { name: true, currency: true } },
       },
     })
     return NextResponse.json(transactions)
@@ -54,61 +54,104 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { accountId, date, description, type, amount, currency }: TransactionData = await request.json()
+    const body: TransactionData = await request.json()
+    const { date, description, type, amount: rawAmount, currency } = body
+    const transactionAmount = Number(rawAmount)
 
-    // 1. Find the account to ensure it exists and get its current balance
-    const account = await prisma.account.findUnique({
-      where: { id: accountId },
-    });
-
-    if (!account) {
-      return NextResponse.json({ error: 'Account not found' }, { status: 404 });
-    }
-    
-    if (account.userId !== session.user.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
-
-    // 2. Calculate the new balance based on account type
-    let newBalance;
-    const transactionAmount = Number(amount);
-
-    if (account.type === 'credit_card') {
-      // For credit cards, 'expense' increases balance (liability), 'income' (payment) decreases it
-      if (type === 'income') {
-        newBalance = account.balance - transactionAmount;
-      } else {
-        newBalance = account.balance + transactionAmount;
+    if (type === 'transfer') {
+      const { fromAccountId, toAccountId } = body
+      if (!fromAccountId || !toAccountId) {
+        return NextResponse.json({ error: 'Source and destination accounts are required' }, { status: 400 })
       }
+
+      const fromAccount = await prisma.account.findUnique({ where: { id: fromAccountId } })
+      const toAccount = await prisma.account.findUnique({ where: { id: toAccountId } })
+
+      if (!fromAccount || !toAccount) return NextResponse.json({ error: 'Account not found' }, { status: 404 })
+      if (fromAccount.userId !== session.user.id || toAccount.userId !== session.user.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      }
+
+      // Calculate new balances
+      // Regular: Asset. Credit Card: Liability (Positive balance = Debt)
+      
+      let newFromBalance = fromAccount.balance
+      if (fromAccount.type === 'credit_card') {
+        // Transfer FROM Credit Card = Cash Advance (Debt increases)
+        newFromBalance += transactionAmount
+      } else {
+        // Transfer FROM Regular = Withdrawal (Asset decreases)
+        newFromBalance -= transactionAmount
+      }
+
+      let newToBalance = toAccount.balance
+      if (toAccount.type === 'credit_card') {
+        // Transfer TO Credit Card = Payment (Debt decreases)
+        newToBalance -= transactionAmount
+      } else {
+        // Transfer TO Regular = Deposit (Asset increases)
+        newToBalance += transactionAmount
+      }
+
+      const [_, __, newTransaction] = await prisma.$transaction([
+        prisma.account.update({ where: { id: fromAccountId }, data: { balance: newFromBalance } }),
+        prisma.account.update({ where: { id: toAccountId }, data: { balance: newToBalance } }),
+        prisma.transaction.create({
+          data: {
+            userId: session.user.id,
+            fromAccountId,
+            toAccountId,
+            date: new Date(date),
+            description,
+            type,
+            amount: transactionAmount,
+            currency,
+          },
+        }),
+      ])
+
+      return NextResponse.json(newTransaction, { status: 201 })
+
     } else {
-      // For regular accounts, 'income' increases balance, 'expense' decreases it
-      if (type === 'income') {
-        newBalance = account.balance + transactionAmount;
+      const { accountId } = body
+      if (!accountId) return NextResponse.json({ error: 'Account ID is required' }, { status: 400 })
+
+      const account = await prisma.account.findUnique({ where: { id: accountId } })
+      if (!account) return NextResponse.json({ error: 'Account not found' }, { status: 404 })
+      if (account.userId !== session.user.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+
+      let newBalance
+      if (account.type === 'credit_card') {
+        if (type === 'income') {
+          newBalance = account.balance - transactionAmount
+        } else {
+          newBalance = account.balance + transactionAmount
+        }
       } else {
-        newBalance = account.balance - transactionAmount;
+        if (type === 'income') {
+          newBalance = account.balance + transactionAmount
+        } else {
+          newBalance = account.balance - transactionAmount
+        }
       }
+
+      const [_, newTransaction] = await prisma.$transaction([
+        prisma.account.update({ where: { id: accountId }, data: { balance: newBalance } }),
+        prisma.transaction.create({
+          data: {
+            userId: session.user.id,
+            accountId,
+            date: new Date(date),
+            description,
+            type,
+            amount: type === 'expense' ? -transactionAmount : transactionAmount,
+            currency,
+          },
+        }),
+      ])
+
+      return NextResponse.json(newTransaction, { status: 201 })
     }
-
-    // 3. Use a Prisma transaction to update the account and create the transaction
-    const [updatedAccount, newTransaction] = await prisma.$transaction([
-      prisma.account.update({
-        where: { id: accountId },
-        data: { balance: newBalance },
-      }),
-      prisma.transaction.create({
-        data: {
-          userId: session.user.id,
-          accountId,
-          date: new Date(date),
-          description,
-          type,
-          amount: type === 'expense' ? -transactionAmount : transactionAmount,
-          currency,
-        },
-      }),
-    ]);
-
-    return NextResponse.json(newTransaction, { status: 201 })
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed to create transaction' }, { status: 500 })
   }

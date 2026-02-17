@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/context/AuthProviderClient'
 import { Mail, Lock, Eye, EyeOff, Wallet, ArrowRight } from 'lucide-react'
+import LanguageSwitcher from '../components/LanguageSwitcher'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -35,7 +36,10 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-12 relative">
+      <div className="absolute top-6 right-6 z-10">
+        <LanguageSwitcher />
+      </div>
       {/* Login Card */}
       <div className="relative w-full max-w-md">
         <div className="bg-white rounded-2xl p-8 shadow-xl border border-slate-200">
