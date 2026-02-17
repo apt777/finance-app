@@ -50,7 +50,7 @@ const GoalList = () => {
             return (
               <div
                 key={goal.id}
-                className="bg-white rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-200 overflow-hidden"
+                className="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl transition-all duration-200 overflow-hidden"
               >
                 {/* Header */}
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 border-b border-slate-200">
@@ -140,7 +140,7 @@ const GoalList = () => {
           })}
         </div>
       ) : (
-        <div className="bg-white rounded-2xl p-12 shadow-lg border border-slate-200 text-center">
+        <div className="bg-white rounded-2xl p-12 shadow-sm border border-slate-100 text-center">
           <Target className="w-16 h-16 text-slate-300 mx-auto mb-4" />
           <p className="text-slate-600 font-medium">목표가 없습니다.</p>
           <p className="text-slate-500 text-sm mt-1">새로운 목표를 추가하여 시작하세요!</p>

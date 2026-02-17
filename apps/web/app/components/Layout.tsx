@@ -338,7 +338,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         
         <footer className="hidden md:block bg-white/50 backdrop-blur-sm border-t border-slate-200 text-center py-4">
           <p className="text-sm text-slate-600">
-            &copy; 2024 KABLUS. All rights reserved.
+            &copy; 2026 KABLUS. All rights reserved.
           </p>
         </footer>
 

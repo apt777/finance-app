@@ -116,7 +116,7 @@ const CurrencySummary = ({ baseCurrency = 'JPY' }: { baseCurrency?: string }) =>
         {summary.currencyBreakdown.map((item) => (
           <div
             key={item.currency}
-            className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-200"
+            className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-xl transition-all duration-200"
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
@@ -170,7 +170,7 @@ const CurrencySummary = ({ baseCurrency = 'JPY' }: { baseCurrency?: string }) =>
 
       {/* Currency Breakdown Chart */}
       {summary.currencyBreakdown.length > 0 && (
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
           <div className="flex items-center space-x-3 mb-6">
             <PieChart className="w-5 h-5 text-blue-600" />
             <h3 className="text-lg font-bold text-slate-800">자산 구성</h3>
@@ -197,7 +197,7 @@ const CurrencySummary = ({ baseCurrency = 'JPY' }: { baseCurrency?: string }) =>
 
       {/* Empty State */}
       {summary.currencyBreakdown.length === 0 && (
-        <div className="bg-white rounded-2xl p-12 shadow-lg border border-slate-200 text-center">
+        <div className="bg-white rounded-2xl p-12 shadow-sm border border-slate-100 text-center">
           <Wallet className="w-16 h-16 text-slate-300 mx-auto mb-4" />
           <p className="text-slate-600 font-medium">계좌가 없습니다.</p>
         </div>

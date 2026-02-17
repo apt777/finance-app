@@ -243,7 +243,7 @@ const Overview = () => {
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Expense Chart */}
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-xl font-bold text-slate-800">최근 30일 지출</h3>
@@ -294,7 +294,7 @@ const Overview = () => {
         {/* Investment & Goals Summary */}
         <div className="space-y-6">
           {/* Investment Summary */}
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200">
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-xl font-bold text-slate-800">투자 현황</h3>
@@ -321,7 +321,7 @@ const Overview = () => {
           </div>
 
           {/* Goals Summary */}
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200">
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-xl font-bold text-slate-800">목표 달성</h3>
@@ -405,7 +405,7 @@ const Overview = () => {
       </div>
 
       {/* Analysis Section */}
-      <div className="bg-white rounded-2xl p-8 shadow-lg border border-slate-200">
+      <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
         <div className="flex items-start justify-between mb-6">
           <div>
             <h3 className="text-2xl font-bold text-slate-800 mb-2">기본 분석</h3>

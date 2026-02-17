@@ -176,7 +176,7 @@ export default function SetupPage() {
 
         {/* Step 1: Accounts */}
         {step === 1 && (
-          <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8 space-y-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 space-y-6">
             <div>
               <h2 className="text-2xl font-bold text-slate-800 mb-2">계좌 설정</h2>
               <p className="text-slate-600">보유하고 있는 계좌를 추가해 주세요</p>
@@ -282,7 +282,7 @@ export default function SetupPage() {
 
         {/* Step 2: Exchange Rates */}
         {step === 2 && (
-          <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8 space-y-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 space-y-6">
             <div>
               <h2 className="text-2xl font-bold text-slate-800 mb-2">환율 설정</h2>
               <p className="text-slate-600">복수 통화 간의 환율을 설정해 주세요</p>
@@ -394,7 +394,7 @@ export default function SetupPage() {
 
         {/* Step 3: Review & Confirm */}
         {step === 3 && (
-          <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8 space-y-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 space-y-6">
             <div>
               <h2 className="text-2xl font-bold text-slate-800 mb-2">설정 확인</h2>
               <p className="text-slate-600">입력한 정보를 확인하고 완료해 주세요</p>

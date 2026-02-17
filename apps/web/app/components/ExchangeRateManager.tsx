@@ -161,7 +161,7 @@ const ExchangeRateManager = () => {
 
       {/* Add/Edit Form */}
       {showForm && (
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
           <h3 className="text-lg font-bold text-slate-800 mb-4">환율 설정</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -266,7 +266,7 @@ const ExchangeRateManager = () => {
           {exchangeRates.map((rate) => (
             <div
               key={rate.id}
-              className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-200 card-hover"
+              className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-xl transition-all duration-200 card-hover"
             >
               {/* Header */}
               <div className="flex items-center justify-between mb-4">
@@ -333,7 +333,7 @@ const ExchangeRateManager = () => {
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-2xl p-12 shadow-lg border border-slate-200 text-center">
+        <div className="bg-white rounded-2xl p-12 shadow-sm border border-slate-100 text-center">
           <RefreshCw className="w-16 h-16 text-slate-300 mx-auto mb-4" />
           <p className="text-slate-600 font-medium mb-4">설정된 환율이 없습니다.</p>
           <button

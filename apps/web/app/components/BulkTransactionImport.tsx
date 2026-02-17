@@ -250,7 +250,7 @@ const BulkTransactionImport = () => {
       </div>
 
       {/* Import Method Selector */}
-      <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200">
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
         <h3 className="text-lg font-bold text-slate-800 mb-4">입력 방법 선택</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <button
@@ -282,7 +282,7 @@ const BulkTransactionImport = () => {
 
       {/* Manual Input Form */}
       {importMethod === 'manual' && (
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
           <h3 className="text-lg font-bold text-slate-800 mb-4">거래 내역 추가</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
@@ -366,7 +366,7 @@ const BulkTransactionImport = () => {
 
       {/* CSV Upload Form */}
       {importMethod === 'csv' && (
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
           <h3 className="text-lg font-bold text-slate-800 mb-4">CSV 파일 업로드</h3>
           <div className="space-y-4">
             <div
@@ -403,7 +403,7 @@ const BulkTransactionImport = () => {
 
       {/* Transactions List */}
       {transactions.length > 0 && (
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
           <h3 className="text-lg font-bold text-slate-800 mb-4">
             입력 예정 거래 ({transactions.length}개)
           </h3>

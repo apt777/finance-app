@@ -175,7 +175,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
       </div>
 
       {/* Form Card */}
-      <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Account Selection */}
           {formData.type === 'transfer' ? (

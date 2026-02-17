@@ -45,7 +45,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="flex border-b border-slate-200 overflow-x-auto">
           {tabs.map((tab) => {
             const Icon = tab.icon
