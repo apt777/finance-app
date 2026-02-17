@@ -111,7 +111,7 @@ export default function SetupPage() {
       return
     }
 
-    if (exchangeRates.some(rate => !rate.rate || rate.rate <= 0)) {
+    if (exchangeRates.some(rate => !rate.rate || Number(rate.rate) <= 0)) {
       setError('모든 환율을 올바르게 입력해 주세요.')
       return
     }
