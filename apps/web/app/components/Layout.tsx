@@ -330,7 +330,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               </div>
             </div>
           ) : (
-            <div className="fade-in max-w-full overflow-x-hidden">
+            <div className="fade-in max-w-full">
               {children}
             </div>
           )}
