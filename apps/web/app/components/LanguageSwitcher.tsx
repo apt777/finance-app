@@ -39,12 +39,12 @@ export default function LanguageSwitcher() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={isPending}
-        className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors"
+        className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-lg transition-all shadow-md hover:shadow-lg"
         title="언어 변경"
       >
-        <Globe className="w-5 h-5 text-slate-600" />
+        <Globe className="w-5 h-5" />
         <span className="text-lg">{currentLanguage.flag}</span>
-        <span className="hidden md:inline text-sm font-medium text-slate-700">{currentLanguage.name}</span>
+        <span className="hidden md:inline text-sm font-medium">{currentLanguage.name}</span>
       </button>
 
       {isOpen && (
