@@ -6,8 +6,11 @@ import { Link } from '@/navigation'
 import { useAuth } from '@/context/AuthProviderClient'
 import { Mail, Lock, Eye, EyeOff, Wallet, ArrowRight } from 'lucide-react'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
+import { useTranslations } from 'next-intl'
 
 export default function Login() {
+  const t = useTranslations('auth')
+  const tCommon = useTranslations('common')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -50,8 +53,8 @@ export default function Login() {
                 <Wallet className="w-8 h-8 text-white" />
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-slate-800 mb-2">KABLUS</h1>
-            <p className="text-slate-500 text-sm">개인 자산 관리 시스템</p>
+            <h1 className="text-3xl font-bold text-slate-800 mb-2">{tCommon('appName')}</h1>
+            <p className="text-slate-500 text-sm">{tCommon('appDescription')}</p>
           </div>
 
           {/* Form Section */}
@@ -59,7 +62,7 @@ export default function Login() {
             {/* Email Input */}
             <div>
               <label htmlFor="email-address" className="block text-sm font-medium text-slate-700 mb-2">
-                이메일 주소
+                {t('email')}
               </label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -81,7 +84,7 @@ export default function Login() {
             {/* Password Input */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">
-                비밀번호
+                {t('password')}
               </label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -115,7 +118,7 @@ export default function Login() {
             {/* Error Message */}
             {errorMessage && (
               <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-600 text-sm">
-                <p className="font-medium">로그인 실패</p>
+                <p className="font-medium">{t('loginFailed')}</p>
                 <p className="text-xs mt-1">{errorMessage}</p>
               </div>
             )}
@@ -129,11 +132,11 @@ export default function Login() {
               {isLoading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  <span>로그인 중...</span>
+                  <span>{t('signingIn')}</span>
                 </>
               ) : (
                 <>
-                  <span>로그인</span>
+                  <span>{t('login')}</span>
                   <ArrowRight className="w-5 h-5" />
                 </>
               )}
@@ -146,7 +149,7 @@ export default function Login() {
               <div className="w-full border-t border-slate-200"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-slate-400">또는</span>
+              <span className="px-2 bg-white text-slate-400">OR</span>
             </div>
           </div>
 
@@ -154,12 +157,12 @@ export default function Login() {
           <div className="space-y-3">
             <div className="text-center">
               <p className="text-slate-600 text-sm">
-                계정이 없으신가요?{' '}
+                {t('dontHaveAccount')}{' '}
                 <Link 
                   href="/register" 
                   className="text-blue-600 hover:text-blue-700 font-semibold transition-colors"
                 >
-                  회원가입
+                  {t('register')}
                 </Link>
               </p>
             </div>
@@ -168,7 +171,7 @@ export default function Login() {
                 href="/forgot-password" 
                 className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
               >
-                비밀번호를 잊으셨나요?
+                {t('forgotPassword')}
               </Link>
             </div>
           </div>
@@ -176,7 +179,7 @@ export default function Login() {
 
         {/* Footer Info */}
         <div className="mt-8 text-center text-slate-400 text-xs">
-          <p>KABLUS © 2024 · 개인 자산 관리</p>
+          <p>{tCommon('appName')} © 2026 · {tCommon('appDescription')}</p>
         </div>
       </div>
     </div>
