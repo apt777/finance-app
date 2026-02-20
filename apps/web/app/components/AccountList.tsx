@@ -6,6 +6,7 @@ import { Link } from '@/navigation'
 import { useRouter } from '@/navigation'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Trash2, Plus, Wallet, CreditCard, PiggyBank, TrendingUp, Filter, ChevronRight } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 interface Account {
   id: string;
@@ -16,6 +17,7 @@ interface Account {
 }
 
 const AccountList = () => {
+  const tAccounts = useTranslations('accounts')
   const router = useRouter()
   const queryClient = useQueryClient()
   const { data, error, isLoading } = useAccounts()
@@ -31,7 +33,7 @@ const AccountList = () => {
       })
       if (!res.ok) {
         const errorData = await res.json()
-        throw new Error(errorData.error || '계좌 삭제 실패')
+        throw new Error(errorData.error || tAccounts('deleteError'))
       }
       return res.json()
     },
@@ -45,7 +47,7 @@ const AccountList = () => {
   const handleDelete = (e: React.MouseEvent, accountId: string, accountName: string) => {
     e.preventDefault()
     e.stopPropagation()
-    if (confirm(`"${accountName}" 계좌를 정말 삭제하시겠습니까?\n이 계좌에 연결된 모든 거래 내역과 투자 정보도 함께 삭제됩니다.`)) {
+    if (confirm(`"${accountName}": ${tAccounts('deleteConfirm')}\n${tAccounts('deleteWarning')}`)) {
       deleteAccountMutation.mutate(accountId)
     }
   }
@@ -55,7 +57,7 @@ const AccountList = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-slate-600">계좌 정보 로딩 중...</p>
+          <p className="text-slate-600">Loading...</p>
         </div>
       </div>
     )
@@ -64,7 +66,7 @@ const AccountList = () => {
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-        <p className="text-red-600 font-medium">계좌 정보를 불러오는 중 오류 발생</p>
+        <p className="text-red-600 font-medium">Error loading accounts</p>
       </div>
     )
   }
@@ -99,13 +101,18 @@ const AccountList = () => {
 
   // Account type labels
   const getAccountTypeLabel = (type: string) => {
-    const labels: { [key: string]: string } = {
-      'checking': '당좌예금',
-      'savings': '저축',
-      'credit_card': '신용카드',
-      'investment': '투자',
+    switch (type) {
+      case 'checking':
+        return tAccounts('checking')
+      case 'savings':
+        return tAccounts('savings')
+      case 'credit_card':
+        return tAccounts('creditCard')
+      case 'investment':
+        return tAccounts('investment')
+      default:
+        return type
     }
-    return labels[type] || type
   }
 
   // Get currency symbol
@@ -123,8 +130,8 @@ const AccountList = () => {
       {/* Header */}
       <div className="flex items-center justify-between px-1">
         <div>
-          <h2 className="text-xl md:text-2xl font-bold text-slate-800">계좌 관리</h2>
-          <p className="text-slate-500 text-xs md:text-sm mt-0.5">총 {accounts.length}개의 계좌</p>
+          <h2 className="text-xl md:text-2xl font-bold text-slate-800">{tAccounts('title')}</h2>
+          <p className="text-slate-500 text-xs md:text-sm mt-0.5">{tAccounts('totalAccounts')}: {accounts.length}</p>
         </div>
         <div className="flex items-center gap-2">
           <button 
@@ -138,7 +145,7 @@ const AccountList = () => {
             className="flex items-center justify-center w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2 bg-blue-600 text-white font-semibold rounded-xl shadow-md hover:bg-blue-700 transition-all"
           >
             <Plus className="w-5 h-5" />
-            <span className="hidden md:inline ml-2">새 계좌 추가</span>
+            <span className="hidden md:inline ml-2">{tAccounts('addNewAccount')}</span>
           </Link>
         </div>
       </div>
@@ -149,14 +156,14 @@ const AccountList = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1.5 ml-1">
-                통화별
+                {tAccounts('currencyFilter')}
               </label>
               <select
                 value={filterCurrency}
                 onChange={(e) => setFilterCurrency(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 text-sm text-slate-700"
               >
-                <option value="">모든 통화</option>
+                <option value="">{tAccounts('allCurrencies')}</option>
                 {uniqueCurrencies.map((currency: string) => (
                   <option key={currency} value={currency}>
                     {currency} ({getCurrencySymbol(currency)})
@@ -166,14 +173,14 @@ const AccountList = () => {
             </div>
             <div>
               <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1.5 ml-1">
-                종류별
+                {tAccounts('typeFilter')}
               </label>
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 text-sm text-slate-700"
               >
-                <option value="">모든 종류</option>
+                <option value="">{tAccounts('allTypes')}</option>
                 {uniqueTypes.map((type: string) => (
                   <option key={type} value={type}>
                     {getAccountTypeLabel(type)}
@@ -220,7 +227,7 @@ const AccountList = () => {
                   <p className={`text-[10px] uppercase tracking-wider font-bold mb-0.5 ${
                     account.type === 'credit_card' ? 'text-rose-400' : 'text-slate-400'
                   }`}>
-                    {account.type === 'credit_card' ? '지불 예정' : '현재 잔액'}
+                    {account.type === 'credit_card' ? 'Liability' : tAccounts('balance')}
                   </p>
                   <div className="flex items-baseline gap-1">
                     <span className={`text-lg md:text-xl font-black ${
@@ -249,7 +256,7 @@ const AccountList = () => {
                     }}
                     className="flex items-center justify-center w-full py-2 bg-rose-100 text-rose-600 rounded-lg text-sm font-bold hover:bg-rose-200 transition-colors"
                   >
-                    상환하기
+                    Repay
                   </button>
                 </div>
               )}
@@ -262,13 +269,13 @@ const AccountList = () => {
       ) : (
         <div className="bg-white rounded-2xl p-12 shadow-sm border border-slate-100 text-center">
           <Wallet className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-          <p className="text-slate-500 text-sm mb-6">표시할 계좌가 없습니다.</p>
+          <p className="text-slate-500 text-sm mb-6">{tAccounts('noAccounts')}</p>
           <Link
             href="/accounts/add"
             className="inline-flex items-center px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all"
           >
             <Plus className="w-5 h-5 mr-2" />
-            <span>첫 계좌 추가</span>
+            <span>{tAccounts('addNewAccount')}</span>
           </Link>
         </div>
       )}

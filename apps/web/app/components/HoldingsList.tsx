@@ -5,6 +5,7 @@ import { useHoldings } from '../hooks/useHoldings'
 import { useAccounts } from '../hooks/useAccounts'
 import { useExchangeRates, ExchangeRate } from '../hooks/useExchangeRates'
 import { TrendingUp, TrendingDown, Filter } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 interface Account {
   id: string;
@@ -26,6 +27,10 @@ interface Holding {
 // ExchangeRate interface is imported from useExchangeRates hook
 
 const HoldingsList = () => {
+  const tHoldings = useTranslations('holdings')
+  const tCommon = useTranslations('common')
+  const tTransactions = useTranslations('transactions')
+  
   const { data: holdingsData, error: holdingsError, isLoading: holdingsLoading } = useHoldings()
   const { data: accountsData, error: accountsError, isLoading: accountsLoading } = useAccounts()
   const { data: exchangeRatesData, isLoading: ratesLoading, isError: ratesError } = useExchangeRates()
@@ -37,7 +42,7 @@ const HoldingsList = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-slate-600">보유 자산 정보 로딩 중...</p>
+          <p className="text-slate-600">{tCommon('loading')}</p>
         </div>
       </div>
     )
@@ -46,7 +51,7 @@ const HoldingsList = () => {
   if (holdingsError || accountsError || ratesError) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-        <p className="text-red-600 font-medium">보유 자산 정보를 불러오는 중 오류 발생</p>
+        <p className="text-red-600 font-medium">{tCommon('error')}</p>
       </div>
     )
   }
@@ -79,14 +84,14 @@ const HoldingsList = () => {
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
         <div className="flex items-center space-x-3 mb-4">
           <Filter className="w-5 h-5 text-blue-600" />
-          <h3 className="text-lg font-bold text-slate-800">필터</h3>
+          <h3 className="text-lg font-bold text-slate-800">{tTransactions('filterBy')}</h3>
         </div>
         <select
           value={filterAccount}
           onChange={(e) => setFilterAccount(e.target.value)}
           className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900"
         >
-          <option value="">모든 계좌</option>
+          <option value="">All Accounts</option>
           {accounts.map((account: Account) => (
             <option key={account.id} value={account.id}>
               {account.name} ({account.currency})
@@ -101,7 +106,7 @@ const HoldingsList = () => {
           <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl p-8 shadow-lg text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-blue-100 text-sm">총 보유 자산</p>
+                <p className="text-blue-100 text-sm">{tHoldings('totalValue')}</p>
                 <h2 className="text-4xl font-bold mt-2">
                   {Math.round(totalValue).toLocaleString()}
                 </h2>
@@ -139,7 +144,7 @@ const HoldingsList = () => {
                   <div className="p-6 space-y-4">
                     {/* Shares */}
                     <div className="bg-slate-50 rounded-lg p-4">
-                      <p className="text-xs text-slate-600 mb-1">보유 주수</p>
+                      <p className="text-xs text-slate-600 mb-1">{tHoldings('shares')}</p>
                       <p className="text-2xl font-bold text-slate-800">
                         {holding.shares.toLocaleString()}
                       </p>
@@ -148,7 +153,7 @@ const HoldingsList = () => {
                     {/* Cost Basis */}
                     <div className="grid grid-cols-2 gap-4">
                       <div className="bg-slate-50 rounded-lg p-4">
-                        <p className="text-xs text-slate-600 mb-1">매입가</p>
+                        <p className="text-xs text-slate-600 mb-1">{tHoldings('costBasis')}</p>
                         <p className="text-sm font-bold text-slate-800">
                           {holding.costBasis.toFixed(2)}
                         </p>
@@ -156,7 +161,7 @@ const HoldingsList = () => {
                       </div>
 
                       <div className="bg-slate-50 rounded-lg p-4">
-                        <p className="text-xs text-slate-600 mb-1">총 매입액</p>
+                        <p className="text-xs text-slate-600 mb-1">Total Cost</p>
                         <p className="text-sm font-bold text-slate-800">
                           {(holding.shares * holding.costBasis).toFixed(2)}
                         </p>
@@ -166,7 +171,7 @@ const HoldingsList = () => {
 
                     {/* Total Value */}
                     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
-                      <p className="text-xs text-slate-600 mb-1">총 가치 ({BASE_CURRENCY})</p>
+                      <p className="text-xs text-slate-600 mb-1">{tHoldings('totalValue')} ({BASE_CURRENCY})</p>
                       <p className="text-2xl font-bold text-blue-600">
                         {Math.round(value).toLocaleString()}
                       </p>
@@ -180,8 +185,8 @@ const HoldingsList = () => {
       ) : (
         <div className="bg-white rounded-2xl p-12 shadow-sm border border-slate-100 text-center">
           <TrendingUp className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-600 font-medium">보유 자산이 없습니다.</p>
-          <p className="text-slate-500 text-sm mt-1">새로운 투자를 추가하여 포트폴리오를 시작하세요!</p>
+          <p className="text-slate-600 font-medium">{tHoldings('noHoldings')}</p>
+          <p className="text-slate-500 text-sm mt-1">Add new investment to start your portfolio!</p>
         </div>
       )}
     </div>

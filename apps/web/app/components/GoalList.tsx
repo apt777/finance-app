@@ -2,26 +2,54 @@
 
 import React from 'react'
 import { useGoals } from '@/hooks/useGoals'
-import { Target, Calendar, TrendingUp } from 'lucide-react'
+import { Link } from '@/navigation'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Trash2, Plus, Target, Calendar, TrendingUp } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 interface Goal {
   id: string;
-  userId: string;
   name: string;
   targetAmount: number;
   currentAmount: number;
+  targetCurrency: string;
   targetDate?: string;
+  priority: number;
 }
 
 const GoalList = () => {
+  const tGoals = useTranslations('goals')
+  const tCommon = useTranslations('common')
+  const queryClient = useQueryClient()
   const { data, error, isLoading } = useGoals()
+
+  const deleteGoalMutation = useMutation<any, Error, string>({
+    mutationFn: async (goalId: string) => {
+      const res = await fetch(`/api/goals?id=${goalId}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) throw new Error(tCommon('error'))
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] })
+    },
+  })
+
+  const handleDelete = (e: React.MouseEvent, goalId: string, goalName: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (confirm(`${goalName}: ${tGoals('deleteGoal')}?`)) {
+      deleteGoalMutation.mutate(goalId)
+    }
+  }
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-slate-600">목표 정보 로딩 중...</p>
+          <p className="text-slate-600">{tCommon('loading')}</p>
         </div>
       </div>
     )
@@ -30,120 +58,114 @@ const GoalList = () => {
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-        <p className="text-red-600 font-medium">목표 정보를 불러오는 중 오류 발생</p>
+        <p className="text-red-600 font-medium">{tCommon('error')}</p>
       </div>
     )
   }
 
   const goals: Goal[] = (data as Goal[]) || []
 
-  return (
-    <div className="space-y-6">
-      {goals.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {goals.map((goal: Goal) => {
-            const progress = (goal.currentAmount / goal.targetAmount) * 100
-            const remaining = goal.targetAmount - goal.currentAmount
-            const targetDate = goal.targetDate ? new Date(goal.targetDate).toLocaleDateString('ko-KR') : null
-            const daysRemaining = targetDate ? Math.ceil((new Date(goal.targetDate!).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null
+  // Calculate progress percentage
+  const goalsWithProgress = goals.map(goal => ({
+    ...goal,
+    progress: Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100))
+  }))
 
-            return (
-              <div
-                key={goal.id}
-                className="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl transition-all duration-200 overflow-hidden"
-              >
-                {/* Header */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 border-b border-slate-200">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-slate-800">{goal.name}</h3>
-                      <p className="text-sm text-slate-600 mt-1">목표 금액: {goal.targetAmount.toLocaleString()} 원</p>
+  return (
+    <div className="space-y-4 md:space-y-6 pb-20 md:pb-0">
+      {/* Header */}
+      <div className="flex items-center justify-between px-1">
+        <div>
+          <h2 className="text-xl md:text-2xl font-bold text-slate-800">{tGoals('title')}</h2>
+          <p className="text-slate-500 text-xs md:text-sm mt-0.5">{tGoals('totalGoals')}: {goals.length}</p>
+        </div>
+        <Link
+          href="/goals/add"
+          className="flex items-center justify-center w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2 bg-blue-600 text-white font-semibold rounded-xl shadow-md hover:bg-blue-700 transition-all"
+        >
+          <Plus className="w-5 h-5" />
+          <span className="hidden md:inline ml-2">{tGoals('addGoal')}</span>
+        </Link>
+      </div>
+
+      {/* Goals List */}
+      {goalsWithProgress.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {goalsWithProgress.map((goal) => (
+            <div
+              key={goal.id}
+              className="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-all duration-200 overflow-hidden"
+            >
+              <div className="p-5">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+                      <Target className="w-5 h-5" />
                     </div>
-                    <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                      <Target className="w-5 h-5 text-blue-600" />
+                    <div>
+                      <h3 className="font-bold text-slate-800">{goal.name}</h3>
+                      {goal.targetDate && (
+                        <div className="flex items-center text-xs text-slate-500 mt-0.5">
+                          <Calendar className="w-3 h-3 mr-1" />
+                          {new Date(goal.targetDate).toLocaleDateString()}
+                        </div>
+                      )}
                     </div>
                   </div>
+                  <button
+                    onClick={(e) => handleDelete(e, goal.id, goal.name)}
+                    className="text-slate-300 hover:text-red-500 transition-colors p-1"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
 
-                {/* Content */}
-                <div className="p-6 space-y-4">
+                <div className="space-y-3">
                   {/* Progress Bar */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-slate-700">진행률</span>
-                      <span className="text-sm font-bold text-blue-600">{progress.toFixed(1)}%</span>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs font-semibold">
+                      <span className="text-blue-600">{goal.progress}%</span>
+                      <span className="text-slate-400">{tGoals('targetAmount')}: {goal.targetAmount.toLocaleString()} {goal.targetCurrency}</span>
                     </div>
-                    <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-300"
-                        style={{ width: `${Math.min(100, progress)}%` }}
+                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                      <div 
+                        className="bg-gradient-to-r from-blue-500 to-indigo-600 h-full rounded-full transition-all duration-500 ease-out"
+                        style={{ width: `${goal.progress}%` }}
                       ></div>
                     </div>
                   </div>
 
-                  {/* Amount Info */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-slate-50 rounded-lg p-3">
-                      <p className="text-xs text-slate-600 mb-1">현재 금액</p>
-                      <p className="text-lg font-bold text-slate-800">
-                        {goal.currentAmount.toLocaleString()}
+                  {/* Details */}
+                  <div className="grid grid-cols-2 gap-2 text-sm mt-2">
+                    <div className="bg-slate-50 rounded-lg p-2">
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{tGoals('currentAmount')}</p>
+                      <p className="font-bold text-slate-700">
+                        {goal.currentAmount.toLocaleString()} <span className="text-xs font-normal text-slate-500">{goal.targetCurrency}</span>
                       </p>
                     </div>
-                    <div className="bg-slate-50 rounded-lg p-3">
-                      <p className="text-xs text-slate-600 mb-1">남은 금액</p>
-                      <p className="text-lg font-bold text-blue-600">
-                        {remaining.toLocaleString()}
+                    <div className="bg-slate-50 rounded-lg p-2">
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{tGoals('targetAmount')}</p>
+                      <p className="font-bold text-slate-700">
+                        {goal.targetAmount.toLocaleString()} <span className="text-xs font-normal text-slate-500">{goal.targetCurrency}</span>
                       </p>
                     </div>
-                  </div>
-
-                  {/* Target Date */}
-                  {targetDate && (
-                    <div className="flex items-center space-x-2 text-sm text-slate-600 bg-slate-50 rounded-lg p-3">
-                      <Calendar className="w-4 h-4" />
-                      <span>{targetDate}</span>
-                      {daysRemaining !== null && daysRemaining > 0 && (
-                        <span className="ml-auto font-medium text-slate-800">
-                          {daysRemaining}일 남음
-                        </span>
-                      )}
-                      {daysRemaining !== null && daysRemaining <= 0 && (
-                        <span className="ml-auto font-medium text-red-600">
-                          기한 초과
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Status Badge */}
-                  <div className="flex items-center space-x-2">
-                    {progress >= 100 ? (
-                      <div className="flex-1 bg-green-50 border border-green-200 rounded-lg p-3 flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-sm font-medium text-green-700">목표 달성!</span>
-                      </div>
-                    ) : progress >= 75 ? (
-                      <div className="flex-1 bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center space-x-2">
-                        <TrendingUp className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm font-medium text-blue-700">거의 다 왔어요!</span>
-                      </div>
-                    ) : (
-                      <div className="flex-1 bg-slate-50 border border-slate-200 rounded-lg p-3 flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-slate-400 rounded-full"></div>
-                        <span className="text-sm font-medium text-slate-600">진행 중</span>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
-            )
-          })}
+            </div>
+          ))}
         </div>
       ) : (
         <div className="bg-white rounded-2xl p-12 shadow-sm border border-slate-100 text-center">
-          <Target className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-600 font-medium">목표가 없습니다.</p>
-          <p className="text-slate-500 text-sm mt-1">새로운 목표를 추가하여 시작하세요!</p>
+          <Target className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+          <p className="text-slate-500 text-sm mb-6">{tGoals('noGoals')}</p>
+          <Link
+            href="/goals/add"
+            className="inline-flex items-center px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            <span>{tGoals('addGoal')}</span>
+          </Link>
         </div>
       )}
     </div>

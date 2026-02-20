@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { useTransactions } from '@/hooks/useTransactions'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowUpRight, ArrowDownLeft, Filter, Download, Calendar, Search, Trash2, X, ArrowRight } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 interface Transaction {
   id: string;
@@ -28,6 +29,8 @@ interface Transaction {
 }
 
 const TransactionList = ({ accountId }: { accountId?: string }) => {
+  const tTransactions = useTranslations('transactions')
+  const tCommon = useTranslations('common')
   const { data, error, isLoading } = useTransactions(accountId)
   const [sortBy, setSortBy] = useState<'date' | 'amount'>('date')
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense' | 'transfer'>('all')
@@ -61,7 +64,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids }),
       })
-      if (!res.ok) throw new Error('삭제 실패')
+      if (!res.ok) throw new Error(tCommon('error'))
       return res.json()
     },
     onSuccess: () => {
@@ -73,7 +76,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
   })
 
   const handleDeleteSelected = () => {
-    if (confirm(`${selectedIds.length}개의 거래 내역을 삭제하시겠습니까?`)) {
+    if (confirm(`${selectedIds.length}: ${tCommon('delete')}?`)) {
       deleteTransactionsMutation.mutate(selectedIds)
     }
   }
@@ -83,7 +86,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-slate-600">거래 내역 로딩 중...</p>
+          <p className="text-slate-600">{tCommon('loading')}</p>
         </div>
       </div>
     )
@@ -92,7 +95,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-        <p className="text-red-600 font-medium">거래 내역을 불러오는 중 오류 발생</p>
+        <p className="text-red-600 font-medium">{tCommon('error')}</p>
       </div>
     )
   }
@@ -122,7 +125,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
 
   // Export to CSV
   const handleExportCSV = () => {
-    const headers = ['날짜', '설명', '유형', '금액', '통화', '계좌']
+    const headers = [tTransactions('date'), tTransactions('description'), tTransactions('type'), tTransactions('amount'), tTransactions('account')]
     const rows = sortedTransactions.map(t => [
       new Date(t.date).toLocaleDateString(),
       t.description,
@@ -151,8 +154,8 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
       {/* Header */}
       <div className="flex items-center justify-between px-1">
         <div>
-          <h2 className="text-xl md:text-2xl font-bold text-slate-800">거래 내역</h2>
-          <p className="text-slate-500 text-xs md:text-sm mt-0.5">총 {transactions.length}개의 거래</p>
+          <h2 className="text-xl md:text-2xl font-bold text-slate-800">{tTransactions('title')}</h2>
+          <p className="text-slate-500 text-xs md:text-sm mt-0.5">{tTransactions('totalTransactions')}: {transactions.length}</p>
         </div>
         <div className="flex items-center gap-2">
           {isEditMode ? (
@@ -160,7 +163,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
               <button
                 onClick={() => { setIsEditMode(false); setSelectedIds([]); }}
                 className="p-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all"
-                title="취소"
+                title={tCommon('cancel')}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -168,7 +171,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
                 <button
                   onClick={handleDeleteSelected}
                   className="p-2 bg-red-100 text-red-600 rounded-xl hover:bg-red-200 transition-all animate-in zoom-in duration-200"
-                  title="선택 삭제"
+                  title={tCommon('delete')}
                 >
                   <Trash2 className="w-5 h-5" />
                 </button>
@@ -179,14 +182,14 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
               <button
                 onClick={handleExportCSV}
                 className="p-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all"
-                title="CSV 다운로드"
+                title={tTransactions('exportCSV')}
               >
                 <Download className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setIsEditMode(true)}
                 className="p-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all"
-                title="삭제 모드"
+                title={tCommon('delete')}
               >
                 <Trash2 className="w-5 h-5" />
               </button>
@@ -206,7 +209,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
         <div className="flex overflow-x-auto pb-2 gap-4 snap-x no-scrollbar -mx-1 px-1">
           <div className="min-w-[160px] flex-1 bg-white rounded-2xl p-4 shadow-sm border border-slate-100 snap-start">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">총 수입</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{tTransactions('totalIncome')}</p>
               <ArrowDownLeft className="w-4 h-4 text-emerald-500" />
             </div>
             <p className="text-lg font-black text-emerald-600">
@@ -215,7 +218,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
           </div>
           <div className="min-w-[160px] flex-1 bg-white rounded-2xl p-4 shadow-sm border border-slate-100 snap-start">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">총 지출</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{tTransactions('totalExpense')}</p>
               <ArrowUpRight className="w-4 h-4 text-rose-500" />
             </div>
             <p className="text-lg font-black text-rose-600">
@@ -224,7 +227,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
           </div>
           <div className="min-w-[160px] flex-1 bg-white rounded-2xl p-4 shadow-sm border border-slate-100 snap-start">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">순 변화</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{tTransactions('netChange')}</p>
               <div className={`w-4 h-4 ${totalIncome - totalExpense >= 0 ? 'text-blue-500' : 'text-rose-500'}`}>
                 {totalIncome - totalExpense >= 0 ? <ArrowDownLeft /> : <ArrowUpRight />}
               </div>
@@ -243,7 +246,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input 
               type="text"
-              placeholder="거래 내용 또는 계좌 검색..."
+              placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 text-sm"
@@ -251,27 +254,27 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1.5 ml-1">정렬</label>
+              <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1.5 ml-1">{tTransactions('sortBy')}</label>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as 'date' | 'amount')}
                 className="w-full px-3 py-2 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 text-sm"
               >
-                <option value="date">최신순</option>
-                <option value="amount">금액순</option>
+                <option value="date">{tTransactions('latest')}</option>
+                <option value="amount">{tTransactions('byAmount')}</option>
               </select>
             </div>
             <div>
-              <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1.5 ml-1">유형</label>
+              <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1.5 ml-1">{tTransactions('filterBy')}</label>
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value as 'all' | 'income' | 'expense' | 'transfer')}
                 className="w-full px-3 py-2 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 text-sm"
               >
-                <option value="all">모두</option>
-                <option value="income">수입만</option>
-                <option value="expense">지출만</option>
-                <option value="transfer">이체만</option>
+                <option value="all">{tTransactions('all')}</option>
+                <option value="income">{tTransactions('incomeOnly')}</option>
+                <option value="expense">{tTransactions('expenseOnly')}</option>
+                <option value="transfer">Transfer</option>
               </select>
             </div>
           </div>
@@ -291,7 +294,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
                 className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
               />
               <label htmlFor="select-all" className="ml-3 text-xs text-slate-500 font-medium cursor-pointer">
-                전체 선택 ({selectedIds.length}개)
+                Select All ({selectedIds.length})
               </label>
             </div>
           )}
@@ -341,7 +344,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
                     </span>
                     <span>•</span>
                     <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">
-                      {transaction.type === 'income' ? '수입' : transaction.type === 'expense' ? '지출' : '이체'}
+                      {transaction.type === 'income' ? 'Income' : transaction.type === 'expense' ? 'Expense' : 'Transfer'}
                     </span>
                     
                     {transaction.type === 'transfer' ? (
@@ -387,7 +390,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
           <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <Search className="w-8 h-8 text-slate-200" />
           </div>
-          <p className="text-slate-500 font-medium">거래 내역이 없습니다.</p>
+          <p className="text-slate-500 font-medium">{tTransactions('noTransactions')}</p>
         </div>
       )}
     </div>

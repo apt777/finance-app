@@ -7,6 +7,7 @@ import { useOverviewData } from '@/hooks/useOverviewData'
 import { useExchangeRates, ExchangeRate } from '@/hooks/useExchangeRates'
 import { Home, Wallet, TrendingUp, Target, Settings, LogOut, User, LogIn, DollarSign, Receipt, Menu, X } from 'lucide-react'
 import { useAuth } from '@/context/AuthProviderClient'
+import { useTranslations } from 'next-intl'
 
 // Define interfaces for data structures
 interface Account {
@@ -33,6 +34,15 @@ interface NavLink {
 }
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
+  const tCommon = useTranslations('common')
+  const tAuth = useTranslations('auth')
+  const tDashboard = useTranslations('dashboard')
+  const tAccounts = useTranslations('accounts')
+  const tGoals = useTranslations('goals')
+  const tHoldings = useTranslations('holdings')
+  const tTransactions = useTranslations('transactions')
+  const tSettings = useTranslations('settings')
+
   const pathname = usePathname()
   const router = useRouter()
   const { user, loading, signOut } = useAuth()
@@ -69,45 +79,35 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     })
   }
 
-  const creditLiabilities = new Map<string, number>();
-  if (!isLoading && !isError) {
-    accounts.forEach((account) => {
-      if (account.type === 'credit_card' && account.balance > 0) {
-        const currentLiability = creditLiabilities.get(account.currency) || 0;
-        creditLiabilities.set(account.currency, currentLiability + account.balance);
-      }
-    });
-  }
-
   const getPageTitle = (path: string) => {
-    if (path === '/') return '대시보드';
-    if (path.startsWith('/accounts')) return '계좌';
-    if (path.startsWith('/holdings') || path.startsWith('/investments')) return '투자';
-    if (path.startsWith('/goals')) return '목표';
-    if (path.startsWith('/transactions')) return '거래 내역';
-    if (path === '/settings/exchange-rates') return '환율 관리';
-    if (path.startsWith('/settings')) return '설정';
-    if (path.startsWith('/setup')) return '초기 설정';
+    if (path === '/') return tDashboard('title');
+    if (path.startsWith('/accounts')) return tAccounts('title');
+    if (path.startsWith('/holdings') || path.startsWith('/investments')) return tHoldings('title');
+    if (path.startsWith('/goals')) return tGoals('title');
+    if (path.startsWith('/transactions')) return tTransactions('title');
+    if (path === '/settings/exchange-rates') return tSettings('exchangeRates');
+    if (path.startsWith('/settings')) return tSettings('title');
+    if (path.startsWith('/setup')) return tCommon('add'); // Fallback or Setup title
     return path.substring(1).split('/')[0];
   }
 
   const navLinks: NavLink[] = [
-    { name: '대시보드', href: '/', icon: Home },
-    { name: '계좌', href: '/accounts', icon: Wallet },
-    { name: '투자', href: '/holdings', icon: TrendingUp },
-    { name: '목표', href: '/goals', icon: Target },
-    { name: '거래내역', href: '/transactions', icon: Receipt },
-    { name: '환율 관리', href: '/settings/exchange-rates', icon: DollarSign },
-    { name: '설정', href: '/setup', icon: Settings },
+    { name: tDashboard('title'), href: '/', icon: Home },
+    { name: tAccounts('title'), href: '/accounts', icon: Wallet },
+    { name: tHoldings('title'), href: '/holdings', icon: TrendingUp },
+    { name: tGoals('title'), href: '/goals', icon: Target },
+    { name: tTransactions('title'), href: '/transactions', icon: Receipt },
+    { name: tSettings('exchangeRates'), href: '/settings/exchange-rates', icon: DollarSign },
+    { name: tSettings('title'), href: '/setup', icon: Settings }, // Setup maps to Settings icon
   ]
 
   // Bottom Tab Bar links (Mobile only)
   const bottomNavLinks = [
-    { name: '홈', href: '/', icon: Home },
-    { name: '계좌', href: '/accounts', icon: Wallet },
-    { name: '투자', href: '/holdings', icon: TrendingUp },
-    { name: '거래', href: '/transactions', icon: Receipt },
-    { name: '더보기', href: '#', icon: Menu, onClick: () => setIsSidebarOpen(true) },
+    { name: tDashboard('overview'), href: '/', icon: Home },
+    { name: tAccounts('title'), href: '/accounts', icon: Wallet },
+    { name: tHoldings('title'), href: '/holdings', icon: TrendingUp },
+    { name: tTransactions('title'), href: '/transactions', icon: Receipt },
+    { name: 'Menu', href: '#', icon: Menu, onClick: () => setIsSidebarOpen(true) }, // Menu kept hardcoded or tCommon('menu') if exists?
   ]
 
   useEffect(() => {
@@ -142,7 +142,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-lg text-gray-700">인증 정보 로딩 중...</p>
+          <p className="text-lg text-gray-700">{tCommon('loading')}</p>
         </div>
       </div>
     )
@@ -187,9 +187,9 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                 </div>
                 <div>
                   <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-                    KABLUS
+                    {tCommon('appName')}
                   </h1>
-                  <p className="text-xs text-slate-400">개인 자산 관리 시스템</p>
+                  <p className="text-xs text-slate-400">{tCommon('appDescription')}</p>
                 </div>
               </div>
               <button className="md:hidden p-2 text-slate-400 hover:text-white" onClick={() => setIsSidebarOpen(false)}>
@@ -228,7 +228,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-white truncate">{user.email}</p>
-                    <p className="text-xs text-slate-400">활성 사용자</p>
+                    <p className="text-xs text-slate-400">Active User</p>
                   </div>
                 </div>
               </div>
@@ -237,7 +237,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                 className="flex items-center justify-center space-x-2 w-full px-4 py-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-all duration-200"
               >
                 <LogOut className="w-5 h-5" />
-                <span className="font-medium">로그아웃</span>
+                <span className="font-medium">{tCommon('logout')}</span>
               </button>
             </div>
           </aside>
@@ -261,7 +261,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                   {getPageTitle(pathname || '')}
                 </h1>
                 <p className="hidden md:block text-sm text-slate-500 mt-0.5">
-                  {pathname === '/' ? '전체 자산 현황을 확인하세요' : ''}
+                  {pathname === '/' ? tDashboard('subtitle') : ''}
                 </p>
               </div>
             </div>
@@ -271,7 +271,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                   {(isLoading || ratesLoading) && (
                     <div className="flex items-center space-x-2 text-xs md:text-sm text-slate-600">
                       <div className="w-3 h-3 md:w-4 md:h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                      <span className="hidden sm:inline">로딩 중...</span>
+                      <span className="hidden sm:inline">{tCommon('loading')}</span>
                     </div>
                   )}
                   {(!isLoading && !isError && !ratesLoading && !ratesError) && (
@@ -279,12 +279,12 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-3 md:px-4 py-1.5 md:py-2 rounded-xl border border-blue-200">
                         <div className="flex items-center space-x-3 md:space-x-6">
                           <div className="hidden sm:block">
-                            <p className="text-[10px] text-slate-600 mb-0.5">계좌 수</p>
+                            <p className="text-[10px] text-slate-600 mb-0.5">{tAccounts('totalAccounts')}</p>
                             <p className="text-sm md:text-lg font-bold text-slate-800">{accounts.length}</p>
                           </div>
                           <div className="hidden sm:block w-px h-6 md:h-8 bg-slate-300"></div>
                           <div>
-                            <p className="text-[10px] text-slate-600 mb-0.5">총자산</p>
+                            <p className="text-[10px] text-slate-600 mb-0.5">{tDashboard('totalAssets')}</p>
                             <p className="text-sm md:text-lg font-bold text-blue-600">
                               {Math.round(netWorth).toLocaleString()} <span className="text-[10px] md:text-xs">{BASE_CURRENCY}</span>
                             </p>
@@ -300,7 +300,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                   className="flex items-center space-x-2 px-3 md:px-4 py-1.5 md:py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:shadow-lg hover:scale-105 transition-all duration-200"
                 >
                   <LogIn className="w-4 h-4 md:w-5 md:h-5" />
-                  <span className="text-sm md:font-medium">로그인</span>
+                  <span className="text-sm md:font-medium">{tAuth('login')}</span>
                 </Link>
               )}
             </div>
@@ -315,17 +315,17 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                   <Wallet className="w-8 h-8 md:w-10 md:h-10 text-white" />
                 </div>
                 <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-3">
-                  KABLUS에 오신 것을 환영합니다!
+                  Welcome to {tCommon('appName')}!
                 </h2>
                 <p className="text-sm md:text-base text-slate-600 mb-8">
-                  아직 등록된 계좌가 없습니다. 초기 설정을 시작해서 자산 관리를 시작하세요.
+                  {tAccounts('noAccounts') || 'Please set up your accounts.'}
                 </p>
                 <Link
                   href="/setup"
                   className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3 px-6 md:px-8 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
                 >
                   <Settings className="w-5 h-5" />
-                  <span>초기 설정 시작하기</span>
+                  <span>{tCommon('add')}</span>
                 </Link>
               </div>
             </div>
@@ -338,7 +338,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         
         <footer className="hidden md:block bg-white/50 backdrop-blur-sm border-t border-slate-200 text-center py-4">
           <p className="text-sm text-slate-600">
-            &copy; 2026 KABLUS. All rights reserved.
+            &copy; 2026 {tCommon('appName')}. All rights reserved.
           </p>
         </footer>
 

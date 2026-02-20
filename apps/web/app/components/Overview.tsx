@@ -6,6 +6,7 @@ import { useExchangeRates, ExchangeRate } from '../hooks/useExchangeRates'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
 import { Link } from '@/navigation'
 import { TrendingUp, TrendingDown, Wallet, Target, PlusCircle, ArrowUpRight } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 // Define interfaces for data structures
 interface Account {
@@ -58,6 +59,12 @@ interface ChartData {
 }
 
 const Overview = () => {
+  const tDashboard = useTranslations('dashboard')
+  const tAccounts = useTranslations('accounts')
+  const tHoldings = useTranslations('holdings')
+  const tGoals = useTranslations('goals')
+  const tTransactions = useTranslations('transactions')
+  
   const { data, isLoading, isError } = useOverviewData()
   const { data: exchangeRates, isLoading: ratesLoading, isError: ratesError } = useExchangeRates()
 
@@ -66,7 +73,7 @@ const Overview = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-slate-600">개요 데이터 로딩 중...</p>
+          <p className="text-slate-600">Loading...</p>
         </div>
       </div>
     )
@@ -75,7 +82,7 @@ const Overview = () => {
   if (isError || ratesError) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-        <p className="text-red-600 font-medium">개요 데이터 로딩 중 오류 발생</p>
+        <p className="text-red-600 font-medium">Error loading data</p>
       </div>
     )
   }
@@ -182,7 +189,7 @@ const Overview = () => {
             </div>
             <TrendingUp className="w-5 h-5 text-white/70" />
           </div>
-          <p className="text-sm text-white/80 mb-1">총자산 (JPY)</p>
+          <p className="text-sm text-white/80 mb-1">{tDashboard('totalAssets')} (JPY)</p>
           <p className="text-3xl font-bold">{Math.round(totalPositiveAssetsBaseCurrency).toLocaleString()}</p>
           <p className="text-xs text-white/70 mt-2">≈ {Math.round(totalPositiveAssetsKRW).toLocaleString()} KRW</p>
         </div>
@@ -194,12 +201,12 @@ const Overview = () => {
               <span className="text-white text-lg font-bold">¥</span>
             </div>
           </div>
-          <p className="text-sm text-slate-600 mb-1">일본 계좌</p>
+          <p className="text-sm text-slate-600 mb-1">{tDashboard('japaneseAccounts')}</p>
           <p className="text-2xl font-bold text-slate-800">{Math.round(japaneseAccountsTotal).toLocaleString()}</p>
           <p className="text-xs text-slate-500 mt-1">JPY</p>
           {creditLiabilities.has('JPY') && (
             <p className="text-sm text-red-500 font-semibold mt-2">
-              부채: -{Math.round(creditLiabilities.get('JPY') || 0).toLocaleString()}
+              Liability: -{Math.round(creditLiabilities.get('JPY') || 0).toLocaleString()}
             </p>
           )}
         </div>
@@ -211,12 +218,12 @@ const Overview = () => {
               <span className="text-white text-lg font-bold">₩</span>
             </div>
           </div>
-          <p className="text-sm text-slate-600 mb-1">한국 계좌</p>
+          <p className="text-sm text-slate-600 mb-1">{tDashboard('koreanAccounts')}</p>
           <p className="text-2xl font-bold text-slate-800">{Math.round(koreanAccountsTotal).toLocaleString()}</p>
           <p className="text-xs text-slate-500 mt-1">KRW</p>
           {creditLiabilities.has('KRW') && (
             <p className="text-sm text-red-500 font-semibold mt-2">
-              부채: -{Math.round(creditLiabilities.get('KRW') || 0).toLocaleString()}
+              Liability: -{Math.round(creditLiabilities.get('KRW') || 0).toLocaleString()}
             </p>
           )}
         </div>
@@ -228,7 +235,7 @@ const Overview = () => {
               <Wallet className="w-6 h-6 text-white" />
             </div>
           </div>
-          <p className="text-sm text-slate-600 mb-1">총 계좌</p>
+          <p className="text-sm text-slate-600 mb-1">{tAccounts('totalAccounts')}</p>
           <p className="text-3xl font-bold text-slate-800">{accounts.length}</p>
           <div className="mt-3 space-y-1">
             {Object.entries(totalBalanceByCurrency).slice(0, 2).map(([currency, balance]) => (
@@ -246,8 +253,8 @@ const Overview = () => {
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-xl font-bold text-slate-800">최근 30일 지출</h3>
-              <p className="text-sm text-slate-500 mt-1">단위: {BASE_CURRENCY}</p>
+              <h3 className="text-xl font-bold text-slate-800">{tDashboard('last30Days')}</h3>
+              <p className="text-sm text-slate-500 mt-1">Unit: {BASE_CURRENCY}</p>
             </div>
             <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-pink-500 rounded-xl flex items-center justify-center">
               <TrendingDown className="w-5 h-5 text-white" />
@@ -286,7 +293,7 @@ const Overview = () => {
             </ResponsiveContainer>
           ) : (
             <div className="h-64 flex items-center justify-center text-slate-400">
-              <p>최근 30일간 지출 내역이 없습니다.</p>
+              <p>{tTransactions('noTransactions')}</p>
             </div>
           )}
         </div>
@@ -297,8 +304,8 @@ const Overview = () => {
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-xl font-bold text-slate-800">투자 현황</h3>
-                <p className="text-sm text-slate-500 mt-1">총 {holdings.length}개 보유</p>
+                <h3 className="text-xl font-bold text-slate-800">{tDashboard('investmentSummary')}</h3>
+                <p className="text-sm text-slate-500 mt-1">{tHoldings('totalHoldings')}: {holdings.length}</p>
               </div>
               <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-white" />
@@ -310,13 +317,13 @@ const Overview = () => {
                   <div key={holding.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                     <span className="font-medium text-slate-700">{holding.symbol}</span>
                     <span className="text-sm text-slate-600">
-                      {holding.shares} 주 × {holding.costBasis.toLocaleString()} {holding.currency}
+                      {holding.shares} x {holding.costBasis.toLocaleString()} {holding.currency}
                     </span>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-slate-400 text-center py-4">투자 내역이 없습니다.</p>
+              <p className="text-slate-400 text-center py-4">{tHoldings('noHoldings')}</p>
             )}
           </div>
 
@@ -324,8 +331,8 @@ const Overview = () => {
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-xl font-bold text-slate-800">목표 달성</h3>
-                <p className="text-sm text-slate-500 mt-1">총 {goals.length}개 목표</p>
+                <h3 className="text-xl font-bold text-slate-800">{tDashboard('goalSummary')}</h3>
+                <p className="text-sm text-slate-500 mt-1">{tGoals('totalGoals')}: {goals.length}</p>
               </div>
               <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center">
                 <Target className="w-5 h-5 text-white" />
@@ -349,7 +356,7 @@ const Overview = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-slate-400 text-center py-4">목표가 없습니다.</p>
+              <p className="text-slate-400 text-center py-4">{tGoals('noGoals')}</p>
             )}
           </div>
         </div>
@@ -357,7 +364,7 @@ const Overview = () => {
 
       {/* Quick Actions */}
       <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 shadow-xl">
-        <h3 className="text-2xl font-bold text-white mb-6">빠른 실행</h3>
+        <h3 className="text-2xl font-bold text-white mb-6">{tDashboard('quickActions')}</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link 
             href="/transactions/add" 
@@ -368,8 +375,8 @@ const Overview = () => {
                 <PlusCircle className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="font-bold text-white">거래 내역 추가</p>
-                <p className="text-xs text-white/70">새로운 거래 기록</p>
+                <p className="font-bold text-white">{tDashboard('addTransaction')}</p>
+                <p className="text-xs text-white/70">New transaction</p>
               </div>
             </div>
           </Link>
@@ -382,8 +389,8 @@ const Overview = () => {
                 <Wallet className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="font-bold text-white">계좌 추가</p>
-                <p className="text-xs text-white/70">새로운 계좌 등록</p>
+                <p className="font-bold text-white">{tDashboard('addAccount')}</p>
+                <p className="text-xs text-white/70">New account</p>
               </div>
             </div>
           </Link>
@@ -396,8 +403,8 @@ const Overview = () => {
                 <TrendingUp className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="font-bold text-white">투자 추가</p>
-                <p className="text-xs text-white/70">새로운 투자 기록</p>
+                <p className="font-bold text-white">{tDashboard('addInvestment')}</p>
+                <p className="text-xs text-white/70">New investment</p>
               </div>
             </div>
           </Link>
@@ -408,10 +415,9 @@ const Overview = () => {
       <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
         <div className="flex items-start justify-between mb-6">
           <div>
-            <h3 className="text-2xl font-bold text-slate-800 mb-2">기본 분석</h3>
+            <h3 className="text-2xl font-bold text-slate-800 mb-2">{tDashboard('basicAnalysis')}</h3>
             <p className="text-slate-600">
-              이 섹션에는 자동 제안 저축 카테고리, 가장 높은 지출 카테고리 강조,
-              그리고 더 상세한 목표 달성 지표와 같은 통찰력이 포함될 예정입니다.
+              Insight and analysis features coming soon.
             </p>
           </div>
           <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -420,15 +426,15 @@ const Overview = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
-            <p className="text-sm text-slate-600 mb-2">분석 가능한 거래</p>
+            <p className="text-sm text-slate-600 mb-2">{tDashboard('totalTransactions')}</p>
             <p className="text-3xl font-bold text-blue-600">{transactions.length}</p>
           </div>
           <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-200">
-            <p className="text-sm text-slate-600 mb-2">활성 계좌</p>
+            <p className="text-sm text-slate-600 mb-2">{tDashboard('activeAccounts')}</p>
             <p className="text-3xl font-bold text-purple-600">{accounts.length}</p>
           </div>
           <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-6 border border-emerald-200">
-            <p className="text-sm text-slate-600 mb-2">투자 포트폴리오</p>
+            <p className="text-sm text-slate-600 mb-2">{tDashboard('investmentPortfolio')}</p>
             <p className="text-3xl font-bold text-emerald-600">{holdings.length}</p>
           </div>
         </div>
