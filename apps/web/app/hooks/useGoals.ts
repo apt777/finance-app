@@ -6,7 +6,9 @@ interface Goal {
   name: string;
   targetAmount: number;
   currentAmount: number;
+  targetCurrency: string;
   targetDate?: string;
+  priority: number;
 }
 
 const fetchGoals = async (): Promise<Goal[]> => {
