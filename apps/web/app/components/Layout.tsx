@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { Link } from '@/navigation'
+import { usePathname, useRouter } from '@/navigation'
 import { useOverviewData } from '@/hooks/useOverviewData'
 import { useExchangeRates, ExchangeRate } from '@/hooks/useExchangeRates'
 import { Home, Wallet, TrendingUp, Target, Settings, LogOut, User, LogIn, DollarSign, Receipt, Menu, X } from 'lucide-react'

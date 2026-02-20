@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { TrendingUp, Plus } from 'lucide-react'
 import InvestmentPortfolio from '@/components/InvestmentPortfolio'
-import Link from 'next/link'
+import { Link } from '@/navigation'
 
 export default function InvestmentsPage() {
   return (

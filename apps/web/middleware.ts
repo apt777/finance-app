@@ -1,52 +1,61 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import createMiddleware from 'next-intl/middleware';
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { routing } from './navigation';
+
+const intlMiddleware = createMiddleware(routing);
 
 export async function middleware(req: NextRequest) {
-  const res = NextResponse.next()
+  // 1. Run Intl Middleware
+  const res = intlMiddleware(req);
+
+  // 2. Setup Supabase
+  const supabase = createMiddlewareClient({ req, res });
+  const { data: { session } } = await supabase.auth.getSession();
+
+  // 3. Auth Logic
+  const { pathname } = req.nextUrl;
   
-  // Create a Supabase client configured to use cookies
-  const supabase = createMiddlewareClient({ req, res })
-
-  // Refresh session if expired - required for Server Components
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  const { pathname } = req.nextUrl
-
-  // 로그인 페이지나 회원가입 페이지에 있는데 이미 로그인된 경우 메인으로 리다이렉트
-  if (session && (pathname === '/login' || pathname === '/register')) {
-    return NextResponse.redirect(new URL('/', req.url))
-  }
-
-  // 보호된 경로에 접근하는데 로그인이 안 된 경우 로그인 페이지로 리다이렉트
-  // 루트 경로('/')도 보호된 경로에 포함
-  const protectedRoutes = ['/', '/accounts', '/transactions', '/goals', '/holdings', '/settings', '/investments', '/setup']
+  // Parse path to check for locale prefix
+  const segments = pathname.split('/');
+  const maybeLocale = segments[1];
+  const isLocalePrefix = routing.locales.includes(maybeLocale as any);
   
+  // Get the internal path (e.g., "/login" from "/en/login" or "/login")
+  const internalPath = isLocalePrefix 
+    ? '/' + segments.slice(2).join('/') 
+    : pathname;
+    
+  // Normalize (remove trailing slash for comparison, unless it's root)
+  const cleanPath = internalPath === '/' ? '/' : internalPath.replace(/\/$/, '') || '/';
+
+  const publicAuthRoutes = ['/login', '/register', '/forgot-password', '/reset-password'];
+  const protectedRoutes = ['/', '/accounts', '/transactions', '/goals', '/holdings', '/settings', '/investments', '/setup'];
+
+  const isPublicAuthRoute = publicAuthRoutes.includes(cleanPath);
+  
+  // Check if path starts with any protected route
   const isProtectedRoute = protectedRoutes.some(route => 
-    pathname === route || (route !== '/' && pathname.startsWith(route))
-  )
+    cleanPath === route || (route !== '/' && cleanPath.startsWith(route))
+  );
+
+  if (session && isPublicAuthRoute) {
+    // Redirect to dashboard (keeping locale if present)
+    const targetPath = isLocalePrefix ? `/${maybeLocale}` : '/';
+    return NextResponse.redirect(new URL(targetPath, req.url));
+  }
 
   if (!session && isProtectedRoute) {
-    // 로그인 페이지로 리다이렉트
-    const redirectUrl = new URL('/login', req.url)
-    return NextResponse.redirect(redirectUrl)
+    // Redirect to login (keeping locale if present)
+    const targetPath = isLocalePrefix ? `/${maybeLocale}/login` : '/login';
+    return NextResponse.redirect(new URL(targetPath, req.url));
   }
 
-  return res
+  return res;
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     * - api (API routes)
-     */
-    '/((?!_next/static|_next/image|favicon.ico|api|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
-}
+  // Matcher ignoring api, _next, static files
+  matcher: ['/((?!api|_next|.*\\..*).*)']
+};

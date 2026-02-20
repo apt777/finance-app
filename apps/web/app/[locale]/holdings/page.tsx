@@ -3,7 +3,7 @@
 import React from 'react'
 import { Briefcase, Plus } from 'lucide-react'
 import HoldingsList from '@/components/HoldingsList'
-import Link from 'next/link'
+import { Link } from '@/navigation'
 
 export default function HoldingsPage() {
   return (

@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react'
 import { useAccounts } from '@/hooks/useAccounts'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { Link } from '@/navigation'
+import { useRouter } from '@/navigation'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Trash2, Plus, Wallet, CreditCard, PiggyBank, TrendingUp, Filter, ChevronRight } from 'lucide-react'
 

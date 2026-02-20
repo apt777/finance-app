@@ -1,11 +1,11 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { useRouter } from '@/navigation'
+import { Link } from '@/navigation'
 import { useAuth } from '@/context/AuthProviderClient'
 import { Mail, Lock, Eye, EyeOff, Wallet, ArrowRight, CheckCircle } from 'lucide-react'
-import LanguageSwitcher from '../components/LanguageSwitcher'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
 
 export default function Register() {
   const [email, setEmail] = useState('')

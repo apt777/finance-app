@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/navigation'
 import { Settings, Plus, Trash2, AlertCircle, CheckCircle, ChevronDown } from 'lucide-react'
 
 interface Account {
