@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'; import { useAuth } from '@/context/AuthProviderClient'
 
 export interface ExchangeRate {
   id: string;
@@ -20,9 +20,11 @@ const fetchExchangeRates = async (): Promise<ExchangeRate[]> => {
 }
 
 export const useExchangeRates = () => {
+  const { user, loading } = useAuth()
   return useQuery<ExchangeRate[]>({
     queryKey: ['exchangeRates'],
     queryFn: fetchExchangeRates,
+    enabled: !!user && !loading,
     staleTime: 1000 * 60 * 60, // 1시간
     gcTime: 1000 * 60 * 60 * 24, // 24시간
   })

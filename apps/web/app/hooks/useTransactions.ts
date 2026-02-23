@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'; import { useAuth } from '@/context/AuthProviderClient'
 
 interface Transaction {
   id: string;
@@ -25,8 +25,10 @@ const fetchTransactions = async (accountId?: string): Promise<Transaction[]> => 
 
 // The hook will now take an optional accountId
 export const useTransactions = (accountId?: string) => {
+  const { user, loading } = useAuth()
   return useQuery<Transaction[]>({
     queryKey: accountId ? ['transactions', accountId] : ['transactions', 'all'], // Adjust queryKey
     queryFn: () => fetchTransactions(accountId),
+    enabled: !!user && !loading,
   });
 };

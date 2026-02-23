@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useAuth } from '@/context/AuthProviderClient'
 
 interface Account {
   id: string;
@@ -17,8 +18,10 @@ const fetchAccounts = async (): Promise<Account[]> => {
 }
 
 export const useAccounts = () => {
+  const { user, loading } = useAuth()
   return useQuery<Account[]>({
     queryKey: ['accounts'],
     queryFn: fetchAccounts,
+    enabled: !!user && !loading,
   })
 }

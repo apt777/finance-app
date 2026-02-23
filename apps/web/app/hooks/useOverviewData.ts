@@ -1,4 +1,5 @@
 import { useQueries } from '@tanstack/react-query'
+import { useAuth } from '@/context/AuthProviderClient'
 
 // Define interfaces for data structures (should match Prisma models)
 interface Account {
@@ -68,12 +69,15 @@ const fetchGoals = async (): Promise<Goal[]> => {
 }
 
 export const useOverviewData = () => {
+  const { user, loading } = useAuth()
+  const isEnabled = !!user && !loading
+
   const results = useQueries({
     queries: [
-      { queryKey: ['accounts'], queryFn: fetchAccounts },
-      { queryKey: ['transactions'], queryFn: fetchTransactions },
-      { queryKey: ['holdings'], queryFn: fetchHoldings },
-      { queryKey: ['goals'], queryFn: fetchGoals },
+      { queryKey: ['accounts'], queryFn: fetchAccounts, enabled: isEnabled },
+      { queryKey: ['transactions'], queryFn: fetchTransactions, enabled: isEnabled },
+      { queryKey: ['holdings'], queryFn: fetchHoldings, enabled: isEnabled },
+      { queryKey: ['goals'], queryFn: fetchGoals, enabled: isEnabled },
     ],
   })
 

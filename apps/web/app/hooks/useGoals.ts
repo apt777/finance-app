@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'; import { useAuth } from '@/context/AuthProviderClient'
 
 interface Goal {
   id: string;
@@ -20,8 +20,10 @@ const fetchGoals = async (): Promise<Goal[]> => {
 }
 
 export const useGoals = () => {
+  const { user, loading } = useAuth()
   return useQuery<Goal[]>({
     queryKey: ['goals'],
     queryFn: fetchGoals,
+    enabled: !!user && !loading,
   })
 }
