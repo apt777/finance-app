@@ -4,29 +4,31 @@ import React, { useState } from 'react'
 import { Settings, Globe, Lock, Bell, Languages } from 'lucide-react'
 import ExchangeRateManager from '@/components/ExchangeRateManager'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
+import { useTranslations } from 'next-intl'
 
 export default function SettingsPage() {
+  const tSettings = useTranslations('settings')
   const [activeTab, setActiveTab] = useState('language')
 
   const tabs = [
     {
       id: 'language',
-      label: '언어',
+      label: tSettings('language'),
       icon: Languages,
     },
     {
       id: 'exchange-rates',
-      label: '환율 관리',
+      label: tSettings('exchangeRates'),
       icon: Globe,
     },
     {
       id: 'security',
-      label: '보안',
+      label: tSettings('security'),
       icon: Lock,
     },
     {
       id: 'notifications',
-      label: '알림',
+      label: tSettings('notifications'),
       icon: Bell,
     },
   ]
@@ -39,8 +41,8 @@ export default function SettingsPage() {
           <Settings className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">설정</h1>
-          <p className="text-slate-600 text-sm mt-1">애플리케이션 설정을 관리하세요</p>
+          <h1 className="text-3xl font-bold text-slate-800">{tSettings('title')}</h1>
+          <p className="text-slate-600 text-sm mt-1">Manage application settings</p>
         </div>
       </div>
 
@@ -71,14 +73,14 @@ export default function SettingsPage() {
           {activeTab === 'language' && (
             <div className="space-y-6">
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
-                <h3 className="text-lg font-bold text-slate-800 mb-2">언어 설정</h3>
-                <p className="text-slate-600 text-sm mb-6">애플리케이션의 언어를 선택하세요. 변경 후 페이지가 새로고침됩니다.</p>
+                <h3 className="text-lg font-bold text-slate-800 mb-2">Language Settings</h3>
+                <p className="text-slate-600 text-sm mb-6">Select your preferred application language.</p>
                 <div className="flex justify-start">
                   <LanguageSwitcher />
                 </div>
               </div>
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-                <h3 className="text-lg font-bold text-slate-800 mb-4">지원 언어</h3>
+                <h3 className="text-lg font-bold text-slate-800 mb-4">Supported Languages</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex items-center space-x-3 p-4 bg-white rounded-lg border border-slate-200">
                     <span className="text-3xl">🇰🇷</span>
@@ -120,46 +122,46 @@ export default function SettingsPage() {
           {activeTab === 'security' && (
             <div className="space-y-6">
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-                <h3 className="text-lg font-bold text-slate-800 mb-4">비밀번호 변경</h3>
+                <h3 className="text-lg font-bold text-slate-800 mb-4">Change Password</h3>
                 <form className="space-y-4">
                   <div>
                     <label htmlFor="current-password" className="block text-sm font-medium text-slate-700 mb-2">
-                      현재 비밀번호
+                      Current Password
                     </label>
                     <input
                       id="current-password"
                       type="password"
                       className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white text-slate-900 placeholder-slate-400"
-                      placeholder="현재 비밀번호 입력"
+                      placeholder="Enter current password"
                     />
                   </div>
                   <div>
                     <label htmlFor="new-password" className="block text-sm font-medium text-slate-700 mb-2">
-                      새 비밀번호
+                      New Password
                     </label>
                     <input
                       id="new-password"
                       type="password"
                       className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white text-slate-900 placeholder-slate-400"
-                      placeholder="새 비밀번호 입력"
+                      placeholder="Enter new password"
                     />
                   </div>
                   <div>
                     <label htmlFor="confirm-password" className="block text-sm font-medium text-slate-700 mb-2">
-                      비밀번호 확인
+                      Confirm Password
                     </label>
                     <input
                       id="confirm-password"
                       type="password"
                       className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white text-slate-900 placeholder-slate-400"
-                      placeholder="비밀번호 다시 입력"
+                      placeholder="Re-enter password"
                     />
                   </div>
                   <button
                     type="submit"
                     className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
                   >
-                    비밀번호 변경
+                    Change Password
                   </button>
                 </form>
               </div>
@@ -169,12 +171,12 @@ export default function SettingsPage() {
           {activeTab === 'notifications' && (
             <div className="space-y-6">
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-                <h3 className="text-lg font-bold text-slate-800 mb-4">알림 설정</h3>
+                <h3 className="text-lg font-bold text-slate-800 mb-4">Notification Settings</h3>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-slate-800">이메일 알림</p>
-                      <p className="text-sm text-slate-600">중요한 거래에 대한 이메일 알림</p>
+                      <p className="font-medium text-slate-800">Email Notifications</p>
+                      <p className="text-sm text-slate-600">Receive emails for important transactions</p>
                     </div>
                     <input
                       type="checkbox"
@@ -184,8 +186,8 @@ export default function SettingsPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-slate-800">목표 달성 알림</p>
-                      <p className="text-sm text-slate-600">목표 달성 시 알림</p>
+                      <p className="font-medium text-slate-800">Goal Notifications</p>
+                      <p className="text-sm text-slate-600">Alerts when goals are reached</p>
                     </div>
                     <input
                       type="checkbox"
@@ -195,8 +197,8 @@ export default function SettingsPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-slate-800">주간 리포트</p>
-                      <p className="text-sm text-slate-600">매주 자산 요약 리포트</p>
+                      <p className="font-medium text-slate-800">Weekly Report</p>
+                      <p className="text-sm text-slate-600">Weekly summary of your assets</p>
                     </div>
                     <input
                       type="checkbox"

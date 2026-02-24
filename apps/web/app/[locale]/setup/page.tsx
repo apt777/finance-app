@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from '@/navigation'
 import { Settings, Plus, Trash2, AlertCircle, CheckCircle, ChevronDown } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 interface Account {
   name: string
@@ -18,6 +19,9 @@ interface ExchangeRate {
 }
 
 export default function SetupPage() {
+  const tAccounts = useTranslations('accounts')
+  const tSettings = useTranslations('settings')
+  const tCommon = useTranslations('common')
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
@@ -107,12 +111,12 @@ export default function SetupPage() {
 
     // Validation
     if (accounts.some(acc => !acc.name)) {
-      setError('모든 계좌의 이름을 입력해 주세요.')
+      setError('Please enter all account names.')
       return
     }
 
     if (exchangeRates.some(rate => !rate.rate || Number(rate.rate) <= 0)) {
-      setError('모든 환율을 올바르게 입력해 주세요.')
+      setError('Please enter valid exchange rates.')
       return
     }
 
@@ -128,10 +132,10 @@ export default function SetupPage() {
       const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || '초기화 실패')
+        throw new Error(result.error || 'Setup failed')
       }
 
-      setSuccessMessage('초기 설정이 완료되었습니다!')
+      setSuccessMessage('Setup completed successfully!')
       setTimeout(() => router.push('/'), 2000)
     } catch (err: any) {
       setError(err.message)
@@ -149,8 +153,8 @@ export default function SetupPage() {
               <Settings className="w-7 h-7" />
             </div>
           </div>
-          <h1 className="text-4xl font-bold text-slate-800 mb-2">초기 설정</h1>
-          <p className="text-slate-600">KABLUS를 시작하기 위해 기본 정보를 입력해 주세요</p>
+          <h1 className="text-4xl font-bold text-slate-800 mb-2">Setup</h1>
+          <p className="text-slate-600">Please enter basic information to start using KABLUS</p>
         </div>
 
         {/* Progress Steps */}
@@ -178,8 +182,8 @@ export default function SetupPage() {
         {step === 1 && (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-slate-800 mb-2">계좌 설정</h2>
-              <p className="text-slate-600">보유하고 있는 계좌를 추가해 주세요</p>
+              <h2 className="text-2xl font-bold text-slate-800 mb-2">{tAccounts('title')}</h2>
+              <p className="text-slate-600">Add your existing accounts</p>
             </div>
 
             <div className="space-y-4">
@@ -188,19 +192,19 @@ export default function SetupPage() {
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     {/* Account Name */}
                     <div>
-                      <label className="block text-sm font-semibold text-slate-800 mb-2">계좌명</label>
+                      <label className="block text-sm font-semibold text-slate-800 mb-2">{tAccounts('accountName')}</label>
                       <input
                         type="text"
                         value={account.name}
                         onChange={(e) => handleAccountChange(index, 'name', e.target.value)}
-                        placeholder="예: 메인 계좌"
+                        placeholder="e.g., Main Account"
                         className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-900 placeholder-slate-400"
                       />
                     </div>
 
                     {/* Account Type */}
                     <div>
-                      <label className="block text-sm font-semibold text-slate-800 mb-2">유형</label>
+                      <label className="block text-sm font-semibold text-slate-800 mb-2">{tAccounts('accountType')}</label>
                       <select
                         value={account.type}
                         onChange={(e) => handleAccountChange(index, 'type', e.target.value)}
@@ -216,7 +220,7 @@ export default function SetupPage() {
 
                     {/* Currency */}
                     <div>
-                      <label className="block text-sm font-semibold text-slate-800 mb-2">통화</label>
+                      <label className="block text-sm font-semibold text-slate-800 mb-2">{tAccounts('currency')}</label>
                       <select
                         value={account.currency}
                         onChange={(e) => handleAccountChange(index, 'currency', e.target.value)}
@@ -232,7 +236,7 @@ export default function SetupPage() {
 
                     {/* Balance */}
                     <div>
-                      <label className="block text-sm font-semibold text-slate-800 mb-2">잔액</label>
+                      <label className="block text-sm font-semibold text-slate-800 mb-2">{tAccounts('balance')}</label>
                       <input
                         type="number"
                         min="0"
@@ -252,7 +256,7 @@ export default function SetupPage() {
                       className="flex items-center space-x-2 text-red-600 hover:text-red-700 font-medium"
                     >
                       <Trash2 className="w-4 h-4" />
-                      <span>계좌 삭제</span>
+                      <span>{tAccounts('deleteAccount')}</span>
                     </button>
                   )}
                 </div>
@@ -265,7 +269,7 @@ export default function SetupPage() {
               className="w-full flex items-center justify-center space-x-2 px-4 py-3 border-2 border-dashed border-blue-300 rounded-lg text-blue-600 hover:bg-blue-50 font-semibold transition-all"
             >
               <Plus className="w-5 h-5" />
-              <span>계좌 추가</span>
+              <span>{tAccounts('addNewAccount')}</span>
             </button>
 
             {/* Navigation */}
@@ -274,7 +278,7 @@ export default function SetupPage() {
                 onClick={() => setStep(2)}
                 className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all"
               >
-                다음
+                {tCommon('next')}
               </button>
             </div>
           </div>
@@ -284,8 +288,8 @@ export default function SetupPage() {
         {step === 2 && (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-slate-800 mb-2">환율 설정</h2>
-              <p className="text-slate-600">복수 통화 간의 환율을 설정해 주세요</p>
+              <h2 className="text-2xl font-bold text-slate-800 mb-2">{tSettings('exchangeRates')}</h2>
+              <p className="text-slate-600">Configure exchange rates between your currencies</p>
             </div>
 
             <div className="space-y-4">
@@ -294,7 +298,7 @@ export default function SetupPage() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                     {/* From Currency */}
                     <div>
-                      <label className="block text-sm font-semibold text-slate-800 mb-2">출발 통화</label>
+                      <label className="block text-sm font-semibold text-slate-800 mb-2">{tSettings('from')}</label>
                       <select
                         value={rate.fromCurrency}
                         onChange={(e) => handleExchangeRateChange(index, 'fromCurrency', e.target.value)}
@@ -315,7 +319,7 @@ export default function SetupPage() {
 
                     {/* To Currency */}
                     <div>
-                      <label className="block text-sm font-semibold text-slate-800 mb-2">도착 통화</label>
+                      <label className="block text-sm font-semibold text-slate-800 mb-2">{tSettings('to')}</label>
                       <select
                         value={rate.toCurrency}
                         onChange={(e) => handleExchangeRateChange(index, 'toCurrency', e.target.value)}
@@ -334,7 +338,7 @@ export default function SetupPage() {
                     {/* Rate */}
                     <div>
                       <label className="block text-sm font-semibold text-slate-800 mb-2">
-                        환율 (1 {rate.fromCurrency} = ? {rate.toCurrency})
+                        {tSettings('rate')} (1 {rate.fromCurrency} = ? {rate.toCurrency})
                       </label>
                       <input
                         type="number"
@@ -356,7 +360,7 @@ export default function SetupPage() {
                           className="w-full flex items-center justify-center space-x-2 px-4 py-2 text-red-600 hover:bg-red-50 font-medium rounded-lg transition-all"
                         >
                           <Trash2 className="w-4 h-4" />
-                          <span>삭제</span>
+                          <span>{tCommon('delete')}</span>
                         </button>
                       </div>
                     )}
@@ -371,7 +375,7 @@ export default function SetupPage() {
               className="w-full flex items-center justify-center space-x-2 px-4 py-3 border-2 border-dashed border-blue-300 rounded-lg text-blue-600 hover:bg-blue-50 font-semibold transition-all"
             >
               <Plus className="w-5 h-5" />
-              <span>환율 추가</span>
+              <span>Add Rate</span>
             </button>
 
             {/* Navigation */}
@@ -380,13 +384,13 @@ export default function SetupPage() {
                 onClick={() => setStep(1)}
                 className="px-6 py-3 border-2 border-slate-300 text-slate-800 font-semibold rounded-lg hover:bg-slate-50 transition-all"
               >
-                이전
+                {tCommon('back')}
               </button>
               <button
                 onClick={() => setStep(3)}
                 className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all"
               >
-                다음
+                {tCommon('next')}
               </button>
             </div>
           </div>
@@ -396,13 +400,13 @@ export default function SetupPage() {
         {step === 3 && (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-slate-800 mb-2">설정 확인</h2>
-              <p className="text-slate-600">입력한 정보를 확인하고 완료해 주세요</p>
+              <h2 className="text-2xl font-bold text-slate-800 mb-2">Confirm Settings</h2>
+              <p className="text-slate-600">Please review your settings before completing</p>
             </div>
 
             {/* Accounts Summary */}
             <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
-              <h3 className="text-lg font-bold text-slate-800 mb-4">계좌 정보</h3>
+              <h3 className="text-lg font-bold text-slate-800 mb-4">Account Information</h3>
               <div className="space-y-3">
                 {accounts.map((account, index) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200">
@@ -410,7 +414,7 @@ export default function SetupPage() {
                       <p className="font-semibold text-slate-800">{account.name}</p>
                       <p className="text-sm text-slate-600">{account.type} • {account.currency}</p>
                     </div>
-                    <p className="text-lg font-bold text-blue-600">{account.balance.toLocaleString()}</p>
+                    <p className="text-lg font-bold text-blue-600">{Number(account.balance).toLocaleString()}</p>
                   </div>
                 ))}
               </div>
@@ -418,7 +422,7 @@ export default function SetupPage() {
 
             {/* Exchange Rates Summary */}
             <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
-              <h3 className="text-lg font-bold text-slate-800 mb-4">환율 정보</h3>
+              <h3 className="text-lg font-bold text-slate-800 mb-4">Exchange Rate Information</h3>
               <div className="space-y-3">
                 {exchangeRates.map((rate, index) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200">
@@ -451,7 +455,7 @@ export default function SetupPage() {
                 onClick={() => setStep(2)}
                 className="px-6 py-3 border-2 border-slate-300 text-slate-800 font-semibold rounded-lg hover:bg-slate-50 transition-all"
               >
-                이전
+                {tCommon('back')}
               </button>
               <button
                 onClick={handleSubmit}
@@ -461,12 +465,12 @@ export default function SetupPage() {
                 {isLoading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    <span>처리 중...</span>
+                    <span>{tCommon('loading')}</span>
                   </>
                 ) : (
                   <>
                     <CheckCircle className="w-5 h-5" />
-                    <span>완료</span>
+                    <span>{tCommon('confirm')}</span>
                   </>
                 )}
               </button>

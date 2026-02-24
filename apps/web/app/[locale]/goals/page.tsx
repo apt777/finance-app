@@ -4,8 +4,11 @@ import React from 'react'
 import { Target, Plus } from 'lucide-react'
 import GoalList from '@/components/GoalList'
 import { Link } from '@/navigation'
+import { useTranslations } from 'next-intl'
 
 export default function GoalsPage() {
+  const t = useTranslations('goals')
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -15,8 +18,8 @@ export default function GoalsPage() {
             <Target className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-slate-800">목표</h1>
-            <p className="text-slate-600 text-sm mt-1">재정 목표를 설정하고 진행 상황을 추적하세요</p>
+            <h1 className="text-3xl font-bold text-slate-800">{t('title')}</h1>
+            <p className="text-slate-600 text-sm mt-1">Set financial goals and track your progress</p>
           </div>
         </div>
         <Link
@@ -24,7 +27,7 @@ export default function GoalsPage() {
           className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
         >
           <Plus className="w-5 h-5" />
-          <span>목표 추가</span>
+          <span>{t('addGoal')}</span>
         </Link>
       </div>
 

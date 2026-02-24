@@ -18,6 +18,7 @@ import {
   getCurrencyName,
   getReverseRate 
 } from '@/lib/currency'
+import { useTranslations } from 'next-intl'
 
 // Interface matching Prisma schema field names
 interface ExchangeRate {
@@ -36,6 +37,8 @@ interface ExchangeRateRequest {
 }
 
 const ExchangeRateManager = () => {
+  const tSettings = useTranslations('settings')
+  const tCommon = useTranslations('common')
   const queryClient = useQueryClient()
   const { data, isLoading, isError } = useExchangeRates()
   const [showForm, setShowForm] = useState(false)
@@ -58,7 +61,7 @@ const ExchangeRateManager = () => {
       })
       if (!res.ok) {
         const errorData = await res.json()
-        throw new Error(errorData.error || '환율 업데이트 실패')
+        throw new Error(errorData.error || tCommon('error'))
       }
       return res.json()
     },
@@ -78,7 +81,7 @@ const ExchangeRateManager = () => {
       })
       if (!res.ok) {
         const errorData = await res.json()
-        throw new Error(errorData.error || '환율 삭제 실패')
+        throw new Error(errorData.error || tCommon('error'))
       }
       return res.json()
     },
@@ -91,12 +94,12 @@ const ExchangeRateManager = () => {
     e.preventDefault()
     
     if (!formData.from || !formData.to || !formData.rate) {
-      alert('모든 필드를 입력해 주세요.')
+      alert('Please fill in all fields.')
       return
     }
 
     if (formData.from === formData.to) {
-      alert('출발지와 도착지가 같을 수 없습니다.')
+      alert('Source and destination currency cannot be the same.')
       return
     }
 
@@ -116,7 +119,7 @@ const ExchangeRateManager = () => {
   }
 
   const handleDelete = (rateId: string) => {
-    if (confirm('이 환율을 삭제하시겠습니까?')) {
+    if (confirm(`${tCommon('delete')}?`)) {
       deleteRateMutation.mutate(rateId)
     }
   }
@@ -126,7 +129,7 @@ const ExchangeRateManager = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-slate-600">환율 정보 로딩 중...</p>
+          <p className="text-slate-600">{tCommon('loading')}</p>
         </div>
       </div>
     )
@@ -135,7 +138,7 @@ const ExchangeRateManager = () => {
   if (isError) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-        <p className="text-red-600 font-medium">환율 정보를 불러오는 중 오류 발생</p>
+        <p className="text-red-600 font-medium">{tCommon('error')}</p>
       </div>
     )
   }
@@ -147,28 +150,28 @@ const ExchangeRateManager = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">환율 관리</h2>
-          <p className="text-slate-600 text-sm mt-1">수동으로 환율을 설정하고 관리하세요</p>
+          <h2 className="text-2xl font-bold text-slate-800">{tSettings('exchangeRates')}</h2>
+          <p className="text-slate-600 text-sm mt-1">Manage your exchange rates manually</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
           className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
         >
           <Plus className="w-5 h-5" />
-          <span>환율 추가</span>
+          <span>Add Rate</span>
         </button>
       </div>
 
       {/* Add/Edit Form */}
       {showForm && (
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-          <h3 className="text-lg font-bold text-slate-800 mb-4">환율 설정</h3>
+          <h3 className="text-lg font-bold text-slate-800 mb-4">Rate Settings</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
               {/* From Currency */}
               <div>
                 <label htmlFor="from" className="block text-sm font-medium text-slate-700 mb-2">
-                  출발지 통화
+                  {tSettings('from')} {tSettings('currencies')}
                 </label>
                 <select
                   id="from"
@@ -190,7 +193,7 @@ const ExchangeRateManager = () => {
                   type="button"
                   onClick={handleSwapCurrencies}
                   className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                  title="통화 교환"
+                  title="Swap"
                 >
                   <ArrowRightLeft className="w-5 h-5 text-slate-600" />
                 </button>
@@ -199,7 +202,7 @@ const ExchangeRateManager = () => {
               {/* To Currency */}
               <div>
                 <label htmlFor="to" className="block text-sm font-medium text-slate-700 mb-2">
-                  도착지 통화
+                  {tSettings('to')} {tSettings('currencies')}
                 </label>
                 <select
                   id="to"
@@ -219,7 +222,7 @@ const ExchangeRateManager = () => {
             {/* Rate Input */}
             <div>
               <label htmlFor="rate" className="block text-sm font-medium text-slate-700 mb-2">
-                환율 (1 {formData.from} = ? {formData.to})
+                {tSettings('rate')} (1 {formData.from} = ? {formData.to})
               </label>
               <input
                 id="rate"
@@ -230,7 +233,7 @@ const ExchangeRateManager = () => {
                 value={formData.rate}
                 onChange={(e) => setFormData({ ...formData, rate: e.target.value })}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white text-slate-900 placeholder-slate-400"
-                placeholder="예: 10.5"
+                placeholder="e.g., 10.5"
                 required
               />
             </div>
@@ -242,7 +245,7 @@ const ExchangeRateManager = () => {
                 disabled={updateRateMutation.isPending}
                 className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-lg transition-colors"
               >
-                {updateRateMutation.isPending ? '저장 중...' : '저장'}
+                {updateRateMutation.isPending ? tCommon('loading') : tCommon('save')}
               </button>
               <button
                 type="button"
@@ -253,7 +256,7 @@ const ExchangeRateManager = () => {
                 }}
                 className="flex-1 px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold rounded-lg transition-colors"
               >
-                취소
+                {tCommon('cancel')}
               </button>
             </div>
           </form>
@@ -288,14 +291,14 @@ const ExchangeRateManager = () => {
                       setShowForm(true)
                     }}
                     className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                    title="수정"
+                    title={tCommon('edit')}
                   >
                     <Edit2 className="w-4 h-4 text-slate-600" />
                   </button>
                   <button
                     onClick={() => handleDelete(rate.id)}
                     className="p-2 hover:bg-red-50 rounded-lg transition-colors"
-                    title="삭제"
+                    title={tCommon('delete')}
                   >
                     <Trash2 className="w-4 h-4 text-red-500" />
                   </button>
@@ -304,7 +307,7 @@ const ExchangeRateManager = () => {
 
               {/* Rate Display */}
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 mb-4">
-                <p className="text-sm text-slate-600 mb-1">현재 환율</p>
+                <p className="text-sm text-slate-600 mb-1">Current Rate</p>
                 <p className="text-2xl font-bold text-slate-800">
                   {rate.rate.toFixed(6)}
                 </p>
@@ -318,7 +321,7 @@ const ExchangeRateManager = () => {
                 <div className="flex items-center space-x-2 text-xs text-slate-500">
                   <Calendar className="w-4 h-4" />
                   <span>
-                    마지막 업데이트: {new Date(rate.updatedAt).toLocaleDateString('ko-KR', {
+                    {tSettings('lastUpdated')}: {new Date(rate.updatedAt).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',
@@ -335,13 +338,13 @@ const ExchangeRateManager = () => {
       ) : (
         <div className="bg-white rounded-2xl p-12 shadow-sm border border-slate-100 text-center">
           <RefreshCw className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-600 font-medium mb-4">설정된 환율이 없습니다.</p>
+          <p className="text-slate-600 font-medium mb-4">No exchange rates configured.</p>
           <button
             onClick={() => setShowForm(true)}
             className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
           >
             <Plus className="w-5 h-5" />
-            <span>첫 환율 추가하기</span>
+            <span>Add your first rate</span>
           </button>
         </div>
       )}
@@ -349,14 +352,14 @@ const ExchangeRateManager = () => {
       {/* Error Messages */}
       {updateRateMutation.isError && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-600 text-sm">
-          <p className="font-medium">환율 업데이트 오류</p>
+          <p className="font-medium">Error updating rate</p>
           <p className="text-xs mt-1">{updateRateMutation.error.message}</p>
         </div>
       )}
 
       {deleteRateMutation.isError && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-600 text-sm">
-          <p className="font-medium">환율 삭제 오류</p>
+          <p className="font-medium">Error deleting rate</p>
           <p className="text-xs mt-1">{deleteRateMutation.error.message}</p>
         </div>
       )}
