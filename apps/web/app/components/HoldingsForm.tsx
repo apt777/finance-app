@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAccounts } from '@/hooks/useAccounts'
 import { TrendingUp, AlertCircle, CheckCircle } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 interface HoldingFormData {
   accountId: string;
@@ -27,7 +28,7 @@ const createHolding = async (holdingData: HoldingFormData) => {
   })
   if (!res.ok) {
     const errorData = await res.json();
-    throw new Error(errorData.error || '투자 추가 실패');
+    throw new Error(errorData.error || 'Error');
   }
   return res.json()
 }
@@ -37,6 +38,9 @@ interface HoldingsFormProps {
 }
 
 const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
+  const tHoldings = useTranslations('holdings')
+  const tCommon = useTranslations('common')
+  const tAccounts = useTranslations('accounts')
   const queryClient = useQueryClient()
   const { data: accounts, isLoading: isLoadingAccounts, error: accountsError } = useAccounts()
   const [formError, setFormError] = useState<string | null>(null)
@@ -60,9 +64,9 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
   })
 
   const currencies = [
-    { value: 'JPY', label: '일본 엔 (¥)' },
-    { value: 'KRW', label: '한국 원 (₩)' },
-    { value: 'USD', label: '미국 달러 ($)' },
+    { value: 'JPY', label: 'JPY (¥)' },
+    { value: 'KRW', label: 'KRW (₩)' },
+    { value: 'USD', label: 'USD ($)' },
   ]
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -86,17 +90,17 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
     setFormError(null)
 
     if (!formData.accountId || !formData.symbol || !formData.shares || !formData.costBasis || !formData.currency) {
-      setFormError('모든 필수 필드를 입력해 주세요.')
+      setFormError('Please fill in all required fields.')
       return
     }
 
     if (isNaN(Number(formData.shares)) || isNaN(Number(formData.costBasis))) {
-      setFormError('주수와 매입가는 숫자여야 합니다.')
+      setFormError('Shares and cost basis must be numbers.')
       return;
     }
 
     if (Number(formData.shares) <= 0 || Number(formData.costBasis) <= 0) {
-      setFormError('주수와 매입가는 0보다 커야 합니다.')
+      setFormError('Shares and cost basis must be greater than 0.')
       return;
     }
 
@@ -116,8 +120,8 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
           <TrendingUp className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">새 투자 추가</h1>
-          <p className="text-slate-600 text-sm mt-1">주식 또는 투자 상품을 포트폴리오에 추가하세요</p>
+          <h1 className="text-3xl font-bold text-slate-800">{tHoldings('addHolding')}</h1>
+          <p className="text-slate-600 text-sm mt-1">Add stocks or investment products to your portfolio</p>
         </div>
       </div>
 
@@ -127,7 +131,7 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
           {/* Account Selection */}
           <div>
             <label htmlFor="accountId" className="block text-sm font-semibold text-slate-800 mb-2">
-              계좌 <span className="text-red-500">*</span>
+              Account <span className="text-red-500">*</span>
             </label>
             <select
               name="accountId"
@@ -138,8 +142,8 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
               disabled={isLoadingAccounts}
               required
             >
-              <option value="">계좌 선택</option>
-              {accountsError && <option value="" disabled>계좌 로딩 오류</option>}
+              <option value="">Select Account</option>
+              {accountsError && <option value="" disabled>Error loading</option>}
               {!accountsError && accounts?.map(account => (
                 <option key={account.id} value={account.id}>
                   {account.name} ({Math.round(account.balance).toLocaleString()} {account.currency})
@@ -152,7 +156,7 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="symbol" className="block text-sm font-semibold text-slate-800 mb-2">
-                종목 코드 <span className="text-red-500">*</span>
+                {tHoldings('symbol')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -161,14 +165,14 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
                 value={formData.symbol}
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400 uppercase"
-                placeholder="예: AAPL, MSFT, 9984"
+                placeholder="e.g., AAPL, MSFT, 9984"
                 required
               />
             </div>
 
             <div>
               <label htmlFor="shares" className="block text-sm font-semibold text-slate-800 mb-2">
-                주수 <span className="text-red-500">*</span>
+                {tHoldings('shares')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -190,7 +194,7 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="costBasis" className="block text-sm font-semibold text-slate-800 mb-2">
-                매입가 <span className="text-red-500">*</span>
+                {tHoldings('costBasis')} <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <span className="absolute left-4 top-3 text-slate-500 font-medium">
@@ -214,7 +218,7 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
 
             <div>
               <label htmlFor="currency" className="block text-sm font-semibold text-slate-800 mb-2">
-                통화
+                {tAccounts('currency')}
               </label>
               <select
                 name="currency"
@@ -224,7 +228,7 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
                 className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900"
                 required
               >
-                <option value="">통화 선택</option>
+                <option value="">Select Currency</option>
                 {currencies.map(curr => (
                   <option key={curr.value} value={curr.value}>{curr.label}</option>
                 ))}
@@ -235,18 +239,18 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
           {/* Investment Summary */}
           {formData.shares && formData.costBasis && (
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
-              <h3 className="text-sm font-semibold text-slate-800 mb-4">투자 요약</h3>
+              <h3 className="text-sm font-semibold text-slate-800 mb-4">Investment Summary</h3>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <p className="text-xs text-slate-600 mb-1">종목</p>
+                  <p className="text-xs text-slate-600 mb-1">{tHoldings('symbol')}</p>
                   <p className="text-lg font-bold text-slate-800">{formData.symbol}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-600 mb-1">주수</p>
+                  <p className="text-xs text-slate-600 mb-1">{tHoldings('shares')}</p>
                   <p className="text-lg font-bold text-slate-800">{Number(formData.shares).toLocaleString()}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-600 mb-1">총 매입액</p>
+                  <p className="text-xs text-slate-600 mb-1">Total Cost</p>
                   <p className="text-lg font-bold text-blue-600">{totalCost.toLocaleString()}</p>
                 </div>
               </div>
@@ -265,7 +269,7 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
           {mutation.isSuccess && (
             <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-start space-x-3">
               <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-              <p className="text-green-700 text-sm">투자가 성공적으로 추가되었습니다!</p>
+              <p className="text-green-700 text-sm">Investment added successfully!</p>
             </div>
           )}
 
@@ -286,12 +290,12 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
             {mutation.isPending ? (
               <>
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                <span>추가 중...</span>
+                <span>{tCommon('loading')}</span>
               </>
             ) : (
               <>
                 <TrendingUp className="w-5 h-5" />
-                <span>투자 추가</span>
+                <span>{tHoldings('addHolding')}</span>
               </>
             )}
           </button>

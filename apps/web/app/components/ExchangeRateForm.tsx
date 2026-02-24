@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, AlertCircle, CheckCircle, TrendingUp, ArrowRight } from 'lucide-react';
+import { useTranslations } from 'next-intl'
 
 interface ExchangeRateFormData {
   from: string;
@@ -23,12 +24,14 @@ const createExchangeRate = async (rateData: ExchangeRateFormData) => {
   });
   if (!res.ok) {
     const errorData = await res.json();
-    throw new Error(errorData.error || '환율 생성 실패');
+    throw new Error(errorData.error || 'Failed to create exchange rate');
   }
   return res.json();
 };
 
 const ExchangeRateForm = () => {
+  const tSettings = useTranslations('settings')
+  const tCommon = useTranslations('common')
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState<ExchangeRateFormData>({
     from: 'KRW',
@@ -60,15 +63,15 @@ const ExchangeRateForm = () => {
     setFormError(null);
 
     if (!formData.from || !formData.to || !formData.rate) {
-      setFormError('모든 필드를 입력해 주세요.');
+      setFormError('Please fill in all fields.');
       return;
     }
     if (isNaN(Number(formData.rate)) || Number(formData.rate) <= 0) {
-      setFormError('환율은 0보다 큰 숫자여야 합니다.');
+      setFormError('Rate must be greater than 0.');
       return;
     }
     if (formData.from === formData.to) {
-      setFormError('시작 통화와 대상 통화는 같을 수 없습니다.');
+      setFormError('Source and destination currency cannot be the same.');
       return;
     }
 
@@ -76,9 +79,9 @@ const ExchangeRateForm = () => {
   };
 
   const currencies = [
-    { value: 'KRW', label: '한국 원 (₩)' },
-    { value: 'JPY', label: '일본 엔 (¥)' },
-    { value: 'USD', label: '미국 달러 ($)' },
+    { value: 'KRW', label: 'KRW (₩)' },
+    { value: 'JPY', label: 'JPY (¥)' },
+    { value: 'USD', label: 'USD ($)' },
   ];
 
   return (
@@ -89,21 +92,21 @@ const ExchangeRateForm = () => {
           <TrendingUp className="w-6 h-6" />
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">새 환율 추가</h2>
-          <p className="text-sm text-slate-600">복수 통화 간의 환율을 설정하세요</p>
+          <h2 className="text-2xl font-bold text-slate-800">Add New Rate</h2>
+          <p className="text-sm text-slate-600">Configure exchange rates between currencies</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Currency Selection */}
         <div className="bg-white rounded-xl p-6 border border-slate-200">
-          <label className="block text-sm font-semibold text-slate-800 mb-4">환율 설정</label>
+          <label className="block text-sm font-semibold text-slate-800 mb-4">Rate Settings</label>
           
           <div className="flex flex-col md:flex-row items-center gap-4">
             {/* From Currency */}
             <div className="flex-1">
               <label htmlFor="from" className="block text-xs font-semibold text-slate-600 mb-2 uppercase">
-                출발 통화
+                {tSettings('from')}
               </label>
               <select
                 name="from"
@@ -127,7 +130,7 @@ const ExchangeRateForm = () => {
                 type="button"
                 onClick={handleSwapCurrencies}
                 className="p-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-lg transition-all shadow-md hover:shadow-lg"
-                title="통화 교환"
+                title="Swap"
               >
                 <ArrowRight className="w-5 h-5 rotate-90 md:rotate-0" />
               </button>
@@ -136,7 +139,7 @@ const ExchangeRateForm = () => {
             {/* To Currency */}
             <div className="flex-1">
               <label htmlFor="to" className="block text-xs font-semibold text-slate-600 mb-2 uppercase">
-                대상 통화
+                {tSettings('to')}
               </label>
               <select
                 name="to"
@@ -159,7 +162,7 @@ const ExchangeRateForm = () => {
         {/* Exchange Rate Input */}
         <div>
           <label htmlFor="rate" className="block text-sm font-semibold text-slate-800 mb-2">
-            환율 (1 {formData.from} = ? {formData.to}) *
+            {tSettings('rate')} (1 {formData.from} = ? {formData.to}) *
           </label>
           <div className="relative">
             <input
@@ -178,7 +181,7 @@ const ExchangeRateForm = () => {
             </span>
           </div>
           <p className="text-xs text-slate-600 mt-2">
-            예: 1 {formData.from}가 {formData.to}로 얼마인지 입력하세요
+            e.g., How much is 1 {formData.from} in {formData.to}?
           </p>
         </div>
 
@@ -194,7 +197,7 @@ const ExchangeRateForm = () => {
         {mutation.isSuccess && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start space-x-3">
             <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-            <p className="text-green-700 text-sm">환율이 성공적으로 추가되었습니다!</p>
+            <p className="text-green-700 text-sm">Exchange rate added successfully!</p>
           </div>
         )}
 
@@ -202,7 +205,7 @@ const ExchangeRateForm = () => {
         {mutation.isError && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
             <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-            <p className="text-red-700 text-sm">오류: {mutation.error.message}</p>
+            <p className="text-red-700 text-sm">{tCommon('error')}: {mutation.error.message}</p>
           </div>
         )}
 
@@ -215,12 +218,12 @@ const ExchangeRateForm = () => {
           {mutation.isPending ? (
             <>
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              <span>추가 중...</span>
+              <span>{tCommon('loading')}</span>
             </>
           ) : (
             <>
               <Plus className="w-5 h-5" />
-              <span>환율 추가</span>
+              <span>Add Rate</span>
             </>
           )}
         </button>

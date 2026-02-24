@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, AlertCircle, CheckCircle, Wallet } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 // userId is no longer needed from the form
 interface AccountFormData {
@@ -25,7 +26,7 @@ const createAccount = async (accountData: Omit<AccountFormData, 'userId'>) => {
   })
   if (!res.ok) {
     const errorData = await res.json();
-    throw new Error(errorData.error || 'Failed to create account');
+    throw new Error(errorData.error || 'Error');
   }
   return res.json()
 }
@@ -35,6 +36,8 @@ interface AccountFormProps {
 }
 
 const AccountForm = ({ onAccountAdded }: AccountFormProps) => {
+  const tAccounts = useTranslations('accounts')
+  const tCommon = useTranslations('common')
   const queryClient = useQueryClient()
   const [formError, setFormError] = useState<string | null>(null);
   const [formData, setFormData] = useState<AccountFormData>({
@@ -63,28 +66,28 @@ const AccountForm = ({ onAccountAdded }: AccountFormProps) => {
     e.preventDefault()
     setFormError(null);
     if (!formData.name || !formData.type || !formData.balance || !formData.currency) {
-      setFormError('모든 필드를 입력해 주세요.');
+      setFormError('Please fill in all fields.');
       return
     }
     if (isNaN(Number(formData.balance))) {
-      setFormError('잔액은 숫자여야 합니다.');
+      setFormError('Balance must be a number.');
       return;
     }
     mutation.mutate(formData)
   }
 
   const accountTypes = [
-    { value: 'checking', label: '입출금' },
-    { value: 'savings', label: '예적금' },
-    { value: 'credit_card', label: '신용카드' },
-    { value: 'investment', label: '투자' },
+    { value: 'checking', label: tAccounts('checking') },
+    { value: 'savings', label: tAccounts('savings') },
+    { value: 'credit_card', label: tAccounts('creditCard') },
+    { value: 'investment', label: tAccounts('investment') },
     { value: 'nisa', label: 'NISA' },
   ]
 
   const currencies = [
-    { value: 'JPY', label: '일본 엔 (¥)' },
-    { value: 'KRW', label: '한국 원 (₩)' },
-    { value: 'USD', label: '미국 달러 ($)' },
+    { value: 'JPY', label: 'JPY (¥)' },
+    { value: 'KRW', label: 'KRW (₩)' },
+    { value: 'USD', label: 'USD ($)' },
   ]
 
   return (
@@ -95,8 +98,8 @@ const AccountForm = ({ onAccountAdded }: AccountFormProps) => {
           <Wallet className="w-6 h-6" />
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">새 계좌 추가</h2>
-          <p className="text-sm text-slate-600">새로운 계좌를 추가하여 자산을 관리하세요</p>
+          <h2 className="text-2xl font-bold text-slate-800">{tAccounts('addNewAccount')}</h2>
+          <p className="text-sm text-slate-600">Add a new account to manage your assets</p>
         </div>
       </div>
 
@@ -104,7 +107,7 @@ const AccountForm = ({ onAccountAdded }: AccountFormProps) => {
         {/* Account Name */}
         <div>
           <label htmlFor="name" className="block text-sm font-semibold text-slate-800 mb-2">
-            계좌 이름 *
+            {tAccounts('accountName')} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -112,7 +115,7 @@ const AccountForm = ({ onAccountAdded }: AccountFormProps) => {
             id="name"
             value={formData.name}
             onChange={handleChange}
-            placeholder="예: 메인 계좌, 여행 자금"
+            placeholder="e.g., Main Account"
             className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
             required
           />
@@ -123,7 +126,7 @@ const AccountForm = ({ onAccountAdded }: AccountFormProps) => {
           {/* Account Type */}
           <div>
             <label htmlFor="type" className="block text-sm font-semibold text-slate-800 mb-2">
-              계좌 종류 *
+              {tAccounts('accountType')} <span className="text-red-500">*</span>
             </label>
             <select
               name="type"
@@ -142,7 +145,7 @@ const AccountForm = ({ onAccountAdded }: AccountFormProps) => {
           {/* Currency */}
           <div>
             <label htmlFor="currency" className="block text-sm font-semibold text-slate-800 mb-2">
-              통화 *
+              {tAccounts('currency')} <span className="text-red-500">*</span>
             </label>
             <select
               name="currency"
@@ -162,7 +165,7 @@ const AccountForm = ({ onAccountAdded }: AccountFormProps) => {
         {/* Balance */}
         <div>
           <label htmlFor="balance" className="block text-sm font-semibold text-slate-800 mb-2">
-            초기 잔액 *
+            Initial Balance <span className="text-red-500">*</span>
           </label>
           <div className="relative">
             <input
@@ -195,7 +198,7 @@ const AccountForm = ({ onAccountAdded }: AccountFormProps) => {
         {mutation.isSuccess && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start space-x-3">
             <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-            <p className="text-green-700 text-sm">계좌가 성공적으로 추가되었습니다!</p>
+            <p className="text-green-700 text-sm">Account added successfully!</p>
           </div>
         )}
 
@@ -203,7 +206,7 @@ const AccountForm = ({ onAccountAdded }: AccountFormProps) => {
         {mutation.isError && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
             <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-            <p className="text-red-700 text-sm">오류: {mutation.error.message}</p>
+            <p className="text-red-700 text-sm">Error: {mutation.error.message}</p>
           </div>
         )}
 
@@ -216,12 +219,12 @@ const AccountForm = ({ onAccountAdded }: AccountFormProps) => {
           {mutation.isPending ? (
             <>
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              <span>추가 중...</span>
+              <span>{tCommon('loading')}</span>
             </>
           ) : (
             <>
               <Plus className="w-5 h-5" />
-              <span>계좌 추가</span>
+              <span>{tAccounts('addNewAccount')}</span>
             </>
           )}
         </button>

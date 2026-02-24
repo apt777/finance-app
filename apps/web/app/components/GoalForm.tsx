@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Target, AlertCircle, CheckCircle } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 interface GoalFormData {
   userId: string;
@@ -28,12 +29,15 @@ const createGoal = async (goalData: GoalFormData) => {
   })
   if (!res.ok) {
     const errorData = await res.json();
-    throw new Error(errorData.error || '목표 생성 실패');
+    throw new Error(errorData.error || 'Error');
   }
   return res.json()
 }
 
 const GoalForm = () => {
+  const tGoals = useTranslations('goals')
+  const tCommon = useTranslations('common')
+  const tAccounts = useTranslations('accounts')
   const queryClient = useQueryClient()
   const [formData, setFormData] = useState<GoalFormData>({
     userId: '',
@@ -65,17 +69,17 @@ const GoalForm = () => {
     setFormError(null)
 
     if (!formData.userId || !formData.name || !formData.targetAmount || !formData.currentAmount || !formData.targetCurrency) {
-      setFormError('모든 필수 필드를 입력해 주세요.')
+      setFormError('Please fill in all required fields.')
       return
     }
 
     if (isNaN(Number(formData.targetAmount)) || isNaN(Number(formData.currentAmount))) {
-      setFormError('목표 금액과 현재 금액은 숫자여야 합니다.')
+      setFormError('Amounts must be numbers.')
       return;
     }
 
     if (Number(formData.currentAmount) > Number(formData.targetAmount)) {
-      setFormError('현재 금액이 목표 금액보다 클 수 없습니다.')
+      setFormError('Current amount cannot exceed target.')
       return;
     }
 
@@ -87,9 +91,9 @@ const GoalForm = () => {
     : 0
     
   const currencies = [
-    { value: 'JPY', label: '일본 엔 (¥)' },
-    { value: 'KRW', label: '한국 원 (₩)' },
-    { value: 'USD', label: '미국 달러 ($)' },
+    { value: 'JPY', label: 'JPY (¥)' },
+    { value: 'KRW', label: 'KRW (₩)' },
+    { value: 'USD', label: 'USD ($)' },
   ]
 
   const currentCurrencyLabel = currencies.find(c => c.value === formData.targetCurrency)?.label || 'JPY'
@@ -103,8 +107,8 @@ const GoalForm = () => {
           <Target className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">새 목표 추가</h1>
-          <p className="text-slate-600 text-sm mt-1">재정 목표를 설정하고 진행 상황을 추적하세요</p>
+          <h1 className="text-3xl font-bold text-slate-800">{tGoals('addGoal')}</h1>
+          <p className="text-slate-600 text-sm mt-1">Set financial goals and track progress</p>
         </div>
       </div>
 
@@ -114,7 +118,7 @@ const GoalForm = () => {
           {/* User ID */}
           <div>
             <label htmlFor="userId" className="block text-sm font-semibold text-slate-800 mb-2">
-              사용자 ID <span className="text-red-500">*</span>
+              User ID <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -123,7 +127,7 @@ const GoalForm = () => {
               value={formData.userId}
               onChange={handleChange}
               className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
-              placeholder="사용자 ID 입력"
+              placeholder="Enter user ID"
               required
             />
           </div>
@@ -131,7 +135,7 @@ const GoalForm = () => {
           {/* Goal Name */}
           <div>
             <label htmlFor="name" className="block text-sm font-semibold text-slate-800 mb-2">
-              목표명 <span className="text-red-500">*</span>
+              {tGoals('goalName')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -140,7 +144,7 @@ const GoalForm = () => {
               value={formData.name}
               onChange={handleChange}
               className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
-              placeholder="예: 해외 여행 자금, 주택 구매 자금"
+              placeholder="e.g., Vacation Fund, New Car"
               required
             />
           </div>
@@ -149,7 +153,7 @@ const GoalForm = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="targetAmount" className="block text-sm font-semibold text-slate-800 mb-2">
-                목표 금액 <span className="text-red-500">*</span>
+                {tGoals('targetAmount')} <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <span className="absolute left-4 top-3 text-slate-500 font-medium">{symbol}</span>
@@ -169,7 +173,7 @@ const GoalForm = () => {
             </div>
             <div>
               <label htmlFor="targetCurrency" className="block text-sm font-semibold text-slate-800 mb-2">
-                통화 <span className="text-red-500">*</span>
+                {tAccounts('currency')} <span className="text-red-500">*</span>
               </label>
               <select
                 name="targetCurrency"
@@ -189,7 +193,7 @@ const GoalForm = () => {
           {/* Current Amount */}
           <div>
               <label htmlFor="currentAmount" className="block text-sm font-semibold text-slate-800 mb-2">
-                현재 금액 <span className="text-red-500">*</span>
+                {tGoals('currentAmount')} <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <span className="absolute left-4 top-3 text-slate-500 font-medium">{symbol}</span>
@@ -212,7 +216,7 @@ const GoalForm = () => {
           {formData.targetAmount && formData.currentAmount && (
             <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-slate-700">진행률</span>
+                <span className="text-sm font-medium text-slate-700">{tGoals('progress')}</span>
                 <span className="text-sm font-bold text-blue-600">{progress.toFixed(1)}%</span>
               </div>
               <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
@@ -223,7 +227,7 @@ const GoalForm = () => {
               </div>
               <div className="flex items-center justify-between mt-3 text-xs text-slate-600">
                 <span>{Number(formData.currentAmount).toLocaleString()} / {Number(formData.targetAmount).toLocaleString()}</span>
-                <span>{(Number(formData.targetAmount) - Number(formData.currentAmount)).toLocaleString()} 남음</span>
+                <span>{(Number(formData.targetAmount) - Number(formData.currentAmount)).toLocaleString()} Remaining</span>
               </div>
             </div>
           )}
@@ -231,7 +235,7 @@ const GoalForm = () => {
           {/* Target Date */}
           <div>
             <label htmlFor="targetDate" className="block text-sm font-semibold text-slate-800 mb-2">
-              목표 달성 날짜 <span className="text-slate-500 text-xs">(선택사항)</span>
+              {tGoals('targetDate')} <span className="text-slate-500 text-xs">(Optional)</span>
             </label>
             <input
               type="date"
@@ -255,7 +259,7 @@ const GoalForm = () => {
           {mutation.isSuccess && (
             <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-start space-x-3">
               <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-              <p className="text-green-700 text-sm">목표가 성공적으로 추가되었습니다!</p>
+              <p className="text-green-700 text-sm">Goal added successfully!</p>
             </div>
           )}
 
@@ -276,12 +280,12 @@ const GoalForm = () => {
             {mutation.isPending ? (
               <>
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                <span>추가 중...</span>
+                <span>{tCommon('loading')}</span>
               </>
             ) : (
               <>
                 <Target className="w-5 h-5" />
-                <span>목표 추가</span>
+                <span>{tGoals('addGoal')}</span>
               </>
             )}
           </button>

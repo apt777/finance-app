@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'next/navigation'
 import { useAccounts } from '../hooks/useAccounts'
 import { ArrowUpRight, ArrowDownLeft, AlertCircle, CheckCircle, ArrowRightLeft } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 interface TransactionFormData {
   accountId?: string;
@@ -30,7 +31,7 @@ const createTransaction = async (transactionData: TransactionFormData) => {
   })
   if (!res.ok) {
     const errorData = await res.json();
-    throw new Error(errorData.error || '거래 내역 생성 실패');
+    throw new Error(errorData.error || 'Error');
   }
   return res.json()
 }
@@ -40,6 +41,9 @@ interface TransactionFormProps {
 }
 
 const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
+  const tTransactions = useTranslations('transactions')
+  const tCommon = useTranslations('common')
+  const tAccounts = useTranslations('accounts')
   const queryClient = useQueryClient()
   const { data: accounts, isLoading: isLoadingAccounts, error: accountsError } = useAccounts()
   const [formError, setFormError] = useState<string | null>(null);
@@ -123,28 +127,28 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
     const isTransfer = formData.type === 'transfer';
 
     if (!formData.date || !formData.type || !formData.amount) {
-      setFormError('모든 필수 필드를 입력해 주세요.');
+      setFormError('Please fill in all required fields.');
       return
     }
 
     if (isTransfer) {
       if (!formData.fromAccountId || !formData.toAccountId) {
-        setFormError('출금 계좌와 입금 계좌를 선택해 주세요.');
+        setFormError('Please select both from and to accounts.');
         return;
       }
       if (formData.fromAccountId === formData.toAccountId) {
-        setFormError('출금 계좌와 입금 계좌는 같을 수 없습니다.');
+        setFormError('Accounts cannot be the same.');
         return;
       }
     } else {
       if (!formData.accountId) {
-        setFormError('계좌를 선택해 주세요.');
+        setFormError('Please select an account.');
         return;
       }
     }
 
     if (isNaN(Number(formData.amount)) || Number(formData.amount) <= 0) {
-      setFormError('금액은 0보다 큰 숫자여야 합니다.');
+      setFormError('Amount must be greater than 0.');
       return;
     }
 
@@ -169,8 +173,8 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
           )}
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">새 거래 내역 추가</h1>
-          <p className="text-slate-600 text-sm mt-1">수입 또는 지출을 기록하세요</p>
+          <h1 className="text-3xl font-bold text-slate-800">{tTransactions('addTransaction')}</h1>
+          <p className="text-slate-600 text-sm mt-1">Record income or expense</p>
         </div>
       </div>
 
@@ -182,7 +186,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label htmlFor="fromAccountId" className="block text-sm font-semibold text-slate-800 mb-2">
-                  출금 계좌 <span className="text-red-500">*</span>
+                  From Account <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="fromAccountId"
@@ -193,8 +197,8 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
                   disabled={isLoadingAccounts}
                   required
                 >
-                  <option value="">계좌 선택</option>
-                  {accountsError && <option value="" disabled>계좌 로딩 오류</option>}
+                  <option value="">Select Account</option>
+                  {accountsError && <option value="" disabled>Error loading</option>}
                   {!accountsError && accounts?.map(account => (
                     <option key={account.id} value={account.id}>
                       {account.name} ({Math.round(account.balance).toLocaleString()} {account.currency})
@@ -204,7 +208,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
               </div>
               <div>
                 <label htmlFor="toAccountId" className="block text-sm font-semibold text-slate-800 mb-2">
-                  입금 계좌 <span className="text-red-500">*</span>
+                  To Account <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="toAccountId"
@@ -215,8 +219,8 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
                   disabled={isLoadingAccounts}
                   required
                 >
-                  <option value="">계좌 선택</option>
-                  {accountsError && <option value="" disabled>계좌 로딩 오류</option>}
+                  <option value="">Select Account</option>
+                  {accountsError && <option value="" disabled>Error loading</option>}
                   {!accountsError && accounts?.map(account => (
                     <option key={account.id} value={account.id}>
                       {account.name} ({Math.round(account.balance).toLocaleString()} {account.currency})
@@ -228,7 +232,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
           ) : (
             <div>
               <label htmlFor="accountId" className="block text-sm font-semibold text-slate-800 mb-2">
-                계좌 <span className="text-red-500">*</span>
+                {tTransactions('account')} <span className="text-red-500">*</span>
               </label>
               <select
                 name="accountId"
@@ -239,8 +243,8 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
                 disabled={isLoadingAccounts}
                 required
               >
-                <option value="">계좌 선택</option>
-                {accountsError && <option value="" disabled>계좌 로딩 오류</option>}
+                <option value="">Select Account</option>
+                {accountsError && <option value="" disabled>Error loading</option>}
                 {!accountsError && accounts?.map(account => (
                   <option key={account.id} value={account.id}>
                     {account.name} ({Math.round(account.balance).toLocaleString()} {account.currency})
@@ -254,7 +258,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="date" className="block text-sm font-semibold text-slate-800 mb-2">
-                날짜 <span className="text-red-500">*</span>
+                {tTransactions('date')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
@@ -269,7 +273,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
 
             <div>
               <label htmlFor="type" className="block text-sm font-semibold text-slate-800 mb-2">
-                유형 <span className="text-red-500">*</span>
+                {tTransactions('type')} <span className="text-red-500">*</span>
               </label>
               <select
                 name="type"
@@ -279,9 +283,9 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
                 className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
                 required
               >
-                <option value="expense">지출</option>
-                <option value="income">수입</option>
-                <option value="transfer">이체</option>
+                <option value="expense">Expense</option>
+                <option value="income">Income</option>
+                <option value="transfer">Transfer</option>
               </select>
             </div>
           </div>
@@ -289,7 +293,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
           {/* Description */}
           <div>
             <label htmlFor="description" className="block text-sm font-semibold text-slate-800 mb-2">
-              내용 <span className="text-red-500">*</span>
+              {tTransactions('description')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -298,7 +302,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
               value={formData.description}
               onChange={handleChange}
               className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
-              placeholder="예: 점심 식사, 월급"
+              placeholder="e.g., Lunch, Salary"
               required
             />
           </div>
@@ -308,7 +312,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label htmlFor="amount" className="block text-sm font-semibold text-slate-800">
-                  금액 <span className="text-red-500">*</span>
+                  {tTransactions('amount')} <span className="text-red-500">*</span>
                 </label>
                 {isCreditCardPayment && (
                   <div className="flex items-center">
@@ -325,7 +329,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
                       className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
                     />
                     <label htmlFor="fullPayment" className="ml-2 text-xs text-slate-600 font-medium cursor-pointer">
-                      부채 전액 상환 ({Math.round(selectedToAccount?.balance || 0).toLocaleString()})
+                      Pay full balance ({Math.round(selectedToAccount?.balance || 0).toLocaleString()})
                     </label>
                   </div>
                 )}
@@ -353,8 +357,8 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
                 <div className="mt-2 flex items-start space-x-2 text-amber-600 text-xs bg-amber-50 p-2 rounded-lg">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   <span>
-                    현재 부채보다 많은 금액을 상환합니다.
-                    (예상 잔액: {Math.round((selectedToAccount?.balance || 0) - Number(formData.amount)).toLocaleString()})
+                    Amount exceeds current balance.
+                    (Expected remaining: {Math.round((selectedToAccount?.balance || 0) - Number(formData.amount)).toLocaleString()})
                   </span>
                 </div>
               )}
@@ -362,7 +366,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
 
             <div>
               <label htmlFor="currency" className="block text-sm font-semibold text-slate-800 mb-2">
-                통화
+                {tAccounts('currency')}
               </label>
               <input
                 type="text"
@@ -392,7 +396,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
                       ? 'text-green-700'
                       : formData.type === 'transfer' ? 'text-blue-700' : 'text-red-700'
                   }`}>
-                    {formData.type === 'income' ? '수입' : formData.type === 'transfer' ? '이체' : '지출'}
+                    {formData.type === 'income' ? 'Income' : formData.type === 'transfer' ? 'Transfer' : 'Expense'}
                   </p>
                   <p className={`text-2xl font-bold mt-1 ${
                     formData.type === 'income'
@@ -432,7 +436,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
           {mutation.isSuccess && (
             <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-start space-x-3">
               <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-              <p className="text-green-700 text-sm">거래 내역이 성공적으로 추가되었습니다!</p>
+              <p className="text-green-700 text-sm">Transaction added successfully!</p>
             </div>
           )}
 
@@ -453,7 +457,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
             {mutation.isPending ? (
               <>
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                <span>추가 중...</span>
+                <span>{tCommon('loading')}</span>
               </>
             ) : (
               <>
@@ -462,7 +466,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
                 ) : (
                   <ArrowUpRight className="w-5 h-5" />
                 )}
-                <span>거래 내역 추가</span>
+                <span>{tTransactions('addTransaction')}</span>
               </>
             )}
           </button>
