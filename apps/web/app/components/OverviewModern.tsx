@@ -5,7 +5,6 @@ import { useOverviewData } from '../hooks/useOverviewData'
 import { useExchangeRates, ExchangeRate } from '../hooks/useExchangeRates'
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import {
-  Sparkles,
   Target,
   TrendingDown,
   TrendingUp,
@@ -178,72 +177,141 @@ export default function OverviewModern() {
   const latestExpenses = chartData.at(-1)?.expenses || 0
   const previousExpenses = chartData.at(-2)?.expenses || 0
   const expenseMomentum = latestExpenses - previousExpenses
+  const totalExpensesLast30 = Math.round(chartData.reduce((sum, item) => sum + item.expenses, 0))
+  const holdingsValueBaseCurrency = Math.round(
+    holdings.reduce((sum, holding) => sum + convertToBaseCurrency(holding.shares * holding.costBasis, holding.currency), 0),
+  )
+  const averageGoalProgress = goalsWithProgress.length > 0
+    ? Math.round(goalsWithProgress.reduce((sum, goal) => sum + goal.progress, 0) / goalsWithProgress.length)
+    : 0
+  const expenseDirectionLabel = expenseMomentum > 0 ? '지출이 늘고 있어요' : '지출이 안정적이에요'
+  const expenseDirectionTone = expenseMomentum > 0
+    ? 'text-rose-600'
+    : isDark
+      ? 'text-emerald-300'
+      : 'text-emerald-600'
 
   return (
     <div className="space-y-8">
       <div className="mx-auto max-w-[1680px] space-y-6">
-        <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <div className={`rounded-[24px] px-4 py-3 ${isDark ? 'border border-white/10 bg-white/[0.06] text-white' : 'border border-slate-200 bg-slate-50 text-slate-950'}`}>
-              <p className={`text-[11px] uppercase tracking-[0.2em] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{tAccounts('totalAccounts')}</p>
-              <p className="mt-2 text-2xl font-bold tabular-nums">{accounts.length}</p>
-            </div>
-            <div className={`rounded-[24px] px-4 py-3 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-slate-200 bg-white'}`}>
-              <p className={`text-[11px] uppercase tracking-[0.2em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{tDashboard('totalAssets')}</p>
-              <p className={`mt-2 text-[clamp(1.1rem,1.7vw,1.6rem)] font-bold leading-tight tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>{Math.round(totalPositiveAssetsBaseCurrency).toLocaleString()}</p>
-            </div>
-            <div className={`hidden rounded-[24px] px-4 py-3 md:block ${isDark ? 'border border-white/10 bg-white/5' : 'border border-slate-200 bg-white'}`}>
-              <p className={`text-[11px] uppercase tracking-[0.2em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{tTransactions('totalExpense')}</p>
-              <p className={`mt-2 text-2xl font-bold tabular-nums ${expenseMomentum > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
-                {expenseMomentum > 0 ? '+' : ''}
-                {Math.round(expenseMomentum).toLocaleString()}
-              </p>
-            </div>
-        </section>
-
-        <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.25fr_0.75fr]">
+        <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.18fr)_minmax(420px,0.82fr)]">
           <div className={`overflow-hidden rounded-[40px] p-6 md:p-8 ${isDark ? 'border border-white/10 bg-[linear-gradient(180deg,rgba(24,27,31,0.98)_0%,rgba(31,35,40,0.98)_100%)] shadow-[0_24px_60px_rgba(0,0,0,0.28)]' : 'border border-white/70 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.96),_rgba(237,243,255,0.9)_36%,_rgba(211,226,255,0.88)_100%)] shadow-[0_24px_80px_rgba(59,130,246,0.16)]'}`}>
-            <div className="flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
-              <div className="max-w-3xl">
-                <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.24em] ${isDark ? 'border border-white/10 bg-white/5 text-slate-300' : 'border border-blue-200/80 bg-white/75 text-blue-700'}`}>
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Modern overview
+            <div className="space-y-6">
+              <div className="max-w-4xl space-y-6">
+                <div className="space-y-3">
+                  <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    자산 요약
+                  </p>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold ${isDark ? 'border border-white/10 bg-white/5 text-slate-200' : 'border border-white/80 bg-white/80 text-slate-700'}`}>
+                      <TrendingUp className={`h-4 w-4 ${expenseMomentum > 0 ? 'text-rose-500' : 'text-emerald-500'}`} />
+                      <span className={expenseDirectionTone}>{expenseDirectionLabel}</span>
+                    </div>
+                    <div className={`inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium ${isDark ? 'border border-white/10 bg-white/5 text-slate-300' : 'border border-white/80 bg-white/80 text-slate-600'}`}>
+                      최근 30일 기준
+                    </div>
+                  </div>
                 </div>
                 <h2 className={`mt-5 max-w-4xl text-[clamp(2.05rem,4.3vw,3.45rem)] font-bold leading-[1.02] tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>
                   {Math.round(netWorth).toLocaleString()} <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>{BASE_CURRENCY}</span>
                 </h2>
-                <p className={`mt-4 max-w-2xl text-sm leading-7 md:text-base ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                  총계좌, 투자, 목표, 최근 지출 흐름을 홈 화면 안에서 바로 읽을 수 있게 메인 뷰를 넓게 다시 구성했습니다.
+                <p className={`max-w-2xl text-sm leading-7 md:text-base ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                  오늘 자산 상태와 최근 소비 흐름을 한 번에 보고, 어디를 먼저 손봐야 하는지 빠르게 판단할 수 있게 정리했습니다.
                 </p>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div className={`flex min-h-[112px] flex-col justify-between rounded-[24px] px-4 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
+                    <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>최근 30일 지출</p>
+                    <p className={`mt-2 text-xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
+                      {totalExpensesLast30.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className={`flex min-h-[112px] flex-col justify-between rounded-[24px] px-4 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
+                    <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>보유자산</p>
+                    <p className={`mt-2 text-xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
+                      {holdingsValueBaseCurrency.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className={`flex min-h-[112px] flex-col justify-between rounded-[24px] px-4 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
+                    <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>목표 평균 진행률</p>
+                    <p className={`mt-2 text-xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
+                      {averageGoalProgress}%
+                    </p>
+                  </div>
+                </div>
+
+                <div className={`rounded-[28px] px-5 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>지금 보면 좋은 포인트</p>
+                      <p className={`mt-2 text-sm leading-6 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                        {expenseMomentum > 0
+                          ? '최근 지출이 직전 흐름보다 커졌습니다. 소비가 늘어난 카테고리를 먼저 확인해보는 게 좋습니다.'
+                          : '지출 흐름이 비교적 안정적입니다. 남는 현금을 목표나 투자 쪽으로 옮길 여지가 있습니다.'}
+                      </p>
+                    </div>
+                    <div className={`rounded-2xl px-4 py-3 text-right ${isDark ? 'bg-white/5 text-white' : 'bg-slate-100 text-slate-900'}`}>
+                      <p className="text-xs font-semibold text-slate-400">순자산 기준</p>
+                      <p className="mt-1 text-lg font-bold tabular-nums">{Math.round(netWorth).toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:min-w-[420px]">
-                <div className={`rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/80'}`}>
-                  <p className={`text-[11px] font-bold uppercase tracking-[0.2em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>KRW Mirror</p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                <div className={`flex min-h-[122px] flex-col justify-between rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/80'}`}>
+                  <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{tAccounts('totalAccounts')}</p>
+                  <p className={`mt-3 text-[clamp(1.08rem,1.8vw,1.55rem)] font-bold leading-tight tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
+                    {accounts.length}
+                  </p>
+                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>연결된 계좌 수</p>
+                </div>
+                <div className={`flex min-h-[122px] flex-col justify-between rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/80'}`}>
+                  <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{tDashboard('totalAssets')}</p>
+                  <p className={`mt-3 text-[clamp(1.08rem,1.8vw,1.55rem)] font-bold leading-tight tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
+                    {Math.round(totalPositiveAssetsBaseCurrency).toLocaleString()}
+                  </p>
+                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>보유 자산 합계</p>
+                </div>
+                <div className={`flex min-h-[122px] flex-col justify-between rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/80'}`}>
+                  <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{tTransactions('totalExpense')}</p>
+                  <p className={`mt-3 text-[clamp(1.08rem,1.8vw,1.55rem)] font-bold leading-tight tabular-nums ${expenseMomentum > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                    {expenseMomentum > 0 ? '+' : ''}
+                    {Math.round(expenseMomentum).toLocaleString()}
+                  </p>
+                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>최근 지출 변화</p>
+                </div>
+                <div className={`flex min-h-[122px] flex-col justify-between rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/80'}`}>
+                  <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>KRW Mirror</p>
                   <p className={`mt-3 text-[clamp(1.18rem,2vw,1.8rem)] font-bold leading-tight tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
                     {Math.round(totalPositiveAssetsKRW).toLocaleString()}
                   </p>
                   <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>원화 기준 참고 자산</p>
                 </div>
-                <div className={`rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5 text-white' : 'border border-slate-200 bg-blue-50 text-slate-950'}`}>
-                  <p className={`text-[11px] font-bold uppercase tracking-[0.2em] ${isDark ? 'text-slate-400' : 'text-blue-600/70'}`}>{tGoals('totalGoals')}</p>
+                <div className={`flex min-h-[122px] flex-col justify-between rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5 text-white' : 'border border-slate-200 bg-blue-50 text-slate-950'}`}>
+                  <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-blue-600/70'}`}>{tGoals('totalGoals')}</p>
                   <p className="mt-3 text-[clamp(1.18rem,2vw,1.8rem)] font-bold leading-tight tabular-nums">
                     {goals.length}
                   </p>
                   <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-blue-700/70'}`}>활성 목표 수</p>
                 </div>
-                <div className={`rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/80'}`}>
-                  <p className={`text-[11px] font-bold uppercase tracking-[0.2em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{tDashboard('japaneseAccounts')}</p>
-                  <p className={`mt-3 text-[clamp(1.08rem,1.8vw,1.55rem)] font-bold leading-tight tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
-                    {Math.round(japaneseAccountsTotal).toLocaleString()}
-                  </p>
-                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>JPY cash</p>
-                </div>
-                <div className={`rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/80'}`}>
-                  <p className={`text-[11px] font-bold uppercase tracking-[0.2em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{tDashboard('koreanAccounts')}</p>
-                  <p className={`mt-3 text-[clamp(1.08rem,1.8vw,1.55rem)] font-bold leading-tight tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
-                    {Math.round(koreanAccountsTotal).toLocaleString()}
-                  </p>
-                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>KRW cash</p>
+                <div className={`flex min-h-[122px] flex-col justify-between rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/80'}`}>
+                  <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>현금 잔고</p>
+                  <div className="mt-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{tDashboard('japaneseAccounts')}</span>
+                      <span className={`text-sm font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
+                        {Math.round(japaneseAccountsTotal).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{tDashboard('koreanAccounts')}</span>
+                      <span className={`text-sm font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
+                        {Math.round(koreanAccountsTotal).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>통화별 현금 잔고</p>
                 </div>
               </div>
             </div>
@@ -267,7 +335,7 @@ export default function OverviewModern() {
                 <div className={`rounded-[24px] p-4 ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
                   <p className={`text-[11px] uppercase tracking-[0.18em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{tTransactions('totalExpense')}</p>
                   <p className="mt-3 text-2xl font-bold text-rose-600 tabular-nums">
-                    {Math.round(chartData.reduce((sum, item) => sum + item.expenses, 0)).toLocaleString()}
+                    {totalExpensesLast30.toLocaleString()}
                   </p>
                 </div>
                 <div className={`rounded-[24px] p-4 ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>

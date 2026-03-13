@@ -16,7 +16,7 @@ export default function GoalsPage() {
 
   if (theme === 'modern') {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 pb-10 md:pb-12">
         <section className={`rounded-[36px] p-6 md:p-7 ${isDark ? 'border border-white/10 bg-white/5 shadow-[0_18px_50px_rgba(0,0,0,0.24)] backdrop-blur-xl' : 'border border-white/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] shadow-[0_18px_50px_rgba(148,163,184,0.14)] backdrop-blur-xl'}`}>
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-start space-x-4">
@@ -47,7 +47,7 @@ export default function GoalsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-10 md:pb-12">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white">

@@ -76,7 +76,7 @@ const GoalList = () => {
   }))
 
   return (
-    <div className={`space-y-4 pb-20 md:space-y-6 md:pb-0 ${theme === 'modern' ? isDark ? 'rounded-[38px] border border-white/10 bg-white/5 p-5 shadow-[0_22px_60px_rgba(0,0,0,0.24)] backdrop-blur-xl md:p-7' : 'rounded-[38px] border border-white/80 bg-white/60 p-5 shadow-[0_22px_60px_rgba(148,163,184,0.14)] backdrop-blur-xl md:p-7' : ''}`}>
+    <div className={`space-y-4 overflow-visible pb-10 md:space-y-6 md:pb-12 ${theme === 'modern' ? isDark ? 'rounded-[38px] border border-white/10 bg-white/5 p-5 shadow-[0_22px_60px_rgba(0,0,0,0.24)] backdrop-blur-xl md:p-7' : 'rounded-[38px] border border-white/80 bg-white/60 p-5 shadow-[0_22px_60px_rgba(148,163,184,0.14)] backdrop-blur-xl md:p-7' : ''}`}>
       {/* Goals List */}
       {goalsWithProgress.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

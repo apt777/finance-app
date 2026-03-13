@@ -11,6 +11,7 @@ import { useColorMode } from '@/context/ColorModeContext'
 import { useUiTheme } from '@/context/UiThemeContext'
 import {
   ChartColumnIncreasing,
+  DollarSign,
   Home,
   LogIn,
   LogOut,
@@ -89,6 +90,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       { name: tHoldings('title'), href: '/holdings', icon: TrendingUp },
       { name: tGoals('title'), href: '/goals', icon: Target },
       { name: tTransactions('title'), href: '/transactions', icon: Receipt },
+      { name: tSettings('exchangeRates'), href: '/settings/exchange-rates', icon: DollarSign },
       { name: tSettings('title'), href: '/settings', icon: Settings },
     ],
     [tAccounts, tDashboard, tGoals, tHoldings, tSettings, tTransactions]
@@ -355,13 +357,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <div className={`rounded-[20px] px-4 py-3 shadow-sm ${isDark ? 'border border-white/10 bg-white/5' : 'border border-slate-200 bg-white'}`}>
+            <div className={`inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold shadow-sm transition-all ${isDark ? 'border border-white/10 bg-white/5 text-slate-200' : 'border border-slate-200 bg-white text-slate-700'}`}>
               <p className={`text-[10px] font-bold uppercase tracking-[0.22em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{tAccounts('totalAccounts')}</p>
-              <p className={`mt-2 text-xl font-black tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>{accounts.length}</p>
+              <p className={`text-base font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>{accounts.length}</p>
             </div>
-            <div className={`rounded-[20px] px-4 py-3 shadow-sm ${isDark ? 'border border-white/10 bg-white/5 text-white' : 'border border-slate-200 bg-slate-50 text-slate-950'}`}>
+            <div className={`inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold shadow-sm transition-all ${isDark ? 'border border-white/10 bg-white/5 text-slate-200' : 'border border-slate-200 bg-white text-slate-700'}`}>
               <p className={`text-[10px] font-bold uppercase tracking-[0.22em] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{tDashboard('totalAssets')}</p>
-              <p className="mt-2 text-xl font-black tabular-nums">
+              <p className={`text-base font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
                 {Math.round(netWorth).toLocaleString()} <span className="text-xs text-slate-400">{BASE_CURRENCY}</span>
               </p>
             </div>
@@ -381,7 +383,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className={`min-h-screen pb-8 ${isDark ? 'text-slate-100' : ''}`}>
       {modernTopNav}
-      <main className="px-4 pb-8 pt-[132px] md:px-8 md:pt-[148px]">
+      <main className="px-4 pb-16 pt-[132px] md:px-8 md:pb-20 md:pt-[148px]">
         <div className="mx-auto max-w-[1680px] fade-in">
           {children}
         </div>
