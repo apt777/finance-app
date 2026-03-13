@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useColorMode } from '@/context/ColorModeContext'
+import AppLoadingState from '@/components/AppLoadingState'
 
 interface Account {
   id: string
@@ -83,17 +84,7 @@ export default function OverviewModern() {
   const isDark = colorMode === 'dark'
 
   if (isLoading || ratesLoading) {
-    return (
-      <div className="min-h-screen px-4 py-6 md:px-8 md:py-8">
-        <div className="mx-auto max-w-[1680px] space-y-6">
-          <div className="h-16 rounded-[28px] bg-white/80 pulse" />
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-            <div className="h-[420px] rounded-[36px] bg-white/80 p-8 pulse" />
-            <div className="h-[420px] rounded-[36px] bg-white/80 p-8 pulse" />
-          </div>
-        </div>
-      </div>
-    )
+    return <AppLoadingState label={tDashboard('title')} />
   }
 
   if (isError || ratesError) {

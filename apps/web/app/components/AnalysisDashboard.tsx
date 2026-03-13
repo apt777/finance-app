@@ -8,6 +8,7 @@ import { BarChart, Bar, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { ChartColumnIncreasing, PiggyBank, Repeat, TriangleAlert } from 'lucide-react'
 import { useColorMode } from '@/context/ColorModeContext'
 import { useUiTheme } from '@/context/UiThemeContext'
+import AppLoadingState from '@/components/AppLoadingState'
 
 export default function AnalysisDashboard() {
   const { theme } = useUiTheme()
@@ -17,11 +18,7 @@ export default function AnalysisDashboard() {
   const { data: budgets } = useBudgets()
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-72">
-        <div className="w-12 h-12 rounded-full border-b-2 border-blue-600 animate-spin" />
-      </div>
-    )
+    return <AppLoadingState label="분석" />
   }
 
   if (isError || !data) {

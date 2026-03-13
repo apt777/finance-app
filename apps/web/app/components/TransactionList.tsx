@@ -7,6 +7,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowUpRight, ArrowDownLeft, Filter, Download, Calendar, Search, Trash2, X, ArrowRight } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useUiTheme } from '@/context/UiThemeContext'
+import AppLoadingState from '@/components/AppLoadingState'
 
 interface Transaction {
   id: string;
@@ -94,14 +95,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-slate-600">{tCommon('loading')}</p>
-        </div>
-      </div>
-    )
+    return <AppLoadingState label={tTransactions('title')} />
   }
 
   if (error) {

@@ -25,6 +25,7 @@ import {
   X,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import AppLoadingState from '@/components/AppLoadingState'
 
 interface Account {
   id: string
@@ -162,14 +163,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }
 
   if (loading || (user && setupLoading && !isSetupPage)) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="text-center">
-          <div className="mb-4 inline-block h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600" />
-          <p className="text-lg text-gray-700">{tCommon('loading')}</p>
-        </div>
-      </div>
-    )
+    return <AppLoadingState label={tCommon('loading')} fullScreen />
   }
 
   if (!user && !isAuthPage) {
@@ -329,8 +323,48 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const modernTopNav = (
     <div className={`fixed inset-x-0 top-0 z-30 border-b ${isDark ? 'border-white/10 bg-[#14171b]/96' : 'border-slate-200/80 bg-white/96'} backdrop-blur-xl`}>
-      <div className="mx-auto flex max-w-[1680px] flex-col gap-4 px-4 py-4 md:px-8 md:py-5">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+      <div className="mx-auto max-w-[1680px] px-4 py-3 md:px-8 md:py-5">
+        <div className="md:hidden">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className={`text-[11px] font-semibold ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Workspace</p>
+              <h1 className={`text-base font-bold ${isDark ? 'text-white' : 'text-slate-950'}`}>{getPageTitle(pathname || '')}</h1>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="inline-flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 transition-all hover:border-red-300 hover:bg-red-100"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="-mx-4 mt-3 overflow-x-auto border-t border-slate-200/70 px-4 pt-3 no-scrollbar">
+            <div className="flex w-max gap-2">
+              {navLinks.map((link) => {
+                const Icon = link.icon
+                const isActive = pathname === link.href
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition-all ${
+                      isActive
+                        ? 'bg-slate-900 text-white shadow-sm'
+                        : isDark
+                          ? 'border border-white/10 bg-white/5 text-slate-200'
+                          : 'border border-slate-200 bg-white text-slate-700'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {link.name}
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div className="hidden flex-col gap-4 md:flex xl:flex-row xl:items-center xl:justify-between">
           <div className="flex flex-wrap gap-2">
             {navLinks.map((link) => {
               const Icon = link.icon
@@ -383,7 +417,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className={`min-h-screen pb-8 ${isDark ? 'text-slate-100' : ''}`}>
       {modernTopNav}
-      <main className="px-4 pb-16 pt-[132px] md:px-8 md:pb-20 md:pt-[148px]">
+      <main className="px-4 pb-16 pt-[98px] md:px-8 md:pb-20 md:pt-[148px]">
         <div className="mx-auto max-w-[1680px] fade-in">
           {children}
         </div>

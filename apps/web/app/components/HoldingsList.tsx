@@ -7,6 +7,7 @@ import { useExchangeRates, ExchangeRate } from '../hooks/useExchangeRates'
 import { TrendingUp, Filter } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useUiTheme } from '@/context/UiThemeContext'
+import AppLoadingState from '@/components/AppLoadingState'
 
 interface Account {
   id: string;
@@ -40,14 +41,7 @@ const HoldingsList = () => {
   const [filterAccount, setFilterAccount] = useState('')
 
   if (holdingsLoading || accountsLoading || ratesLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-slate-600">{tCommon('loading')}</p>
-        </div>
-      </div>
-    )
+    return <AppLoadingState label={tHoldings('title')} />
   }
 
   if (holdingsError || accountsError || ratesError) {

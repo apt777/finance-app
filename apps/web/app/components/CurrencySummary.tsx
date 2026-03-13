@@ -10,6 +10,7 @@ import {
   SUPPORTED_CURRENCIES 
 } from '@/lib/currency'
 import { Wallet, TrendingUp, PieChart } from 'lucide-react'
+import AppLoadingState from '@/components/AppLoadingState'
 
 interface CurrencyBalance {
   currency: string
@@ -81,14 +82,7 @@ const CurrencySummary = ({ baseCurrency = 'JPY' }: { baseCurrency?: string }) =>
   }, [accounts, exchangeRates, baseCurrency])
 
   if (accountsLoading || ratesLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-slate-600">자산 정보 로딩 중...</p>
-        </div>
-      </div>
-    )
+    return <AppLoadingState label="자산 요약" />
   }
 
   return (

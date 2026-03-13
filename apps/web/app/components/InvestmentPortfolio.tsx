@@ -9,7 +9,7 @@ import {
   getStockTypeStats,
   checkNISALimit 
 } from '@/lib/investment'
-import { 
+import {
   TrendingUp, 
   TrendingDown, 
   PieChart, 
@@ -18,6 +18,7 @@ import {
   Globe,
   ChevronRight
 } from 'lucide-react'
+import AppLoadingState from '@/components/AppLoadingState'
 
 const InvestmentPortfolio = () => {
   const { data: holdings, isLoading, isError } = useHoldings()
@@ -44,14 +45,7 @@ const InvestmentPortfolio = () => {
   }, [holdings])
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-slate-600">투자 정보 로딩 중...</p>
-        </div>
-      </div>
-    )
+    return <AppLoadingState label="투자 포트폴리오" />
   }
 
   if (isError) {

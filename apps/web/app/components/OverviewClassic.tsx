@@ -7,6 +7,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Link } from '@/navigation'
 import { TrendingUp, TrendingDown, Wallet, Target, PlusCircle, ArrowUpRight } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import AppLoadingState from '@/components/AppLoadingState'
 
 interface Account {
   id: string
@@ -67,14 +68,7 @@ export default function OverviewClassic() {
   const { data: exchangeRates, isLoading: ratesLoading, isError: ratesError } = useExchangeRates()
 
   if (isLoading || ratesLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="text-center">
-          <div className="mb-4 inline-block h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600" />
-          <p className="text-slate-600">{tCommon('loading')}</p>
-        </div>
-      </div>
-    )
+    return <AppLoadingState label={tDashboard('title')} />
   }
 
   if (isError || ratesError) {
