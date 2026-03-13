@@ -6,7 +6,6 @@ import { Target, AlertCircle, CheckCircle } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 interface GoalFormData {
-  userId: string;
   name: string;
   targetAmount: number | string;
   currentAmount: number | string;
@@ -40,7 +39,6 @@ const GoalForm = () => {
   const tAccounts = useTranslations('accounts')
   const queryClient = useQueryClient()
   const [formData, setFormData] = useState<GoalFormData>({
-    userId: '',
     name: '',
     targetAmount: '',
     currentAmount: '',
@@ -53,7 +51,7 @@ const GoalForm = () => {
     mutationFn: createGoal,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] })
-      setFormData({ userId: '', name: '', targetAmount: '', currentAmount: '', targetDate: '', targetCurrency: 'JPY' })
+      setFormData({ name: '', targetAmount: '', currentAmount: '', targetDate: '', targetCurrency: 'JPY' })
       setFormError(null)
     },
   })
@@ -68,7 +66,7 @@ const GoalForm = () => {
     e.preventDefault()
     setFormError(null)
 
-    if (!formData.userId || !formData.name || !formData.targetAmount || !formData.currentAmount || !formData.targetCurrency) {
+    if (!formData.name || !formData.targetAmount || !formData.currentAmount || !formData.targetCurrency) {
       setFormError('Please fill in all required fields.')
       return
     }
@@ -115,23 +113,6 @@ const GoalForm = () => {
       {/* Form Card */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* User ID */}
-          <div>
-            <label htmlFor="userId" className="block text-sm font-semibold text-slate-800 mb-2">
-              User ID <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="userId"
-              id="userId"
-              value={formData.userId}
-              onChange={handleChange}
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
-              placeholder="Enter user ID"
-              required
-            />
-          </div>
-
           {/* Goal Name */}
           <div>
             <label htmlFor="name" className="block text-sm font-semibold text-slate-800 mb-2">

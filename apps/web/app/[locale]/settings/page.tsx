@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Settings, Globe, Lock, Bell, Languages } from 'lucide-react'
-import ExchangeRateManager from '@/components/ExchangeRateManager'
+import { Settings, Lock, Bell, Languages, Tags } from 'lucide-react'
+import CategoryManager from '@/components/CategoryManager'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import { useTranslations } from 'next-intl'
 
@@ -17,9 +17,9 @@ export default function SettingsPage() {
       icon: Languages,
     },
     {
-      id: 'exchange-rates',
-      label: tSettings('exchangeRates'),
-      icon: Globe,
+      id: 'categories',
+      label: tSettings('categories'),
+      icon: Tags,
     },
     {
       id: 'security',
@@ -47,7 +47,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100">
         <div className="flex border-b border-slate-200 overflow-x-auto">
           {tabs.map((tab) => {
             const Icon = tab.icon
@@ -115,8 +115,8 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {activeTab === 'exchange-rates' && (
-            <ExchangeRateManager />
+          {activeTab === 'categories' && (
+            <CategoryManager />
           )}
 
           {activeTab === 'security' && (

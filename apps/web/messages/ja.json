@@ -14,7 +14,9 @@
     "next": "次へ",
     "confirm": "確認",
     "logout": "ログアウト",
-    "language": "言語"
+    "language": "言語",
+    "activeUser": "アクティブユーザー",
+    "menu": "メニュー"
   },
   "auth": {
     "login": "ログイン",
@@ -60,7 +62,11 @@
     "basicAnalysis": "基本分析",
     "totalTransactions": "分析可能な取引",
     "activeAccounts": "アクティブな口座",
-    "investmentPortfolio": "投資ポートフォリオ"
+    "investmentPortfolio": "投資ポートフォリオ",
+    "analysisTitle": "分析",
+    "analysisShort": "分析",
+    "onboardingTitle": "オンボーディング",
+    "unit": "単位"
   },
   "accounts": {
     "title": "口座管理",
@@ -105,10 +111,25 @@
     "all": "すべて",
     "incomeOnly": "収入のみ",
     "expenseOnly": "支出のみ",
+    "transferOnly": "振替のみ",
+    "income": "収入",
+    "expense": "支出",
+    "transfer": "振替",
     "noTransactions": "取引がありません。",
     "exportCSV": "CSVダウンロード",
     "addTransaction": "取引を追加",
-    "bulkImport": "一括インポート"
+    "bulkImport": "一括インポート",
+    "recordIncomeExpense": "収入または支出を記録します",
+    "fromAccount": "出金口座",
+    "toAccount": "入金口座",
+    "payFullBalance": "全額返済",
+    "amountExceedsBalance": "金額が現在の残高を超えています。(予想残高: {balance})",
+    "transactionAdded": "取引が追加されました。",
+    "searchPlaceholder": "取引や口座を検索...",
+    "category": "カテゴリ",
+    "allCategories": "すべてのカテゴリ",
+    "notes": "メモ",
+    "notesPlaceholder": "必要なメモを残してください"
   },
   "goals": {
     "title": "目標",
@@ -138,7 +159,8 @@
     "theme": "テーマ",
     "notifications": "通知",
     "privacy": "プライバシー",
-    "security": "セキュリティ"
+    "security": "セキュリティ",
+    "categories": "カテゴリ"
   },
   "holdings": {
     "title": "投資",

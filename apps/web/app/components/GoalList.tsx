@@ -2,9 +2,8 @@
 
 import React from 'react'
 import { useGoals } from '@/hooks/useGoals'
-import { Link } from '@/navigation'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Trash2, Plus, Target, Calendar, TrendingUp } from 'lucide-react'
+import { Trash2, Target, Calendar } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 interface Goal {
@@ -73,21 +72,6 @@ const GoalList = () => {
 
   return (
     <div className="space-y-4 md:space-y-6 pb-20 md:pb-0">
-      {/* Header */}
-      <div className="flex items-center justify-between px-1">
-        <div>
-          <h2 className="text-xl md:text-2xl font-bold text-slate-800">{tGoals('title')}</h2>
-          <p className="text-slate-500 text-xs md:text-sm mt-0.5">{tGoals('totalGoals')}: {goals.length}</p>
-        </div>
-        <Link
-          href="/goals/add"
-          className="flex items-center justify-center w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2 bg-blue-600 text-white font-semibold rounded-xl shadow-md hover:bg-blue-700 transition-all"
-        >
-          <Plus className="w-5 h-5" />
-          <span className="hidden md:inline ml-2">{tGoals('addGoal')}</span>
-        </Link>
-      </div>
-
       {/* Goals List */}
       {goalsWithProgress.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -159,13 +143,6 @@ const GoalList = () => {
         <div className="bg-white rounded-2xl p-12 shadow-sm border border-slate-100 text-center">
           <Target className="w-12 h-12 text-slate-200 mx-auto mb-4" />
           <p className="text-slate-500 text-sm mb-6">{tGoals('noGoals')}</p>
-          <Link
-            href="/goals/add"
-            className="inline-flex items-center px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            <span>{tGoals('addGoal')}</span>
-          </Link>
         </div>
       )}
     </div>

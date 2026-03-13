@@ -14,7 +14,9 @@
     "next": "下一步",
     "confirm": "确认",
     "logout": "退出登录",
-    "language": "语言"
+    "language": "语言",
+    "activeUser": "活跃用户",
+    "menu": "菜单"
   },
   "auth": {
     "login": "登录",
@@ -60,7 +62,11 @@
     "basicAnalysis": "基本分析",
     "totalTransactions": "可分析的交易",
     "activeAccounts": "活跃账户",
-    "investmentPortfolio": "投资组合"
+    "investmentPortfolio": "投资组合",
+    "analysisTitle": "分析",
+    "analysisShort": "分析",
+    "onboardingTitle": "引导设置",
+    "unit": "单位"
   },
   "accounts": {
     "title": "账户管理",
@@ -105,10 +111,25 @@
     "all": "全部",
     "incomeOnly": "仅收入",
     "expenseOnly": "仅支出",
+    "transferOnly": "仅转账",
+    "income": "收入",
+    "expense": "支出",
+    "transfer": "转账",
     "noTransactions": "未找到交易。",
     "exportCSV": "下载CSV",
     "addTransaction": "添加交易",
-    "bulkImport": "批量导入"
+    "bulkImport": "批量导入",
+    "recordIncomeExpense": "记录收入或支出",
+    "fromAccount": "转出账户",
+    "toAccount": "转入账户",
+    "payFullBalance": "全额偿还",
+    "amountExceedsBalance": "金额超过当前余额。(预计剩余: {balance})",
+    "transactionAdded": "交易已成功添加！",
+    "searchPlaceholder": "搜索交易或账户...",
+    "category": "分类",
+    "allCategories": "所有分类",
+    "notes": "备注",
+    "notesPlaceholder": "记录可选备注"
   },
   "goals": {
     "title": "目标",
@@ -138,7 +159,8 @@
     "theme": "主题",
     "notifications": "通知",
     "privacy": "隐私",
-    "security": "安全"
+    "security": "安全",
+    "categories": "分类"
   },
   "holdings": {
     "title": "投资",

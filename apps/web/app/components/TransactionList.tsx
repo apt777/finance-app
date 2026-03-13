@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { useTransactions } from '@/hooks/useTransactions'
+import { useCategories } from '@/hooks/useCategories'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowUpRight, ArrowDownLeft, Filter, Download, Calendar, Search, Trash2, X, ArrowRight } from 'lucide-react'
 import { useTranslations } from 'next-intl'
@@ -14,6 +15,13 @@ interface Transaction {
   amount: number;
   type: string;
   currency: string;
+  categoryKey?: string | null;
+  notes?: string | null;
+  category?: {
+    key: string;
+    name: string;
+    color?: string | null;
+  } | null;
   account?: {
     name: string;
     currency: string;
@@ -32,8 +40,10 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
   const tTransactions = useTranslations('transactions')
   const tCommon = useTranslations('common')
   const { data, error, isLoading } = useTransactions(accountId)
+  const { data: categories } = useCategories()
   const [sortBy, setSortBy] = useState<'date' | 'amount'>('date')
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense' | 'transfer'>('all')
+  const [filterCategory, setFilterCategory] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   
@@ -105,9 +115,12 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
   // Filter transactions
   const filteredTransactions = transactions.filter((t) => {
     const matchesType = filterType === 'all' || t.type === filterType
+    const matchesCategory = filterCategory === 'all' || t.categoryKey === filterCategory
     const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         (t.notes || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (t.category?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (t.account?.name || t.fromAccount?.name || t.toAccount?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
-    return matchesType && matchesSearch
+    return matchesType && matchesCategory && matchesSearch
   })
 
   // Sort transactions
@@ -246,13 +259,13 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input 
               type="text"
-              placeholder="Search..."
+              placeholder={tTransactions('searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 text-sm"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1.5 ml-1">{tTransactions('sortBy')}</label>
               <select
@@ -274,7 +287,22 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
                 <option value="all">{tTransactions('all')}</option>
                 <option value="income">{tTransactions('incomeOnly')}</option>
                 <option value="expense">{tTransactions('expenseOnly')}</option>
-                <option value="transfer">Transfer</option>
+                <option value="transfer">{tTransactions('transferOnly')}</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1.5 ml-1">{tTransactions('category')}</label>
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 text-sm"
+              >
+                <option value="all">{tTransactions('allCategories')}</option>
+                {(categories || []).map((category) => (
+                  <option key={category.id} value={category.key}>
+                    {category.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -334,9 +362,22 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
 
                 {/* Details */}
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-slate-800 text-sm md:text-base truncate group-hover:text-blue-600 transition-colors">
-                    {transaction.description}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold text-slate-800 text-sm md:text-base truncate group-hover:text-blue-600 transition-colors">
+                      {transaction.description}
+                    </p>
+                    {transaction.category && (
+                      <span
+                        className="text-[10px] font-semibold px-2 py-1 rounded-full"
+                        style={{
+                          backgroundColor: `${transaction.category.color || '#cbd5e1'}22`,
+                          color: transaction.category.color || '#475569',
+                        }}
+                      >
+                        {transaction.category.name}
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2 text-[10px] md:text-xs text-slate-400 mt-0.5">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
@@ -344,7 +385,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
                     </span>
                     <span>•</span>
                     <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">
-                      {transaction.type === 'income' ? 'Income' : transaction.type === 'expense' ? 'Expense' : 'Transfer'}
+                      {transaction.type === 'income' ? tTransactions('income') : transaction.type === 'expense' ? tTransactions('expense') : tTransactions('transfer')}
                     </span>
                     
                     {transaction.type === 'transfer' ? (
@@ -363,6 +404,9 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
                       )
                     )}
                   </div>
+                  {transaction.notes && (
+                    <p className="text-[10px] md:text-xs text-slate-400 mt-1 truncate">{transaction.notes}</p>
+                  )}
                 </div>
               </div>
 

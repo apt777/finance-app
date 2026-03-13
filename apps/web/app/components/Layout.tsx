@@ -5,7 +5,8 @@ import { Link } from '@/navigation'
 import { usePathname, useRouter } from '@/navigation'
 import { useOverviewData } from '@/hooks/useOverviewData'
 import { useExchangeRates, ExchangeRate } from '@/hooks/useExchangeRates'
-import { Home, Wallet, TrendingUp, Target, Settings, LogOut, User, LogIn, DollarSign, Receipt, Menu, X } from 'lucide-react'
+import { useOnboardingStatus } from '@/hooks/useOnboardingStatus'
+import { Home, Wallet, TrendingUp, Target, Settings, LogOut, User, LogIn, DollarSign, Receipt, Menu, X, ChartColumnIncreasing } from 'lucide-react'
 import { useAuth } from '@/context/AuthProviderClient'
 import { useTranslations } from 'next-intl'
 
@@ -47,6 +48,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter()
   const { user, loading, signOut } = useAuth()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const { data: setupStatus, isLoading: setupLoading } = useOnboardingStatus()
 
   const { data, isLoading, isError } = useOverviewData()
   const { data: exchangeRates, isLoading: ratesLoading, isError: ratesError } = useExchangeRates()
@@ -81,31 +83,33 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
   const getPageTitle = (path: string) => {
     if (path === '/') return tDashboard('title');
+    if (path.startsWith('/analysis')) return tDashboard('analysisTitle');
     if (path.startsWith('/accounts')) return tAccounts('title');
     if (path.startsWith('/holdings') || path.startsWith('/investments')) return tHoldings('title');
     if (path.startsWith('/goals')) return tGoals('title');
     if (path.startsWith('/transactions')) return tTransactions('title');
     if (path === '/settings/exchange-rates') return tSettings('exchangeRates');
     if (path.startsWith('/settings')) return tSettings('title');
-    if (path.startsWith('/setup')) return tCommon('add'); // Fallback or Setup title
+    if (path.startsWith('/setup')) return tDashboard('onboardingTitle');
     return path.substring(1).split('/')[0];
   }
 
   const navLinks: NavLink[] = [
     { name: tDashboard('title'), href: '/', icon: Home },
+    { name: tDashboard('analysisTitle'), href: '/analysis', icon: ChartColumnIncreasing },
     { name: tAccounts('title'), href: '/accounts', icon: Wallet },
     { name: tHoldings('title'), href: '/holdings', icon: TrendingUp },
     { name: tGoals('title'), href: '/goals', icon: Target },
     { name: tTransactions('title'), href: '/transactions', icon: Receipt },
     { name: tSettings('exchangeRates'), href: '/settings/exchange-rates', icon: DollarSign },
-    { name: tSettings('title'), href: '/setup', icon: Settings }, // Setup maps to Settings icon
+    { name: tSettings('title'), href: '/settings', icon: Settings },
   ]
 
   // Bottom Tab Bar links (Mobile only)
   const bottomNavLinks = [
     { name: tDashboard('overview'), href: '/', icon: Home },
+    { name: tDashboard('analysisShort'), href: '/analysis', icon: ChartColumnIncreasing },
     { name: tAccounts('title'), href: '/accounts', icon: Wallet },
-    { name: tHoldings('title'), href: '/holdings', icon: TrendingUp },
     { name: tTransactions('title'), href: '/transactions', icon: Receipt },
     { name: 'Menu', href: '#', icon: Menu, onClick: () => setIsSidebarOpen(true) }, // Menu kept hardcoded or tCommon('menu') if exists?
   ]
@@ -123,6 +127,23 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     }
   }, [user, loading, pathname, router])
 
+  useEffect(() => {
+    if (loading || setupLoading || !user) {
+      return
+    }
+
+    const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/forgot-password' || pathname === '/reset-password'
+    const isSetupPage = pathname.startsWith('/setup')
+
+    if (!isAuthPage && !isSetupPage && setupStatus && !setupStatus.completed) {
+      router.push('/setup')
+    }
+
+    if (isSetupPage && setupStatus?.completed) {
+      router.push('/')
+    }
+  }, [loading, pathname, router, setupLoading, setupStatus, user])
+
   // Close sidebar on route change
   useEffect(() => {
     setIsSidebarOpen(false)
@@ -137,7 +158,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     }
   }
 
-  if (loading) {
+  if (loading || (user && setupLoading && pathname !== '/setup')) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
@@ -228,7 +249,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-white truncate">{user.email}</p>
-                    <p className="text-xs text-slate-400">Active User</p>
+                    <p className="text-xs text-slate-400">{tCommon('activeUser')}</p>
                   </div>
                 </div>
               </div>
@@ -308,7 +329,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         </header>
         
         <main className="flex-grow p-4 md:p-8">
-          {user && !isLoading && accounts.length === 0 && pathname !== '/setup' ? (
+          {user && !isLoading && accounts.length === 0 && pathname !== '/setup' && !setupStatus?.completed ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center max-w-md px-4">
                 <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">

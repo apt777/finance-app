@@ -38,6 +38,7 @@ interface AccountFormProps {
 const AccountForm = ({ onAccountAdded }: AccountFormProps) => {
   const tAccounts = useTranslations('accounts')
   const tCommon = useTranslations('common')
+  const tValidation = useTranslations('validation')
   const queryClient = useQueryClient()
   const [formError, setFormError] = useState<string | null>(null);
   const [formData, setFormData] = useState<AccountFormData>({
@@ -66,11 +67,11 @@ const AccountForm = ({ onAccountAdded }: AccountFormProps) => {
     e.preventDefault()
     setFormError(null);
     if (!formData.name || !formData.type || !formData.balance || !formData.currency) {
-      setFormError('Please fill in all fields.');
+      setFormError(tValidation('allFieldsRequired'));
       return
     }
     if (isNaN(Number(formData.balance))) {
-      setFormError('Balance must be a number.');
+      setFormError(tValidation('amountMustBeNumber'));
       return;
     }
     mutation.mutate(formData)
@@ -99,7 +100,7 @@ const AccountForm = ({ onAccountAdded }: AccountFormProps) => {
         </div>
         <div>
           <h2 className="text-2xl font-bold text-slate-800">{tAccounts('addNewAccount')}</h2>
-          <p className="text-sm text-slate-600">Add a new account to manage your assets</p>
+          <p className="text-sm text-slate-600">{tAccounts('addAccountDesc')}</p>
         </div>
       </div>
 
@@ -165,7 +166,7 @@ const AccountForm = ({ onAccountAdded }: AccountFormProps) => {
         {/* Balance */}
         <div>
           <label htmlFor="balance" className="block text-sm font-semibold text-slate-800 mb-2">
-            Initial Balance <span className="text-red-500">*</span>
+            {tAccounts('initialBalance')} <span className="text-red-500">*</span>
           </label>
           <div className="relative">
             <input
@@ -198,7 +199,7 @@ const AccountForm = ({ onAccountAdded }: AccountFormProps) => {
         {mutation.isSuccess && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start space-x-3">
             <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-            <p className="text-green-700 text-sm">Account added successfully!</p>
+            <p className="text-green-700 text-sm">{tAccounts('accountAdded')}</p>
           </div>
         )}
 
@@ -206,7 +207,7 @@ const AccountForm = ({ onAccountAdded }: AccountFormProps) => {
         {mutation.isError && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
             <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-            <p className="text-red-700 text-sm">Error: {mutation.error.message}</p>
+            <p className="text-red-700 text-sm">{tCommon('error')}: {mutation.error.message}</p>
           </div>
         )}
 

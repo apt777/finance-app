@@ -64,6 +64,7 @@ const Overview = () => {
   const tHoldings = useTranslations('holdings')
   const tGoals = useTranslations('goals')
   const tTransactions = useTranslations('transactions')
+  const tCommon = useTranslations('common')
   
   const { data, isLoading, isError } = useOverviewData()
   const { data: exchangeRates, isLoading: ratesLoading, isError: ratesError } = useExchangeRates()
@@ -73,7 +74,7 @@ const Overview = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-slate-600">Loading...</p>
+          <p className="text-slate-600">{tCommon('loading')}</p>
         </div>
       </div>
     )
@@ -82,7 +83,7 @@ const Overview = () => {
   if (isError || ratesError) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-        <p className="text-red-600 font-medium">Error loading data</p>
+        <p className="text-red-600 font-medium">{tCommon('error')}</p>
       </div>
     )
   }
@@ -206,7 +207,7 @@ const Overview = () => {
           <p className="text-xs text-slate-500 mt-1">JPY</p>
           {creditLiabilities.has('JPY') && (
             <p className="text-sm text-red-500 font-semibold mt-2">
-              Liability: -{Math.round(creditLiabilities.get('JPY') || 0).toLocaleString()}
+              {tCommon('liability')}: -{Math.round(creditLiabilities.get('JPY') || 0).toLocaleString()}
             </p>
           )}
         </div>
@@ -223,7 +224,7 @@ const Overview = () => {
           <p className="text-xs text-slate-500 mt-1">KRW</p>
           {creditLiabilities.has('KRW') && (
             <p className="text-sm text-red-500 font-semibold mt-2">
-              Liability: -{Math.round(creditLiabilities.get('KRW') || 0).toLocaleString()}
+              {tCommon('liability')}: -{Math.round(creditLiabilities.get('KRW') || 0).toLocaleString()}
             </p>
           )}
         </div>
@@ -254,7 +255,7 @@ const Overview = () => {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-xl font-bold text-slate-800">{tDashboard('last30Days')}</h3>
-              <p className="text-sm text-slate-500 mt-1">Unit: {BASE_CURRENCY}</p>
+              <p className="text-sm text-slate-500 mt-1">{tDashboard('unit')}: {BASE_CURRENCY}</p>
             </div>
             <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-pink-500 rounded-xl flex items-center justify-center">
               <TrendingDown className="w-5 h-5 text-white" />
@@ -376,7 +377,7 @@ const Overview = () => {
               </div>
               <div>
                 <p className="font-bold text-white">{tDashboard('addTransaction')}</p>
-                <p className="text-xs text-white/70">New transaction</p>
+                <p className="text-xs text-white/70">{tDashboard('newTransaction')}</p>
               </div>
             </div>
           </Link>
@@ -390,7 +391,7 @@ const Overview = () => {
               </div>
               <div>
                 <p className="font-bold text-white">{tDashboard('addAccount')}</p>
-                <p className="text-xs text-white/70">New account</p>
+                <p className="text-xs text-white/70">{tDashboard('newAccount')}</p>
               </div>
             </div>
           </Link>
@@ -404,7 +405,7 @@ const Overview = () => {
               </div>
               <div>
                 <p className="font-bold text-white">{tDashboard('addInvestment')}</p>
-                <p className="text-xs text-white/70">New investment</p>
+                <p className="text-xs text-white/70">{tDashboard('newInvestment')}</p>
               </div>
             </div>
           </Link>
@@ -417,7 +418,7 @@ const Overview = () => {
           <div>
             <h3 className="text-2xl font-bold text-slate-800 mb-2">{tDashboard('basicAnalysis')}</h3>
             <p className="text-slate-600">
-              Insight and analysis features coming soon.
+              {tDashboard('analysisDesc')}
             </p>
           </div>
           <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center flex-shrink-0">

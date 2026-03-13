@@ -18,6 +18,7 @@ interface Account {
 
 const AccountList = () => {
   const tAccounts = useTranslations('accounts')
+  const tCommon = useTranslations('common')
   const router = useRouter()
   const queryClient = useQueryClient()
   const { data, error, isLoading } = useAccounts()
@@ -57,7 +58,7 @@ const AccountList = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-slate-600">Loading...</p>
+          <p className="text-slate-600">{tCommon('loading')}</p>
         </div>
       </div>
     )
@@ -66,7 +67,7 @@ const AccountList = () => {
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-        <p className="text-red-600 font-medium">Error loading accounts</p>
+        <p className="text-red-600 font-medium">{tCommon('error')}</p>
       </div>
     )
   }
@@ -227,7 +228,7 @@ const AccountList = () => {
                   <p className={`text-[10px] uppercase tracking-wider font-bold mb-0.5 ${
                     account.type === 'credit_card' ? 'text-rose-400' : 'text-slate-400'
                   }`}>
-                    {account.type === 'credit_card' ? 'Liability' : tAccounts('balance')}
+                    {account.type === 'credit_card' ? tCommon('liability') : tAccounts('balance')}
                   </p>
                   <div className="flex items-baseline gap-1">
                     <span className={`text-lg md:text-xl font-black ${
@@ -256,7 +257,7 @@ const AccountList = () => {
                     }}
                     className="flex items-center justify-center w-full py-2 bg-rose-100 text-rose-600 rounded-lg text-sm font-bold hover:bg-rose-200 transition-colors"
                   >
-                    Repay
+                    {tCommon('repay')}
                   </button>
                 </div>
               )}
