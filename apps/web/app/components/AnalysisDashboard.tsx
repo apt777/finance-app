@@ -6,8 +6,12 @@ import { useRecurringTransactions } from '@/hooks/useRecurringTransactions'
 import { useBudgets } from '@/hooks/useBudgets'
 import { BarChart, Bar, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, LineChart, Line } from 'recharts'
 import { ChartColumnIncreasing, PiggyBank, Repeat, TriangleAlert } from 'lucide-react'
+import { useColorMode } from '@/context/ColorModeContext'
+import { useUiTheme } from '@/context/UiThemeContext'
 
 export default function AnalysisDashboard() {
+  const { theme } = useUiTheme()
+  const { colorMode } = useColorMode()
   const { data, isLoading, isError } = useAnalysisSummary()
   const { data: recurringTransactions } = useRecurringTransactions()
   const { data: budgets } = useBudgets()
@@ -53,10 +57,12 @@ export default function AnalysisDashboard() {
   const expenseDelta = currentMonth && previousMonth ? currentMonth.expense - previousMonth.expense : 0
   const overBudgetCount = data.budgetStatus.filter((item) => item.usagePercentage >= 100).length
 
+  const isDark = colorMode === 'dark'
+
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${theme === 'modern' ? isDark ? 'rounded-[34px] border border-white/10 bg-white/5 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.24)] backdrop-blur-xl md:p-6' : 'rounded-[34px] border border-white/80 bg-white/50 p-4 shadow-[0_18px_50px_rgba(148,163,184,0.12)] backdrop-blur-xl md:p-6' : ''}`}>
       <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        <article className="rounded-3xl bg-gradient-to-br from-slate-900 to-slate-800 text-white p-6">
+        <article className={`rounded-3xl p-6 ${theme === 'modern' ? isDark ? 'border border-blue-400/20 bg-blue-500/10 text-white shadow-lg' : 'border border-blue-200 bg-blue-50 text-slate-950 shadow-sm' : 'bg-gradient-to-br from-slate-900 to-slate-800 text-white'}`}>
           <div className="flex items-center justify-between mb-4">
             <ChartColumnIncreasing className="w-6 h-6" />
             <span className="text-xs text-slate-300">이번 달</span>
@@ -65,7 +71,7 @@ export default function AnalysisDashboard() {
           <p className="text-3xl font-black mt-2">{Math.round(currentMonth?.net ?? 0).toLocaleString()}</p>
         </article>
 
-        <article className="rounded-3xl bg-white border border-slate-200 p-6">
+        <article className={`rounded-3xl border p-6 ${theme === 'modern' ? isDark ? 'border-white/10 bg-white/5 shadow-sm' : 'border-white/80 bg-white/80 shadow-sm' : 'border-slate-200 bg-white'}`}>
           <div className="flex items-center justify-between mb-4">
             <TriangleAlert className={`w-6 h-6 ${expenseDelta > 0 ? 'text-rose-500' : 'text-emerald-500'}`} />
             <span className="text-xs text-slate-400">전월 대비</span>
@@ -76,7 +82,7 @@ export default function AnalysisDashboard() {
           </p>
         </article>
 
-        <article className="rounded-3xl bg-white border border-slate-200 p-6">
+        <article className={`rounded-3xl border p-6 ${theme === 'modern' ? isDark ? 'border-white/10 bg-white/5 shadow-sm' : 'border-white/80 bg-white/80 shadow-sm' : 'border-slate-200 bg-white'}`}>
           <div className="flex items-center justify-between mb-4">
             <PiggyBank className="w-6 h-6 text-amber-500" />
             <span className="text-xs text-slate-400">예산</span>
@@ -86,7 +92,7 @@ export default function AnalysisDashboard() {
           <p className="text-xs text-slate-500 mt-2">초과 예산 {overBudgetCount}개</p>
         </article>
 
-        <article className="rounded-3xl bg-white border border-slate-200 p-6">
+        <article className={`rounded-3xl border p-6 ${theme === 'modern' ? isDark ? 'border-white/10 bg-white/5 shadow-sm' : 'border-white/80 bg-white/80 shadow-sm' : 'border-slate-200 bg-white'}`}>
           <div className="flex items-center justify-between mb-4">
             <Repeat className="w-6 h-6 text-indigo-500" />
             <span className="text-xs text-slate-400">자동 입력 보조</span>
@@ -97,7 +103,7 @@ export default function AnalysisDashboard() {
       </section>
 
       <section className="grid grid-cols-1 xl:grid-cols-5 gap-6">
-        <article className="xl:col-span-3 bg-white rounded-3xl border border-slate-200 p-6">
+        <article className={`xl:col-span-3 rounded-3xl border p-6 ${theme === 'modern' ? isDark ? 'border-white/10 bg-white/5 shadow-sm' : 'border-white/80 bg-white/80 shadow-sm' : 'border-slate-200 bg-white'}`}>
           <div className="mb-6">
             <h2 className="text-xl font-bold text-slate-900">월별 현금흐름</h2>
             <p className="text-sm text-slate-500 mt-1">최근 12개월 기준 수입, 지출, 순저축 추이입니다.</p>
@@ -114,7 +120,7 @@ export default function AnalysisDashboard() {
           </ResponsiveContainer>
         </article>
 
-        <article className="xl:col-span-2 bg-white rounded-3xl border border-slate-200 p-6">
+        <article className={`xl:col-span-2 rounded-3xl border p-6 ${theme === 'modern' ? isDark ? 'border-white/10 bg-white/5 shadow-sm' : 'border-white/80 bg-white/80 shadow-sm' : 'border-slate-200 bg-white'}`}>
           <div className="mb-6">
             <h2 className="text-xl font-bold text-slate-900">카테고리 지출 비중</h2>
             <p className="text-sm text-slate-500 mt-1">지출이 큰 카테고리부터 확인할 수 있습니다.</p>
@@ -142,7 +148,7 @@ export default function AnalysisDashboard() {
       </section>
 
       <section className="grid grid-cols-1 xl:grid-cols-5 gap-6">
-        <article className="xl:col-span-3 bg-white rounded-3xl border border-slate-200 p-6">
+        <article className={`xl:col-span-3 rounded-3xl border p-6 ${theme === 'modern' ? isDark ? 'border-white/10 bg-white/5 shadow-sm' : 'border-white/80 bg-white/80 shadow-sm' : 'border-slate-200 bg-white'}`}>
           <div className="mb-6">
             <h2 className="text-xl font-bold text-slate-900">연도별 추이</h2>
             <p className="text-sm text-slate-500 mt-1">연도 단위로 수입과 지출 흐름을 비교합니다.</p>
@@ -160,7 +166,7 @@ export default function AnalysisDashboard() {
           </ResponsiveContainer>
         </article>
 
-        <article className="xl:col-span-2 bg-white rounded-3xl border border-slate-200 p-6">
+        <article className={`xl:col-span-2 rounded-3xl border p-6 ${theme === 'modern' ? isDark ? 'border-white/10 bg-white/5 shadow-sm' : 'border-white/80 bg-white/80 shadow-sm' : 'border-slate-200 bg-white'}`}>
           <div className="mb-6">
             <h2 className="text-xl font-bold text-slate-900">예산 상태</h2>
             <p className="text-sm text-slate-500 mt-1">현재 월 예산과 실제 지출을 비교합니다.</p>

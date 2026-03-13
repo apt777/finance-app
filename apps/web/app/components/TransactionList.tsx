@@ -6,6 +6,7 @@ import { useCategories } from '@/hooks/useCategories'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowUpRight, ArrowDownLeft, Filter, Download, Calendar, Search, Trash2, X, ArrowRight } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { useUiTheme } from '@/context/UiThemeContext'
 
 interface Transaction {
   id: string;
@@ -37,6 +38,7 @@ interface Transaction {
 }
 
 const TransactionList = ({ accountId }: { accountId?: string }) => {
+  const { theme } = useUiTheme()
   const tTransactions = useTranslations('transactions')
   const tCommon = useTranslations('common')
   const { data, error, isLoading } = useTransactions(accountId)
@@ -163,7 +165,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6 pb-20 md:pb-0">
+    <div className={`space-y-4 pb-20 md:space-y-6 md:pb-0 ${theme === 'modern' ? 'rounded-[34px] border border-white/80 bg-white/55 p-4 shadow-[0_18px_50px_rgba(148,163,184,0.12)] backdrop-blur-xl md:p-6' : ''}`}>
       {/* Header */}
       <div className="flex items-center justify-between px-1">
         <div>
@@ -175,7 +177,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
             <>
               <button
                 onClick={() => { setIsEditMode(false); setSelectedIds([]); }}
-                className="p-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all"
+                className="rounded-xl bg-slate-100 p-2 text-slate-600 transition-all hover:bg-slate-200"
                 title={tCommon('cancel')}
               >
                 <X className="w-5 h-5" />
@@ -183,7 +185,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
               {selectedIds.length > 0 && (
                 <button
                   onClick={handleDeleteSelected}
-                  className="p-2 bg-red-100 text-red-600 rounded-xl hover:bg-red-200 transition-all animate-in zoom-in duration-200"
+                  className="animate-in zoom-in rounded-xl bg-red-100 p-2 text-red-600 transition-all duration-200 hover:bg-red-200"
                   title={tCommon('delete')}
                 >
                   <Trash2 className="w-5 h-5" />
@@ -194,14 +196,14 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
             <>
               <button
                 onClick={handleExportCSV}
-                className="p-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all"
+                className="rounded-xl bg-slate-100 p-2 text-slate-600 transition-all hover:bg-slate-200"
                 title={tTransactions('exportCSV')}
               >
                 <Download className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setIsEditMode(true)}
-                className="p-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all"
+                className="rounded-xl bg-slate-100 p-2 text-slate-600 transition-all hover:bg-slate-200"
                 title={tCommon('delete')}
               >
                 <Trash2 className="w-5 h-5" />
@@ -210,7 +212,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
           )}
           <button 
             onClick={() => setShowFilters(!showFilters)}
-            className={`p-2 rounded-xl border transition-all ${showFilters ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-slate-200 text-slate-600'}`}
+            className={`rounded-xl border p-2 transition-all ${showFilters ? 'border-blue-200 bg-blue-50 text-blue-600' : 'border-slate-200 bg-white text-slate-600'}`}
           >
             <Filter className="w-5 h-5" />
           </button>
@@ -220,7 +222,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
       {/* Summary Cards - Horizontal scroll on mobile */}
       {transactions.length > 0 && (
         <div className="flex overflow-x-auto pb-2 gap-4 snap-x no-scrollbar -mx-1 px-1">
-          <div className="min-w-[160px] flex-1 bg-white rounded-2xl p-4 shadow-sm border border-slate-100 snap-start">
+          <div className={`min-w-[160px] flex-1 snap-start rounded-2xl p-4 ${theme === 'modern' ? 'border border-white/80 bg-white shadow-[0_10px_30px_rgba(148,163,184,0.14)]' : 'border border-slate-100 bg-white shadow-sm'}`}>
             <div className="flex items-center justify-between mb-2">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{tTransactions('totalIncome')}</p>
               <ArrowDownLeft className="w-4 h-4 text-emerald-500" />
@@ -229,7 +231,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
               +{Math.round(totalIncome).toLocaleString()}
             </p>
           </div>
-          <div className="min-w-[160px] flex-1 bg-white rounded-2xl p-4 shadow-sm border border-slate-100 snap-start">
+          <div className={`min-w-[160px] flex-1 snap-start rounded-2xl p-4 ${theme === 'modern' ? 'border border-white/80 bg-white shadow-[0_10px_30px_rgba(148,163,184,0.14)]' : 'border border-slate-100 bg-white shadow-sm'}`}>
             <div className="flex items-center justify-between mb-2">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{tTransactions('totalExpense')}</p>
               <ArrowUpRight className="w-4 h-4 text-rose-500" />
@@ -238,7 +240,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
               -{Math.round(totalExpense).toLocaleString()}
             </p>
           </div>
-          <div className="min-w-[160px] flex-1 bg-white rounded-2xl p-4 shadow-sm border border-slate-100 snap-start">
+          <div className={`min-w-[160px] flex-1 snap-start rounded-2xl p-4 ${theme === 'modern' ? 'border border-white/80 bg-white shadow-[0_10px_30px_rgba(148,163,184,0.14)]' : 'border border-slate-100 bg-white shadow-sm'}`}>
             <div className="flex items-center justify-between mb-2">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{tTransactions('netChange')}</p>
               <div className={`w-4 h-4 ${totalIncome - totalExpense >= 0 ? 'text-blue-500' : 'text-rose-500'}`}>
@@ -254,7 +256,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
 
       {/* Search and Filters */}
       {showFilters && (
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className={`animate-in fade-in slide-in-from-top-2 space-y-4 rounded-2xl p-4 duration-200 ${theme === 'modern' ? 'border border-white/80 bg-white shadow-[0_10px_30px_rgba(148,163,184,0.14)]' : 'border border-slate-100 bg-white shadow-sm'}`}>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input 

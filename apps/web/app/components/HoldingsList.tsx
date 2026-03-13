@@ -4,8 +4,9 @@ import React, { useState } from 'react'
 import { useHoldings } from '../hooks/useHoldings'
 import { useAccounts } from '../hooks/useAccounts'
 import { useExchangeRates, ExchangeRate } from '../hooks/useExchangeRates'
-import { TrendingUp, TrendingDown, Filter } from 'lucide-react'
+import { TrendingUp, Filter } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { useUiTheme } from '@/context/UiThemeContext'
 
 interface Account {
   id: string;
@@ -27,6 +28,7 @@ interface Holding {
 // ExchangeRate interface is imported from useExchangeRates hook
 
 const HoldingsList = () => {
+  const { theme } = useUiTheme()
   const tHoldings = useTranslations('holdings')
   const tCommon = useTranslations('common')
   const tTransactions = useTranslations('transactions')
@@ -79,9 +81,9 @@ const HoldingsList = () => {
   }, 0)
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${theme === 'modern' ? 'rounded-[34px] border border-white/80 bg-white/55 p-4 shadow-[0_18px_50px_rgba(148,163,184,0.12)] backdrop-blur-xl md:p-6' : ''}`}>
       {/* Filter Card */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+      <div className={`rounded-2xl p-6 ${theme === 'modern' ? 'border border-white/80 bg-white shadow-[0_10px_30px_rgba(148,163,184,0.14)]' : 'border border-slate-100 bg-white shadow-sm'}`}>
         <div className="flex items-center space-x-3 mb-4">
           <Filter className="w-5 h-5 text-blue-600" />
           <h3 className="text-lg font-bold text-slate-800">{tTransactions('filterBy')}</h3>
@@ -103,7 +105,7 @@ const HoldingsList = () => {
       {filteredHoldings.length > 0 ? (
         <>
           {/* Summary Card */}
-          <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl p-8 shadow-lg text-white">
+          <div className={`rounded-2xl p-8 text-white ${theme === 'modern' ? 'bg-slate-950 shadow-[0_18px_40px_rgba(15,23,42,0.22)]' : 'bg-gradient-to-br from-blue-600 to-indigo-600 shadow-lg'}`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-blue-100 text-sm">{tHoldings('totalValue')}</p>
@@ -125,7 +127,7 @@ const HoldingsList = () => {
               return (
                 <div
                   key={holding.id}
-                  className="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl transition-all duration-200 overflow-hidden"
+                  className={`overflow-hidden rounded-2xl border transition-all duration-200 ${theme === 'modern' ? 'border-white/80 bg-white shadow-[0_14px_34px_rgba(148,163,184,0.14)] hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(148,163,184,0.18)]' : 'border-slate-100 bg-white shadow-sm hover:shadow-xl'}`}
                 >
                   {/* Header */}
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 border-b border-slate-200">
@@ -183,7 +185,7 @@ const HoldingsList = () => {
           </div>
         </>
       ) : (
-        <div className="bg-white rounded-2xl p-12 shadow-sm border border-slate-100 text-center">
+        <div className={`rounded-2xl p-12 text-center ${theme === 'modern' ? 'border border-white/80 bg-white shadow-[0_14px_34px_rgba(148,163,184,0.14)]' : 'border border-slate-100 bg-white shadow-sm'}`}>
           <TrendingUp className="w-16 h-16 text-slate-300 mx-auto mb-4" />
           <p className="text-slate-600 font-medium">{tHoldings('noHoldings')}</p>
           <p className="text-slate-500 text-sm mt-1">Add new investment to start your portfolio!</p>

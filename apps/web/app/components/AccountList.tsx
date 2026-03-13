@@ -7,6 +7,7 @@ import { useRouter } from '@/navigation'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Trash2, Plus, Wallet, CreditCard, PiggyBank, TrendingUp, Filter, ChevronRight } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { useUiTheme } from '@/context/UiThemeContext'
 
 interface Account {
   id: string;
@@ -17,6 +18,7 @@ interface Account {
 }
 
 const AccountList = () => {
+  const { theme } = useUiTheme()
   const tAccounts = useTranslations('accounts')
   const tCommon = useTranslations('common')
   const router = useRouter()
@@ -127,7 +129,7 @@ const AccountList = () => {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6 pb-20 md:pb-0">
+    <div className={`space-y-4 pb-20 md:space-y-6 md:pb-0 ${theme === 'modern' ? 'rounded-[34px] border border-white/80 bg-white/55 p-4 shadow-[0_18px_50px_rgba(148,163,184,0.12)] backdrop-blur-xl md:p-6' : ''}`}>
       {/* Header */}
       <div className="flex items-center justify-between px-1">
         <div>
@@ -137,13 +139,13 @@ const AccountList = () => {
         <div className="flex items-center gap-2">
           <button 
             onClick={() => setShowFilters(!showFilters)}
-            className={`p-2 rounded-xl border transition-all ${showFilters ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-slate-200 text-slate-600'}`}
+            className={`rounded-xl border p-2 transition-all ${showFilters ? 'border-blue-200 bg-blue-50 text-blue-600' : 'border-slate-200 bg-white text-slate-600'}`}
           >
             <Filter className="w-5 h-5" />
           </button>
           <Link
             href="/accounts/add"
-            className="flex items-center justify-center w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2 bg-blue-600 text-white font-semibold rounded-xl shadow-md hover:bg-blue-700 transition-all"
+            className={`flex h-10 w-10 items-center justify-center rounded-xl font-semibold text-white transition-all md:h-auto md:w-auto md:px-4 md:py-2 ${theme === 'modern' ? 'bg-slate-950 shadow-lg hover:bg-slate-800' : 'bg-blue-600 shadow-md hover:bg-blue-700'}`}
           >
             <Plus className="w-5 h-5" />
             <span className="hidden md:inline ml-2">{tAccounts('addNewAccount')}</span>
@@ -153,7 +155,7 @@ const AccountList = () => {
 
       {/* Filters - Collapsible on mobile */}
       {showFilters && (
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className={`animate-in fade-in slide-in-from-top-2 rounded-2xl p-4 duration-200 ${theme === 'modern' ? 'border border-white/80 bg-white shadow-[0_10px_30px_rgba(148,163,184,0.14)]' : 'border border-slate-100 bg-white shadow-sm'}`}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1.5 ml-1">
@@ -200,7 +202,7 @@ const AccountList = () => {
             <div
               key={account.id}
               onClick={() => router.push(`/accounts/${account.id}/transactions`)}
-              className="group bg-white rounded-2xl p-4 shadow-sm border border-slate-100 hover:border-blue-200 hover:shadow-md transition-all duration-200 relative overflow-hidden cursor-pointer"
+              className={`group relative cursor-pointer overflow-hidden rounded-2xl border p-4 transition-all duration-200 ${theme === 'modern' ? 'border-white/80 bg-white shadow-[0_14px_34px_rgba(148,163,184,0.14)] hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_20px_40px_rgba(148,163,184,0.18)]' : 'border-slate-100 bg-white shadow-sm hover:border-blue-200 hover:shadow-md'}`}
             >
               <div className="flex items-center justify-between relative z-10">
                 <div className="flex items-center space-x-3">
