@@ -2,9 +2,11 @@
 
 import React, { useState } from 'react'
 import { useTransactions } from '@/hooks/useTransactions'
+import { useCategories } from '@/hooks/useCategories'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowUpRight, ArrowDownLeft, Filter, Download, Calendar, Search, Trash2, X, ArrowRight } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { useUiTheme } from '@/context/UiThemeContext'
 
 interface Transaction {
   id: string;
@@ -14,6 +16,13 @@ interface Transaction {
   amount: number;
   type: string;
   currency: string;
+  categoryKey?: string | null;
+  notes?: string | null;
+  category?: {
+    key: string;
+    name: string;
+    color?: string | null;
+  } | null;
   account?: {
     name: string;
     currency: string;
@@ -29,11 +38,14 @@ interface Transaction {
 }
 
 const TransactionList = ({ accountId }: { accountId?: string }) => {
+  const { theme } = useUiTheme()
   const tTransactions = useTranslations('transactions')
   const tCommon = useTranslations('common')
   const { data, error, isLoading } = useTransactions(accountId)
+  const { data: categories } = useCategories()
   const [sortBy, setSortBy] = useState<'date' | 'amount'>('date')
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense' | 'transfer'>('all')
+  const [filterCategory, setFilterCategory] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   
@@ -105,9 +117,12 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
   // Filter transactions
   const filteredTransactions = transactions.filter((t) => {
     const matchesType = filterType === 'all' || t.type === filterType
+    const matchesCategory = filterCategory === 'all' || t.categoryKey === filterCategory
     const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         (t.notes || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (t.category?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (t.account?.name || t.fromAccount?.name || t.toAccount?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
-    return matchesType && matchesSearch
+    return matchesType && matchesCategory && matchesSearch
   })
 
   // Sort transactions
@@ -150,7 +165,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6 pb-20 md:pb-0">
+    <div className={`space-y-4 overflow-visible pb-10 md:space-y-6 md:pb-12 ${theme === 'modern' ? 'rounded-[34px] border border-white/80 bg-white/55 p-4 shadow-[0_18px_50px_rgba(148,163,184,0.12)] backdrop-blur-xl md:p-6' : ''}`}>
       {/* Header */}
       <div className="flex items-center justify-between px-1">
         <div>
@@ -162,7 +177,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
             <>
               <button
                 onClick={() => { setIsEditMode(false); setSelectedIds([]); }}
-                className="p-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all"
+                className="rounded-xl bg-slate-100 p-2 text-slate-600 transition-all hover:bg-slate-200"
                 title={tCommon('cancel')}
               >
                 <X className="w-5 h-5" />
@@ -170,7 +185,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
               {selectedIds.length > 0 && (
                 <button
                   onClick={handleDeleteSelected}
-                  className="p-2 bg-red-100 text-red-600 rounded-xl hover:bg-red-200 transition-all animate-in zoom-in duration-200"
+                  className="animate-in zoom-in rounded-xl bg-red-100 p-2 text-red-600 transition-all duration-200 hover:bg-red-200"
                   title={tCommon('delete')}
                 >
                   <Trash2 className="w-5 h-5" />
@@ -181,14 +196,14 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
             <>
               <button
                 onClick={handleExportCSV}
-                className="p-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all"
+                className="rounded-xl bg-slate-100 p-2 text-slate-600 transition-all hover:bg-slate-200"
                 title={tTransactions('exportCSV')}
               >
                 <Download className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setIsEditMode(true)}
-                className="p-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all"
+                className="rounded-xl bg-slate-100 p-2 text-slate-600 transition-all hover:bg-slate-200"
                 title={tCommon('delete')}
               >
                 <Trash2 className="w-5 h-5" />
@@ -197,7 +212,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
           )}
           <button 
             onClick={() => setShowFilters(!showFilters)}
-            className={`p-2 rounded-xl border transition-all ${showFilters ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-slate-200 text-slate-600'}`}
+            className={`rounded-xl border p-2 transition-all ${showFilters ? 'border-blue-200 bg-blue-50 text-blue-600' : 'border-slate-200 bg-white text-slate-600'}`}
           >
             <Filter className="w-5 h-5" />
           </button>
@@ -207,7 +222,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
       {/* Summary Cards - Horizontal scroll on mobile */}
       {transactions.length > 0 && (
         <div className="flex overflow-x-auto pb-2 gap-4 snap-x no-scrollbar -mx-1 px-1">
-          <div className="min-w-[160px] flex-1 bg-white rounded-2xl p-4 shadow-sm border border-slate-100 snap-start">
+          <div className={`min-w-[160px] flex-1 snap-start rounded-2xl p-4 ${theme === 'modern' ? 'border border-white/80 bg-white shadow-[0_10px_30px_rgba(148,163,184,0.14)]' : 'border border-slate-100 bg-white shadow-sm'}`}>
             <div className="flex items-center justify-between mb-2">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{tTransactions('totalIncome')}</p>
               <ArrowDownLeft className="w-4 h-4 text-emerald-500" />
@@ -216,7 +231,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
               +{Math.round(totalIncome).toLocaleString()}
             </p>
           </div>
-          <div className="min-w-[160px] flex-1 bg-white rounded-2xl p-4 shadow-sm border border-slate-100 snap-start">
+          <div className={`min-w-[160px] flex-1 snap-start rounded-2xl p-4 ${theme === 'modern' ? 'border border-white/80 bg-white shadow-[0_10px_30px_rgba(148,163,184,0.14)]' : 'border border-slate-100 bg-white shadow-sm'}`}>
             <div className="flex items-center justify-between mb-2">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{tTransactions('totalExpense')}</p>
               <ArrowUpRight className="w-4 h-4 text-rose-500" />
@@ -225,7 +240,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
               -{Math.round(totalExpense).toLocaleString()}
             </p>
           </div>
-          <div className="min-w-[160px] flex-1 bg-white rounded-2xl p-4 shadow-sm border border-slate-100 snap-start">
+          <div className={`min-w-[160px] flex-1 snap-start rounded-2xl p-4 ${theme === 'modern' ? 'border border-white/80 bg-white shadow-[0_10px_30px_rgba(148,163,184,0.14)]' : 'border border-slate-100 bg-white shadow-sm'}`}>
             <div className="flex items-center justify-between mb-2">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{tTransactions('netChange')}</p>
               <div className={`w-4 h-4 ${totalIncome - totalExpense >= 0 ? 'text-blue-500' : 'text-rose-500'}`}>
@@ -241,18 +256,18 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
 
       {/* Search and Filters */}
       {showFilters && (
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className={`animate-in fade-in slide-in-from-top-2 space-y-4 rounded-2xl p-4 duration-200 ${theme === 'modern' ? 'border border-white/80 bg-white shadow-[0_10px_30px_rgba(148,163,184,0.14)]' : 'border border-slate-100 bg-white shadow-sm'}`}>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input 
               type="text"
-              placeholder="Search..."
+              placeholder={tTransactions('searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 text-sm"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1.5 ml-1">{tTransactions('sortBy')}</label>
               <select
@@ -274,7 +289,22 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
                 <option value="all">{tTransactions('all')}</option>
                 <option value="income">{tTransactions('incomeOnly')}</option>
                 <option value="expense">{tTransactions('expenseOnly')}</option>
-                <option value="transfer">Transfer</option>
+                <option value="transfer">{tTransactions('transferOnly')}</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1.5 ml-1">{tTransactions('category')}</label>
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 text-sm"
+              >
+                <option value="all">{tTransactions('allCategories')}</option>
+                {(categories || []).map((category) => (
+                  <option key={category.id} value={category.key}>
+                    {category.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -334,9 +364,22 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
 
                 {/* Details */}
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-slate-800 text-sm md:text-base truncate group-hover:text-blue-600 transition-colors">
-                    {transaction.description}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold text-slate-800 text-sm md:text-base truncate group-hover:text-blue-600 transition-colors">
+                      {transaction.description}
+                    </p>
+                    {transaction.category && (
+                      <span
+                        className="text-[10px] font-semibold px-2 py-1 rounded-full"
+                        style={{
+                          backgroundColor: `${transaction.category.color || '#cbd5e1'}22`,
+                          color: transaction.category.color || '#475569',
+                        }}
+                      >
+                        {transaction.category.name}
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2 text-[10px] md:text-xs text-slate-400 mt-0.5">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
@@ -344,7 +387,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
                     </span>
                     <span>•</span>
                     <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">
-                      {transaction.type === 'income' ? 'Income' : transaction.type === 'expense' ? 'Expense' : 'Transfer'}
+                      {transaction.type === 'income' ? tTransactions('income') : transaction.type === 'expense' ? tTransactions('expense') : tTransactions('transfer')}
                     </span>
                     
                     {transaction.type === 'transfer' ? (
@@ -363,6 +406,9 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
                       )
                     )}
                   </div>
+                  {transaction.notes && (
+                    <p className="text-[10px] md:text-xs text-slate-400 mt-1 truncate">{transaction.notes}</p>
+                  )}
                 </div>
               </div>
 

@@ -7,7 +7,25 @@ interface Transaction {
   description: string;
   amount: number;
   currency: string;
+  type: 'income' | 'expense' | 'transfer';
+  categoryKey?: string | null;
+  notes?: string | null;
+  category?: {
+    key: string;
+    name: string;
+    icon?: string | null;
+    color?: string | null;
+    type: 'income' | 'expense' | 'transfer';
+  } | null;
   account?: { // Optional account details for global transactions
+    name: string;
+    currency: string;
+  };
+  fromAccount?: {
+    name: string;
+    currency: string;
+  };
+  toAccount?: {
     name: string;
     currency: string;
   };

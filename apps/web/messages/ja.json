@@ -14,7 +14,9 @@
     "next": "次へ",
     "confirm": "確認",
     "logout": "ログアウト",
-    "language": "言語"
+    "language": "言語",
+    "activeUser": "アクティブユーザー",
+    "menu": "メニュー"
   },
   "auth": {
     "login": "ログイン",
@@ -60,7 +62,11 @@
     "basicAnalysis": "基本分析",
     "totalTransactions": "分析可能な取引",
     "activeAccounts": "アクティブな口座",
-    "investmentPortfolio": "投資ポートフォリオ"
+    "investmentPortfolio": "投資ポートフォリオ",
+    "analysisTitle": "分析",
+    "analysisShort": "分析",
+    "onboardingTitle": "オンボーディング",
+    "unit": "単位"
   },
   "accounts": {
     "title": "口座管理",
@@ -105,10 +111,25 @@
     "all": "すべて",
     "incomeOnly": "収入のみ",
     "expenseOnly": "支出のみ",
+    "transferOnly": "振替のみ",
+    "income": "収入",
+    "expense": "支出",
+    "transfer": "振替",
     "noTransactions": "取引がありません。",
     "exportCSV": "CSVダウンロード",
     "addTransaction": "取引を追加",
-    "bulkImport": "一括インポート"
+    "bulkImport": "一括インポート",
+    "recordIncomeExpense": "収入または支出を記録します",
+    "fromAccount": "出金口座",
+    "toAccount": "入金口座",
+    "payFullBalance": "全額返済",
+    "amountExceedsBalance": "金額が現在の残高を超えています。(予想残高: {balance})",
+    "transactionAdded": "取引が追加されました。",
+    "searchPlaceholder": "取引や口座を検索...",
+    "category": "カテゴリ",
+    "allCategories": "すべてのカテゴリ",
+    "notes": "メモ",
+    "notesPlaceholder": "必要なメモを残してください"
   },
   "goals": {
     "title": "目標",
@@ -124,6 +145,7 @@
   },
   "settings": {
     "title": "設定",
+    "manageSettings": "アプリケーション設定を管理します",
     "exchangeRates": "為替レート管理",
     "currencies": "通貨",
     "from": "出発地",
@@ -135,10 +157,26 @@
     "profile": "プロフィール",
     "preferences": "環境設定",
     "language": "言語",
+    "languageSettings": "言語設定",
+    "languageDesc": "希望するアプリケーション言語を選択してください。",
+    "supportedLanguages": "対応言語",
     "theme": "テーマ",
+    "themeSettings": "インターフェーステーマ",
+    "themeDesc": "従来レイアウトと新しい modern ワークスペースを切り替えます。",
+    "oldTheme": "Old",
+    "oldThemeDesc": "従来のサイドバーとクラシックカードレイアウトです。",
+    "modernTheme": "Modern",
+    "modernThemeDesc": "ワイドなダッシュボードと整理された新UIです。",
+    "colorModeSettings": "カラーモード",
+    "colorModeDesc": "old と modern の両方にライトまたはダークを適用します。",
+    "lightMode": "Light",
+    "lightModeDesc": "明るいカードと柔らかい影の画面です。",
+    "darkMode": "Dark",
+    "darkModeDesc": "暗い環境向けの落ち着いた画面です。",
     "notifications": "通知",
     "privacy": "プライバシー",
-    "security": "セキュリティ"
+    "security": "セキュリティ",
+    "categories": "カテゴリ"
   },
   "holdings": {
     "title": "投資",

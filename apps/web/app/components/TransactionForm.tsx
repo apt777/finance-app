@@ -1,9 +1,10 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'next/navigation'
 import { useAccounts } from '../hooks/useAccounts'
+import { useCategories } from '../hooks/useCategories'
 import { ArrowUpRight, ArrowDownLeft, AlertCircle, CheckCircle, ArrowRightLeft } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
@@ -16,6 +17,8 @@ interface TransactionFormData {
   type: string;
   amount: number | string;
   currency: string;
+  categoryKey?: string;
+  notes?: string;
 }
 
 const createTransaction = async (transactionData: TransactionFormData) => {
@@ -44,8 +47,10 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
   const tTransactions = useTranslations('transactions')
   const tCommon = useTranslations('common')
   const tAccounts = useTranslations('accounts')
+  const tValidation = useTranslations('validation')
   const queryClient = useQueryClient()
   const { data: accounts, isLoading: isLoadingAccounts, error: accountsError } = useAccounts()
+  const { data: categories } = useCategories()
   const [formError, setFormError] = useState<string | null>(null);
   const [formData, setFormData] = useState<TransactionFormData>({
     accountId: '',
@@ -56,6 +61,8 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
     type: 'expense',
     amount: '',
     currency: '',
+    categoryKey: 'food',
+    notes: '',
   })
 
   const searchParams = useSearchParams()
@@ -90,14 +97,16 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
         description: '', 
         type: 'expense', 
         amount: '', 
-        currency: '' 
+        currency: '',
+        categoryKey: 'food',
+        notes: '',
       })
       setFormError(null)
       onTransactionAdded?.();
     },
   })
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormError(null)
 
@@ -127,28 +136,28 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
     const isTransfer = formData.type === 'transfer';
 
     if (!formData.date || !formData.type || !formData.amount) {
-      setFormError('Please fill in all required fields.');
+      setFormError(tValidation('allFieldsRequired'));
       return
     }
 
     if (isTransfer) {
       if (!formData.fromAccountId || !formData.toAccountId) {
-        setFormError('Please select both from and to accounts.');
+        setFormError(tValidation('allFieldsRequired'));
         return;
       }
       if (formData.fromAccountId === formData.toAccountId) {
-        setFormError('Accounts cannot be the same.');
+        setFormError(tValidation('accountsMustBeDifferent'));
         return;
       }
     } else {
       if (!formData.accountId) {
-        setFormError('Please select an account.');
+        setFormError(tValidation('allFieldsRequired'));
         return;
       }
     }
 
     if (isNaN(Number(formData.amount)) || Number(formData.amount) <= 0) {
-      setFormError('Amount must be greater than 0.');
+      setFormError(tValidation('amountGreaterThanZero'));
       return;
     }
 
@@ -158,6 +167,25 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
   const selectedAccount = accounts?.find(acc => acc.id === formData.accountId)
   const selectedToAccount = accounts?.find(acc => acc.id === formData.toAccountId)
   const isCreditCardPayment = formData.type === 'transfer' && selectedToAccount?.type === 'credit_card'
+  const filteredCategories = useMemo(
+    () => (categories || []).filter((category) => category.type === formData.type),
+    [categories, formData.type]
+  )
+  const fieldClassName =
+    'w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-slate-50 text-slate-900 placeholder-slate-400'
+
+  useEffect(() => {
+    if (formData.type === 'transfer') {
+      if (formData.categoryKey !== 'transfer') {
+        setFormData((prev) => ({ ...prev, categoryKey: 'transfer' }))
+      }
+      return
+    }
+
+    if (filteredCategories.length > 0 && !filteredCategories.some((category) => category.key === formData.categoryKey)) {
+      setFormData((prev) => ({ ...prev, categoryKey: filteredCategories[0]?.key || '' }))
+    }
+  }, [filteredCategories, formData.categoryKey, formData.type])
 
   return (
     <div className="space-y-6">
@@ -174,7 +202,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
         </div>
         <div>
           <h1 className="text-3xl font-bold text-slate-800">{tTransactions('addTransaction')}</h1>
-          <p className="text-slate-600 text-sm mt-1">Record income or expense</p>
+          <p className="text-slate-600 text-sm mt-1">{tTransactions('recordIncomeExpense')}</p>
         </div>
       </div>
 
@@ -186,7 +214,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label htmlFor="fromAccountId" className="block text-sm font-semibold text-slate-800 mb-2">
-                  From Account <span className="text-red-500">*</span>
+                  {tTransactions('fromAccount')} <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="fromAccountId"
@@ -197,8 +225,8 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
                   disabled={isLoadingAccounts}
                   required
                 >
-                  <option value="">Select Account</option>
-                  {accountsError && <option value="" disabled>Error loading</option>}
+                  <option value="">{tAccounts('selectAccount')}</option>
+                  {accountsError && <option value="" disabled>{tCommon('error')}</option>}
                   {!accountsError && accounts?.map(account => (
                     <option key={account.id} value={account.id}>
                       {account.name} ({Math.round(account.balance).toLocaleString()} {account.currency})
@@ -208,7 +236,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
               </div>
               <div>
                 <label htmlFor="toAccountId" className="block text-sm font-semibold text-slate-800 mb-2">
-                  To Account <span className="text-red-500">*</span>
+                  {tTransactions('toAccount')} <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="toAccountId"
@@ -219,8 +247,8 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
                   disabled={isLoadingAccounts}
                   required
                 >
-                  <option value="">Select Account</option>
-                  {accountsError && <option value="" disabled>Error loading</option>}
+                  <option value="">{tAccounts('selectAccount')}</option>
+                  {accountsError && <option value="" disabled>{tCommon('error')}</option>}
                   {!accountsError && accounts?.map(account => (
                     <option key={account.id} value={account.id}>
                       {account.name} ({Math.round(account.balance).toLocaleString()} {account.currency})
@@ -243,8 +271,8 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
                 disabled={isLoadingAccounts}
                 required
               >
-                <option value="">Select Account</option>
-                {accountsError && <option value="" disabled>Error loading</option>}
+                <option value="">{tAccounts('selectAccount')}</option>
+                {accountsError && <option value="" disabled>{tCommon('error')}</option>}
                 {!accountsError && accounts?.map(account => (
                   <option key={account.id} value={account.id}>
                     {account.name} ({Math.round(account.balance).toLocaleString()} {account.currency})
@@ -283,9 +311,9 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
                 className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
                 required
               >
-                <option value="expense">Expense</option>
-                <option value="income">Income</option>
-                <option value="transfer">Transfer</option>
+                <option value="expense">{tTransactions('expense')}</option>
+                <option value="income">{tTransactions('income')}</option>
+                <option value="transfer">{tTransactions('transfer')}</option>
               </select>
             </div>
           </div>
@@ -305,6 +333,46 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
               placeholder="e.g., Lunch, Salary"
               required
             />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label htmlFor="categoryKey" className="block text-sm font-semibold text-slate-800 mb-2">
+                {tTransactions('category')}
+              </label>
+              <select
+                name="categoryKey"
+                id="categoryKey"
+                value={formData.categoryKey}
+                onChange={handleChange}
+                disabled={formData.type === 'transfer'}
+                className={`${fieldClassName} disabled:bg-slate-100`}
+              >
+                {formData.type === 'transfer' ? (
+                  <option value="transfer">{tTransactions('transfer')}</option>
+                ) : (
+                  filteredCategories.map((category) => (
+                    <option key={category.id} value={category.key}>
+                      {category.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="notes" className="block text-sm font-semibold text-slate-800 mb-2">
+                {tTransactions('notes')}
+              </label>
+              <textarea
+                name="notes"
+                id="notes"
+                value={formData.notes}
+                onChange={handleChange}
+                rows={3}
+                className={`${fieldClassName} resize-none`}
+                placeholder={tTransactions('notesPlaceholder')}
+              />
+            </div>
           </div>
 
           {/* Amount and Currency */}
@@ -329,7 +397,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
                       className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
                     />
                     <label htmlFor="fullPayment" className="ml-2 text-xs text-slate-600 font-medium cursor-pointer">
-                      Pay full balance ({Math.round(selectedToAccount?.balance || 0).toLocaleString()})
+                      {tTransactions('payFullBalance')} ({Math.round(selectedToAccount?.balance || 0).toLocaleString()})
                     </label>
                   </div>
                 )}
@@ -357,8 +425,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
                 <div className="mt-2 flex items-start space-x-2 text-amber-600 text-xs bg-amber-50 p-2 rounded-lg">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   <span>
-                    Amount exceeds current balance.
-                    (Expected remaining: {Math.round((selectedToAccount?.balance || 0) - Number(formData.amount)).toLocaleString()})
+                    {tTransactions('amountExceedsBalance').replace('{balance}', Math.round((selectedToAccount?.balance || 0) - Number(formData.amount)).toLocaleString())}
                   </span>
                 </div>
               )}
@@ -396,7 +463,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
                       ? 'text-green-700'
                       : formData.type === 'transfer' ? 'text-blue-700' : 'text-red-700'
                   }`}>
-                    {formData.type === 'income' ? 'Income' : formData.type === 'transfer' ? 'Transfer' : 'Expense'}
+                    {formData.type === 'income' ? tTransactions('income') : formData.type === 'transfer' ? tTransactions('transfer') : tTransactions('expense')}
                   </p>
                   <p className={`text-2xl font-bold mt-1 ${
                     formData.type === 'income'
@@ -436,7 +503,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
           {mutation.isSuccess && (
             <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-start space-x-3">
               <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-              <p className="text-green-700 text-sm">Transaction added successfully!</p>
+              <p className="text-green-700 text-sm">{tTransactions('transactionAdded')}</p>
             </div>
           )}
 

@@ -1,109 +1,177 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Settings, Globe, Lock, Bell, Languages } from 'lucide-react'
-import ExchangeRateManager from '@/components/ExchangeRateManager'
+import { Bell, Languages, Lock, Settings, Tags } from 'lucide-react'
+import CategoryManager from '@/components/CategoryManager'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
+import { useColorMode } from '@/context/ColorModeContext'
+import { useUiTheme } from '@/context/UiThemeContext'
 import { useTranslations } from 'next-intl'
 
 export default function SettingsPage() {
   const tSettings = useTranslations('settings')
-  const [activeTab, setActiveTab] = useState('language')
+  const { theme, setTheme } = useUiTheme()
+  const { colorMode, setColorMode } = useColorMode()
+  const [activeTab, setActiveTab] = useState('theme')
 
   const tabs = [
-    {
-      id: 'language',
-      label: tSettings('language'),
-      icon: Languages,
-    },
-    {
-      id: 'exchange-rates',
-      label: tSettings('exchangeRates'),
-      icon: Globe,
-    },
-    {
-      id: 'security',
-      label: tSettings('security'),
-      icon: Lock,
-    },
-    {
-      id: 'notifications',
-      label: tSettings('notifications'),
-      icon: Bell,
-    },
+    { id: 'theme', label: tSettings('theme'), icon: Settings },
+    { id: 'language', label: tSettings('language'), icon: Languages },
+    { id: 'categories', label: tSettings('categories'), icon: Tags },
+    { id: 'security', label: tSettings('security'), icon: Lock },
+    { id: 'notifications', label: tSettings('notifications'), icon: Bell },
   ]
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center space-x-3">
-        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white">
-          <Settings className="w-6 h-6" />
-        </div>
-        <div>
-          <h1 className="text-3xl font-bold text-slate-800">{tSettings('title')}</h1>
-          <p className="text-slate-600 text-sm mt-1">Manage application settings</p>
+      <div className="rounded-[32px] border border-white/80 bg-white/70 p-6 shadow-[0_18px_60px_rgba(148,163,184,0.14)] backdrop-blur-xl">
+        <div className="flex items-center space-x-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white">
+            <Settings className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">{tSettings('theme')}</p>
+            <h1 className="mt-2 text-3xl font-black tracking-[-0.04em] text-slate-950">{tSettings('title')}</h1>
+            <p className="mt-2 text-sm text-slate-500">{tSettings('manageSettings')}</p>
+          </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="flex border-b border-slate-200 overflow-x-auto">
+      <div className="rounded-[32px] border border-white/80 bg-white/70 shadow-[0_18px_60px_rgba(148,163,184,0.12)] backdrop-blur-xl">
+        <div className="flex overflow-x-auto border-b border-slate-200/80">
           {tabs.map((tab) => {
             const Icon = tab.icon
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 px-6 py-4 font-medium transition-colors whitespace-nowrap ${
+                className={`flex items-center space-x-2 whitespace-nowrap px-5 py-4 font-semibold transition-all ${
                   activeTab === tab.id
-                    ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
-                    : 'text-slate-600 hover:text-slate-800'
+                    ? 'text-slate-950'
+                    : 'text-slate-500 hover:text-slate-900'
                 }`}
               >
-                <Icon className="w-5 h-5" />
-                <span>{tab.label}</span>
+                <span className={`flex items-center gap-2 rounded-full px-3 py-2 ${activeTab === tab.id ? 'bg-slate-100 shadow-sm' : ''}`}>
+                  <Icon className="h-5 w-5" />
+                  <span>{tab.label}</span>
+                </span>
               </button>
             )
           })}
         </div>
 
-        {/* Tab Content */}
         <div className="p-6">
+          {activeTab === 'theme' && (
+            <div className="space-y-6">
+              <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-6">
+                <h3 className="text-xl font-black tracking-[-0.03em] text-slate-950">{tSettings('themeSettings')}</h3>
+                <p className="mt-2 text-sm text-slate-500">{tSettings('themeDesc')}</p>
+                <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => setTheme('old')}
+                    className={`rounded-[28px] border p-5 text-left transition-all ${
+                      theme === 'old'
+                        ? 'border-blue-300 bg-blue-50 text-slate-950 shadow-md ring-1 ring-blue-200'
+                        : 'border-slate-200 bg-white text-slate-800 hover:-translate-y-0.5 hover:shadow-md'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-bold uppercase tracking-[0.2em]">{tSettings('oldTheme')}</span>
+                      <span className={`rounded-full px-2 py-1 text-xs font-bold ${theme === 'old' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                        {theme === 'old' ? 'Active' : 'Classic'}
+                      </span>
+                    </div>
+                    <p className="mt-4 text-sm leading-7 text-slate-500">
+                      {tSettings('oldThemeDesc')}
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTheme('modern')}
+                    className={`rounded-[28px] border p-5 text-left transition-all ${
+                      theme === 'modern'
+                        ? 'border-blue-200 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.96),_rgba(237,243,255,0.92)_45%,_rgba(211,226,255,0.92)_100%)] text-slate-950 shadow-lg'
+                        : 'border-slate-200 bg-white text-slate-800 hover:-translate-y-0.5 hover:shadow-md'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-bold uppercase tracking-[0.2em]">{tSettings('modernTheme')}</span>
+                      <span className={`rounded-full px-2 py-1 text-xs font-bold ${theme === 'modern' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                        {theme === 'modern' ? 'Active' : 'New'}
+                      </span>
+                    </div>
+                    <p className="mt-4 text-sm leading-7 text-slate-500">{tSettings('modernThemeDesc')}</p>
+                  </button>
+                </div>
+
+                <div className="mt-8 border-t border-slate-200 pt-6">
+                  <h4 className="text-base font-black tracking-[-0.02em] text-slate-950">{tSettings('colorModeSettings')}</h4>
+                  <p className="mt-2 text-sm text-slate-500">{tSettings('colorModeDesc')}</p>
+                  <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => setColorMode('light')}
+                      className={`rounded-[24px] border p-5 text-left transition-all ${colorMode === 'light' ? 'border-blue-300 bg-blue-50 shadow-md ring-1 ring-blue-200' : 'border-slate-200 bg-white hover:-translate-y-0.5 hover:shadow-md'}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-bold uppercase tracking-[0.2em]">{tSettings('lightMode')}</span>
+                        <span className={`rounded-full px-2 py-1 text-xs font-bold ${colorMode === 'light' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}`}>Light</span>
+                      </div>
+                      <p className="mt-4 text-sm leading-7 text-slate-500">{tSettings('lightModeDesc')}</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setColorMode('dark')}
+                      className={`rounded-[24px] border p-5 text-left transition-all ${colorMode === 'dark' ? 'border-slate-700 bg-slate-950 text-white shadow-md ring-1 ring-slate-700' : 'border-slate-200 bg-white hover:-translate-y-0.5 hover:shadow-md'}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-bold uppercase tracking-[0.2em]">{tSettings('darkMode')}</span>
+                        <span className={`rounded-full px-2 py-1 text-xs font-bold ${colorMode === 'dark' ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-500'}`}>Dark</span>
+                      </div>
+                      <p className={`mt-4 text-sm leading-7 ${colorMode === 'dark' ? 'text-slate-300' : 'text-slate-500'}`}>{tSettings('darkModeDesc')}</p>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'language' && (
             <div className="space-y-6">
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
-                <h3 className="text-lg font-bold text-slate-800 mb-2">Language Settings</h3>
-                <p className="text-slate-600 text-sm mb-6">Select your preferred application language.</p>
+              <div className="rounded-[28px] border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-6">
+                <h3 className="text-lg font-black tracking-[-0.03em] text-slate-950">{tSettings('languageSettings')}</h3>
+                <p className="mb-6 mt-2 text-sm text-slate-500">{tSettings('languageDesc')}</p>
                 <div className="flex justify-start">
                   <LanguageSwitcher />
                 </div>
               </div>
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-                <h3 className="text-lg font-bold text-slate-800 mb-4">Supported Languages</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-3 p-4 bg-white rounded-lg border border-slate-200">
+              <div className="rounded-[28px] border border-slate-200 bg-white p-6">
+                <h3 className="mb-4 text-lg font-black tracking-[-0.03em] text-slate-950">{tSettings('supportedLanguages')}</h3>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="flex items-center space-x-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <span className="text-3xl">🇰🇷</span>
                     <div>
                       <p className="font-semibold text-slate-800">한국어</p>
                       <p className="text-xs text-slate-500">Korean</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3 p-4 bg-white rounded-lg border border-slate-200">
+                  <div className="flex items-center space-x-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <span className="text-3xl">🇯🇵</span>
                     <div>
                       <p className="font-semibold text-slate-800">日本語</p>
                       <p className="text-xs text-slate-500">Japanese</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3 p-4 bg-white rounded-lg border border-slate-200">
+                  <div className="flex items-center space-x-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <span className="text-3xl">🇺🇸</span>
                     <div>
                       <p className="font-semibold text-slate-800">English</p>
                       <p className="text-xs text-slate-500">English</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3 p-4 bg-white rounded-lg border border-slate-200">
+                  <div className="flex items-center space-x-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <span className="text-3xl">🇨🇳</span>
                     <div>
                       <p className="font-semibold text-slate-800">中文</p>
@@ -115,52 +183,47 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {activeTab === 'exchange-rates' && (
-            <ExchangeRateManager />
-          )}
+          {activeTab === 'categories' && <CategoryManager />}
 
           {activeTab === 'security' && (
             <div className="space-y-6">
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-                <h3 className="text-lg font-bold text-slate-800 mb-4">Change Password</h3>
+              <div className="rounded-[28px] border border-slate-200 bg-white p-6">
+                <h3 className="mb-4 text-lg font-black tracking-[-0.03em] text-slate-950">Change Password</h3>
                 <form className="space-y-4">
                   <div>
-                    <label htmlFor="current-password" className="block text-sm font-medium text-slate-700 mb-2">
+                    <label htmlFor="current-password" className="mb-2 block text-sm font-medium text-slate-700">
                       Current Password
                     </label>
                     <input
                       id="current-password"
                       type="password"
-                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white text-slate-900 placeholder-slate-400"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 placeholder-slate-400 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Enter current password"
                     />
                   </div>
                   <div>
-                    <label htmlFor="new-password" className="block text-sm font-medium text-slate-700 mb-2">
+                    <label htmlFor="new-password" className="mb-2 block text-sm font-medium text-slate-700">
                       New Password
                     </label>
                     <input
                       id="new-password"
                       type="password"
-                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white text-slate-900 placeholder-slate-400"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 placeholder-slate-400 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Enter new password"
                     />
                   </div>
                   <div>
-                    <label htmlFor="confirm-password" className="block text-sm font-medium text-slate-700 mb-2">
+                    <label htmlFor="confirm-password" className="mb-2 block text-sm font-medium text-slate-700">
                       Confirm Password
                     </label>
                     <input
                       id="confirm-password"
                       type="password"
-                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white text-slate-900 placeholder-slate-400"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 placeholder-slate-400 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Re-enter password"
                     />
                   </div>
-                  <button
-                    type="submit"
-                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
-                  >
+                  <button type="submit" className="rounded-2xl bg-slate-950 px-6 py-3 font-semibold text-white transition-colors hover:bg-slate-800">
                     Change Password
                   </button>
                 </form>
@@ -170,40 +233,29 @@ export default function SettingsPage() {
 
           {activeTab === 'notifications' && (
             <div className="space-y-6">
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-                <h3 className="text-lg font-bold text-slate-800 mb-4">Notification Settings</h3>
+              <div className="rounded-[28px] border border-slate-200 bg-white p-6">
+                <h3 className="mb-4 text-lg font-black tracking-[-0.03em] text-slate-950">Notification Settings</h3>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between rounded-2xl bg-slate-50 p-4">
                     <div>
                       <p className="font-medium text-slate-800">Email Notifications</p>
                       <p className="text-sm text-slate-600">Receive emails for important transactions</p>
                     </div>
-                    <input
-                      type="checkbox"
-                      defaultChecked
-                      className="w-5 h-5 rounded"
-                    />
+                    <input type="checkbox" defaultChecked className="h-5 w-5 rounded" />
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between rounded-2xl bg-slate-50 p-4">
                     <div>
                       <p className="font-medium text-slate-800">Goal Notifications</p>
                       <p className="text-sm text-slate-600">Alerts when goals are reached</p>
                     </div>
-                    <input
-                      type="checkbox"
-                      defaultChecked
-                      className="w-5 h-5 rounded"
-                    />
+                    <input type="checkbox" defaultChecked className="h-5 w-5 rounded" />
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between rounded-2xl bg-slate-50 p-4">
                     <div>
                       <p className="font-medium text-slate-800">Weekly Report</p>
                       <p className="text-sm text-slate-600">Weekly summary of your assets</p>
                     </div>
-                    <input
-                      type="checkbox"
-                      className="w-5 h-5 rounded"
-                    />
+                    <input type="checkbox" className="h-5 w-5 rounded" />
                   </div>
                 </div>
               </div>

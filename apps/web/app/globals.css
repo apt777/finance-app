@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
 :root {
+  --font-ui-sans: var(--font-app-sans), "Pretendard", "Apple SD Gothic Neo",
+    "Noto Sans KR", "Segoe UI Variable", "Helvetica Neue", Arial, sans-serif;
   --background: #f8fafc;
   --foreground: #0f172a;
   --primary: #3b82f6;
@@ -14,34 +16,50 @@
   --sidebar-bg: #1e293b;
   --sidebar-hover: #334155;
   --border-color: #e2e8f0;
+  --shell-bg: linear-gradient(180deg, #f7f9fc 0%, #eef3ff 40%, #f8fafc 100%);
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.8);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-ui-sans);
+  --font-mono: var(--font-app-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0f172a;
-    --foreground: #f1f5f9;
-    --card-bg: #1e293b;
-    --sidebar-bg: #0f172a;
-    --sidebar-hover: #1e293b;
-    --border-color: #334155;
-  }
+html[data-color-mode='dark'] {
+  --background: #111315;
+  --foreground: #eef1f4;
+  --card-bg: #191c1f;
+  --sidebar-bg: #121417;
+  --sidebar-hover: #20252b;
+  --border-color: #2f363d;
+  --shell-bg: linear-gradient(180deg, #121417 0%, #181c21 42%, #111315 100%);
+  --glass-bg: rgba(23, 26, 30, 0.9);
+  --glass-border: rgba(255, 255, 255, 0.08);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: var(--font-ui-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "ss01" 1, "cv05" 1, "tnum" 1;
+}
+
+html[data-ui-theme='modern'] body {
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.92), transparent 32%),
+    linear-gradient(180deg, #f7f9fc 0%, #eef3ff 40%, #f8fafc 100%);
+}
+
+html[data-ui-theme='modern'][data-color-mode='dark'] body {
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.04), transparent 24%),
+    linear-gradient(180deg, #121417 0%, #181c21 42%, #111315 100%);
 }
 
 /* Custom scrollbar */
@@ -141,4 +159,8 @@ body {
 /* Safe area padding for mobile */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }

@@ -29,6 +29,9 @@ model User {
   settings         UserSetting[]
   exchangeRates    ExchangeRate[]
   nisaAccounts     NISAAccount[]
+  categories       TransactionCategory[]
+  budgets          Budget[]
+  recurringTransactions RecurringTransaction[]
 
   @@index([email])
 }
@@ -111,6 +114,9 @@ model Account {
   toTransactions  Transaction[] @relation("ToAccountTransactions")
   holdings        Holding[]
   nisaAccount     NISAAccount?
+  recurringTransactions RecurringTransaction[] @relation("RecurringAccountTransactions")
+  recurringFromTransactions RecurringTransaction[] @relation("RecurringFromAccountTransactions")
+  recurringToTransactions RecurringTransaction[] @relation("RecurringToAccountTransactions")
 
   @@index([userId])
   @@index([type])
@@ -123,12 +129,19 @@ model Account {
 
 model TransactionCategory {
   id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   name      String   // e.g., "Food", "Transportation", "Entertainment"
-  key       String   @unique // e.g., "food", "transportation", "entertainment"
+  key       String   // e.g., "food", "transportation", "entertainment"
   icon      String?  // Icon name or emoji
+  color     String?  // Hex color
+  type      String   @default("expense") // "income", "expense", "transfer"
+  isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
 
+  @@unique([userId, key])
   @@index([key])
+  @@index([userId])
 }
 
 model Transaction {
@@ -162,6 +175,7 @@ model Transaction {
   @@index([toAccountId])
   @@index([date])
   @@index([type])
+  @@index([categoryKey])
 }
 
 // ============================================================================
@@ -239,6 +253,62 @@ model Goal {
 
   @@index([userId])
   @@index([targetDate])
+}
+
+// ============================================================================
+// Budget & Planning Models
+// ============================================================================
+
+model Budget {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  categoryKey     String?
+  amount          Float
+  currency        String
+  period          String    @default("monthly") // "monthly", "yearly"
+  year            Int
+  month           Int?
+  alertThreshold  Int       @default(80)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([categoryKey])
+  @@unique([userId, categoryKey, period, year, month])
+}
+
+model RecurringTransaction {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  description     String
+  type            String    // "income", "expense", "transfer"
+  amount          Float
+  currency        String
+  categoryKey     String?
+  accountId       String?
+  account         Account?   @relation("RecurringAccountTransactions", fields: [accountId], references: [id], onDelete: SetNull)
+  fromAccountId   String?
+  fromAccount     Account?   @relation("RecurringFromAccountTransactions", fields: [fromAccountId], references: [id], onDelete: SetNull)
+  toAccountId     String?
+  toAccount       Account?   @relation("RecurringToAccountTransactions", fields: [toAccountId], references: [id], onDelete: SetNull)
+  interval        String    @default("monthly") // "weekly", "monthly", "yearly"
+  dayOfMonth      Int?
+  dayOfWeek       Int?
+  startDate       DateTime
+  endDate         DateTime?
+  nextRunDate     DateTime?
+  lastProcessedAt DateTime?
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([nextRunDate])
+  @@index([categoryKey])
 }
 
 // ============================================================================

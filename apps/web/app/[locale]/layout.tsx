@@ -1,10 +1,27 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import type { Metadata } from "next";
+import localFont from 'next/font/local';
 import "../globals.css";
 import Layout from '@/components/Layout';
 import { Providers } from '@/providers';
 import { AuthProvider } from '@/context/AuthProviderClient';
+import { ColorModeProvider } from '@/context/ColorModeContext';
+import { UiThemeProvider } from '@/context/UiThemeContext';
+
+const appSans = localFont({
+  src: '../fonts/Pretendard-SemiBold.otf',
+  variable: '--font-app-sans',
+  weight: '600',
+  display: 'swap',
+});
+
+const mono = localFont({
+  src: '../../../docs/app/fonts/GeistMonoVF.woff',
+  variable: '--font-app-mono',
+  weight: '100 900',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: "KABLUS",
@@ -23,14 +40,18 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale}>
-      <body className={`antialiased`}>
+      <body className={`${appSans.variable} ${mono.variable} antialiased`}>
         <NextIntlClientProvider messages={messages}>
           <AuthProvider>
-            <Providers>
-              <Layout>
-                {children}
-              </Layout>
-            </Providers>
+            <ColorModeProvider>
+              <UiThemeProvider>
+                <Providers>
+                  <Layout>
+                    {children}
+                  </Layout>
+                </Providers>
+              </UiThemeProvider>
+            </ColorModeProvider>
           </AuthProvider>
         </NextIntlClientProvider>
       </body>
