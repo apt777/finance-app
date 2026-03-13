@@ -52,14 +52,14 @@ body {
 
 html[data-ui-theme='modern'] body {
   background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.92), transparent 32%),
-    linear-gradient(180deg, #f7f9fc 0%, #eef3ff 40%, #f8fafc 100%);
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.84), transparent 28%),
+    linear-gradient(180deg, #f8fafc 0%, #f4f7fb 42%, #f8fafc 100%);
 }
 
 html[data-ui-theme='modern'][data-color-mode='dark'] body {
   background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.04), transparent 24%),
-    linear-gradient(180deg, #121417 0%, #181c21 42%, #111315 100%);
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.03), transparent 22%),
+    linear-gradient(180deg, #121417 0%, #171b20 42%, #111315 100%);
 }
 
 /* Custom scrollbar */
