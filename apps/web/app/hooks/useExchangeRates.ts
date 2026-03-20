@@ -12,11 +12,19 @@ export interface ExchangeRate {
 }
 
 const fetchExchangeRates = async (): Promise<ExchangeRate[]> => {
-  const res = await fetch('/api/exchange-rates')
-  if (!res.ok) {
-    throw new Error('환율 정보를 불러오는 중 오류 발생')
+  try {
+    const res = await fetch('/api/exchange-rates')
+
+    if (!res.ok) {
+      console.error(`[overview] failed to fetch exchange rates: ${res.status}`)
+      return []
+    }
+
+    return res.json()
+  } catch (error) {
+    console.error('[overview] failed to fetch exchange rates:', error)
+    return []
   }
-  return res.json()
 }
 
 export const useExchangeRates = () => {

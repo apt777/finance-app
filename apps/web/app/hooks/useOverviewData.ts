@@ -44,28 +44,36 @@ interface OverviewDataResult {
   goals: Goal[];
 }
 
+const fetchListOrEmpty = async <T>(url: string, label: string): Promise<T[]> => {
+  try {
+    const res = await fetch(url)
+
+    if (!res.ok) {
+      console.error(`[overview] failed to fetch ${label}: ${res.status}`)
+      return []
+    }
+
+    return res.json()
+  } catch (error) {
+    console.error(`[overview] failed to fetch ${label}:`, error)
+    return []
+  }
+}
+
 const fetchAccounts = async (): Promise<Account[]> => {
-  const res = await fetch('/api/accounts')
-  if (!res.ok) throw new Error('Failed to fetch accounts')
-  return res.json()
+  return fetchListOrEmpty<Account>('/api/accounts', 'accounts')
 }
 
 const fetchTransactions = async (): Promise<Transaction[]> => {
-  const res = await fetch('/api/transactions')
-  if (!res.ok) throw new Error('Failed to fetch transactions')
-  return res.json()
+  return fetchListOrEmpty<Transaction>('/api/transactions', 'transactions')
 }
 
 const fetchHoldings = async (): Promise<Holding[]> => {
-  const res = await fetch('/api/holdings')
-  if (!res.ok) throw new Error('Failed to fetch holdings')
-  return res.json()
+  return fetchListOrEmpty<Holding>('/api/holdings', 'holdings')
 }
 
 const fetchGoals = async (): Promise<Goal[]> => {
-  const res = await fetch('/api/goals')
-  if (!res.ok) throw new Error('Failed to fetch goals')
-  return res.json()
+  return fetchListOrEmpty<Goal>('/api/goals', 'goals')
 }
 
 export const useOverviewData = () => {
@@ -82,7 +90,7 @@ export const useOverviewData = () => {
   })
 
   const isLoading = results.some((query) => query.isLoading)
-  const isError = results.some((query) => query.isError)
+  const isError = false
 
   // Type assertions for data from useQueries results
   const data: OverviewDataResult = {
