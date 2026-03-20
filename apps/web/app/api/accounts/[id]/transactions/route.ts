@@ -1,44 +1,83 @@
 import { NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
 import prisma from '@lib/prisma'
+import { requireRouteSession } from '@/lib/server-auth'
+import { ensureDefaultCategories } from '@/lib/categories'
 
-export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
-  const params = await props.params;
-  const cookieStore = await cookies()
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore as any })
+function stripInternalNotes(notes?: string | null) {
+  if (!notes) return null
+
+  const cleaned = notes.replace('[[KABLUS_NO_BALANCE_SYNC]]', '').trim()
+  return cleaned || null
+}
+
+export async function GET(_request: Request, props: { params: Promise<{ id: string }> }) {
+  const { userId } = await requireRouteSession()
+
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
-    const { data: { session } } = await supabase.auth.getSession()
+    const { id } = await props.params
 
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const { id } = params
-
-    // Ensure the account belongs to the logged-in user
-    const account = await prisma.account.findUnique({
-      where: { id: id, userId: session.user.id },
+    const account = await prisma.account.findFirst({
+      where: {
+        id,
+        userId,
+      },
+      select: {
+        id: true,
+      },
     })
 
     if (!account) {
       return NextResponse.json({ error: 'Account not found or does not belong to user' }, { status: 404 })
     }
 
-    const transactions = await prisma.transaction.findMany({
-      where: {
-        accountId: id,
-      },
-      orderBy: {
-        date: 'desc',
-      },
-      include: {
-        account: { // Include account details for display
-          select: { name: true, currency: true },
+    const [transactions, categories] = await Promise.all([
+      prisma.transaction.findMany({
+        where: {
+          userId,
+          OR: [{ accountId: id }, { fromAccountId: id }, { toAccountId: id }],
         },
-      },
-    })
-    return NextResponse.json(transactions)
+        orderBy: {
+          date: 'desc',
+        },
+        include: {
+          account: {
+            select: { id: true, name: true, currency: true },
+          },
+          fromAccount: {
+            select: { id: true, name: true, currency: true },
+          },
+          toAccount: {
+            select: { id: true, name: true, currency: true },
+          },
+        },
+      }),
+      ensureDefaultCategories(userId),
+    ])
+
+    const categoryMap = new Map(
+      categories.map((category) => [
+        category.key,
+        {
+          key: category.key,
+          name: category.name,
+          icon: 'icon' in category ? category.icon : null,
+          color: 'color' in category ? category.color : null,
+          type: 'type' in category ? category.type : 'expense',
+        },
+      ])
+    )
+
+    return NextResponse.json(
+      transactions.map((transaction) => ({
+        ...transaction,
+        notes: stripInternalNotes(transaction.notes),
+        category: transaction.categoryKey ? categoryMap.get(transaction.categoryKey) ?? null : null,
+      }))
+    )
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed to fetch transactions' }, { status: 500 })
   }
