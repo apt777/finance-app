@@ -26,6 +26,13 @@ const mono = localFont({
 export const metadata: Metadata = {
   title: "KABLUS",
   description: "Personal Finance Application",
+  icons: {
+    icon: [
+      { url: '/icon.svg?v=2', type: 'image/svg+xml' },
+    ],
+    shortcut: ['/icon.svg?v=2'],
+    apple: ['/icon.svg?v=2'],
+  },
 };
 
 export default async function LocaleLayout({
