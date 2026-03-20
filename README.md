@@ -51,6 +51,8 @@ npx prisma generate       # Ensure Prisma Client is up-to-date
 ```
 *Note: If you are connecting to an existing Supabase database that is not empty, and encounter migration errors, please refer to the "Troubleshooting & Setup Log" section below for details on how to baseline the database.*
 
+For production deployment policy and schema drift 대응, see [docs/production-database-runbook.md](docs/production-database-runbook.md).
+
 
 ### 4. Run the Development Server
 

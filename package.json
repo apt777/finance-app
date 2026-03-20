@@ -7,6 +7,9 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
+    "db:generate": "prisma generate --schema=prisma/schema.prisma",
+    "db:migrate:status": "prisma migrate status --schema=prisma/schema.prisma",
+    "db:migrate:deploy": "prisma migrate deploy --schema=prisma/schema.prisma",
     "seed": "tsx prisma/seed.ts",
     "setup": "npm install && npx prisma db push && npm run seed",
     "postinstall": "prisma generate"
