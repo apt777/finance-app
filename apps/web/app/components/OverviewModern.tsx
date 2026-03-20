@@ -1,10 +1,12 @@
 'use client'
 
 import React from 'react'
+import { Link } from '@/navigation'
 import { useOverviewData } from '../hooks/useOverviewData'
 import { useExchangeRates, ExchangeRate } from '../hooks/useExchangeRates'
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import {
+  PlusCircle,
   Target,
   TrendingDown,
   TrendingUp,
@@ -229,6 +231,60 @@ export default function OverviewModern() {
                       {averageGoalProgress}%
                     </p>
                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <Link
+                    href="/transactions/add"
+                    className={`group flex min-h-[112px] flex-col justify-between rounded-[24px] px-4 py-4 transition-all ${
+                      isDark
+                        ? 'border border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/[0.08]'
+                        : 'border border-white/80 bg-white/80 hover:-translate-y-0.5 hover:bg-white hover:shadow-md'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>빠른 추가</p>
+                      <PlusCircle className={`h-4 w-4 ${isDark ? 'text-slate-400' : 'text-slate-400'}`} />
+                    </div>
+                    <div>
+                      <p className={`text-base font-bold ${isDark ? 'text-white' : 'text-slate-950'}`}>거래내역 추가</p>
+                      <p className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>지출, 수입, 이체를 바로 기록</p>
+                    </div>
+                  </Link>
+                  <Link
+                    href="/accounts/add"
+                    className={`group flex min-h-[112px] flex-col justify-between rounded-[24px] px-4 py-4 transition-all ${
+                      isDark
+                        ? 'border border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/[0.08]'
+                        : 'border border-white/80 bg-white/80 hover:-translate-y-0.5 hover:bg-white hover:shadow-md'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>자산 설정</p>
+                      <Wallet className={`h-4 w-4 ${isDark ? 'text-slate-400' : 'text-slate-400'}`} />
+                    </div>
+                    <div>
+                      <p className={`text-base font-bold ${isDark ? 'text-white' : 'text-slate-950'}`}>계좌 추가</p>
+                      <p className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>새 계좌나 카드 연결</p>
+                    </div>
+                  </Link>
+                  <Link
+                    href="/holdings/add"
+                    className={`group flex min-h-[112px] flex-col justify-between rounded-[24px] px-4 py-4 transition-all ${
+                      isDark
+                        ? 'border border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/[0.08]'
+                        : 'border border-white/80 bg-white/80 hover:-translate-y-0.5 hover:bg-white hover:shadow-md'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>포트폴리오</p>
+                      <TrendingUp className={`h-4 w-4 ${isDark ? 'text-slate-400' : 'text-slate-400'}`} />
+                    </div>
+                    <div>
+                      <p className={`text-base font-bold ${isDark ? 'text-white' : 'text-slate-950'}`}>투자 추가</p>
+                      <p className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>보유 종목을 빠르게 등록</p>
+                    </div>
+                  </Link>
                 </div>
 
                 <div className={`rounded-[28px] px-5 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>

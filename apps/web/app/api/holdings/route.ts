@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
 import prisma from '@lib/prisma'
+import { requireRouteSession } from '@/lib/server-auth'
 
 interface HoldingData {
   accountId: string;
@@ -13,17 +12,15 @@ interface HoldingData {
 }
 
 export async function GET(request: Request) {
-  const cookieStore = await cookies()
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore as any })
   try {
-    const { data: { session } } = await supabase.auth.getSession()
+    const { userId } = await requireRouteSession()
 
-    if (!session) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const userAccounts = await prisma.account.findMany({
-      where: { userId: session.user.id },
+      where: { userId },
       select: { id: true }
     })
 
@@ -48,12 +45,10 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const cookieStore = await cookies()
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore as any })
   try {
-    const { data: { session } } = await supabase.auth.getSession()
+    const { userId } = await requireRouteSession()
 
-    if (!session) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -63,7 +58,7 @@ export async function POST(request: Request) {
     const account = await prisma.account.findFirst({
       where: {
         id: accountId,
-        userId: session.user.id
+        userId
       }
     })
 
@@ -73,7 +68,7 @@ export async function POST(request: Request) {
 
     const newHolding = await prisma.holding.create({
       data: { 
-        userId: session.user.id,
+        userId,
         accountId, 
         symbol, 
         shares, 

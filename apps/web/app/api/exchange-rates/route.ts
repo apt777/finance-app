@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
 import prisma from '@lib/prisma'
+import { requireRouteSession } from '@/lib/server-auth'
 
 interface ExchangeRateData {
   from: string;
@@ -126,30 +125,28 @@ async function updateRatesFromExternalApi(userId: string) {
 }
 
 export async function GET(request: Request) {
-  const cookieStore = await cookies()
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore as any })
   try {
-    const { data: { session } } = await supabase.auth.getSession()
+    const { userId } = await requireRouteSession()
 
-    if (!session) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Check the most recently updated rate
     const latestRate = await prisma.exchangeRate.findFirst({
-      where: { userId: session.user.id },
+      where: { userId },
       orderBy: { updatedAt: 'desc' }
     });
 
     const shouldUpdate = !latestRate || (new Date().getTime() - new Date(latestRate.updatedAt).getTime() > UPDATE_INTERVAL_MS);
 
     if (shouldUpdate) {
-      await updateRatesFromExternalApi(session.user.id);
+      await updateRatesFromExternalApi(userId);
     }
 
     const exchangeRates = await prisma.exchangeRate.findMany({
       where: {
-        userId: session.user.id,
+        userId,
       },
       orderBy: {
         updatedAt: 'desc'
@@ -162,22 +159,20 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const cookieStore = await cookies()
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore as any })
   try {
-    const { data: { session } } = await supabase.auth.getSession()
+    const { userId, session } = await requireRouteSession()
 
-    if (!session) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Ensure a user record exists in the public schema
     await prisma.user.upsert({
-      where: { id: session.user.id },
+      where: { id: userId },
       update: {},
       create: {
-        id: session.user.id,
-        email: session.user.email!,
+        id: userId,
+        email: session?.user.email ?? `${userId}@local.invalid`,
       },
     });
 
@@ -187,7 +182,7 @@ export async function POST(request: Request) {
     const existingRate = await prisma.exchangeRate.findUnique({
       where: {
         userId_fromCurrency_toCurrency: {
-          userId: session.user.id,
+          userId,
           fromCurrency: from,
           toCurrency: to,
         }
@@ -206,7 +201,7 @@ export async function POST(request: Request) {
     // Create new exchange rate
     const newExchangeRate = await prisma.exchangeRate.create({
       data: {
-        userId: session.user.id,
+        userId,
         fromCurrency: from,
         toCurrency: to,
         rate,

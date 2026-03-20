@@ -39,10 +39,10 @@ export default function LanguageSwitcher() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={isPending}
-        className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-lg transition-all shadow-md hover:shadow-lg"
+        className="flex items-center space-x-2 rounded-2xl border border-white/80 bg-white/80 px-4 py-2.5 text-slate-700 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-white hover:text-slate-950 hover:shadow-md"
         title="언어 변경"
       >
-        <Globe className="w-5 h-5" />
+        <Globe className="w-5 h-5 text-slate-500" />
         <span className="text-lg">{currentLanguage.flag}</span>
         <span className="hidden md:inline text-sm font-medium">{currentLanguage.name}</span>
       </button>
@@ -53,16 +53,16 @@ export default function LanguageSwitcher() {
             className="fixed inset-0 z-40" 
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 z-50 overflow-hidden">
+          <div className="absolute right-0 z-50 mt-2 w-52 overflow-hidden rounded-2xl border border-white/80 bg-white/92 shadow-[0_24px_60px_rgba(148,163,184,0.18)] backdrop-blur-xl">
             <div className="p-1">
               {languages.map((language) => (
                 <button
                   key={language.code}
                   onClick={() => handleLanguageChange(language.code)}
                   disabled={isPending}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors ${
+                  className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 transition-colors ${
                     locale === language.code
-                      ? 'bg-blue-50 text-blue-600'
+                      ? 'bg-slate-100 text-slate-950'
                       : 'text-slate-700 hover:bg-slate-50'
                   }`}
                 >
@@ -71,7 +71,7 @@ export default function LanguageSwitcher() {
                     <span className="text-sm font-medium">{language.name}</span>
                   </div>
                   {locale === language.code && (
-                    <Check className="w-4 h-4 text-blue-600" />
+                    <Check className="w-4 h-4 text-slate-900" />
                   )}
                 </button>
               ))}

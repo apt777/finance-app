@@ -22,8 +22,9 @@ export default function AnalysisDashboard() {
   }
 
   if (isError || !data) {
+    const isDark = colorMode === 'dark'
     return (
-      <div className="bg-red-50 border border-red-200 rounded-3xl p-8 text-red-700">
+      <div className={`mx-auto w-full rounded-[28px] p-5 md:p-8 ${theme === 'modern' ? isDark ? 'border border-rose-400/20 bg-rose-500/10 text-rose-200 shadow-sm' : 'border border-rose-200 bg-rose-50 text-rose-700 shadow-sm' : 'border border-red-200 bg-red-50 text-red-700'}`}>
         분석 데이터를 불러오지 못했습니다.
       </div>
     )
@@ -36,13 +37,14 @@ export default function AnalysisDashboard() {
     data.budgetStatus.length === 0
 
   if (hasNoAnalysisData) {
+    const isDark = colorMode === 'dark'
     return (
-      <div className="bg-white rounded-3xl border border-slate-200 p-10 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center mx-auto mb-4">
+      <div className={`mx-auto w-full rounded-[28px] p-6 text-center md:p-10 ${theme === 'modern' ? isDark ? 'border border-white/10 bg-white/5 shadow-sm' : 'border border-white/80 bg-white/80 shadow-sm' : 'border border-slate-200 bg-white'}`}>
+        <div className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl ${theme === 'modern' ? isDark ? 'bg-white/10 text-slate-300' : 'bg-slate-100 text-slate-500' : 'bg-slate-100 text-slate-500'}`}>
           <ChartColumnIncreasing className="w-7 h-7" />
         </div>
-        <h2 className="text-2xl font-bold text-slate-900">현재 데이터가 존재하지 않습니다.</h2>
-        <p className="text-slate-500 mt-2">
+        <h2 className={`text-xl font-bold md:text-2xl ${isDark ? 'text-white' : 'text-slate-900'}`}>현재 데이터가 존재하지 않습니다.</h2>
+        <p className={`mt-2 text-sm md:text-base ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
           거래 내역이나 예산을 입력하면 월별 분석과 카테고리 분석이 여기에 표시됩니다.
         </p>
       </div>

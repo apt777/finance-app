@@ -9,21 +9,30 @@ export async function requireRouteSession() {
     data: { session },
   } = await supabase.auth.getSession()
 
-  if (!session) {
+  let resolvedUser = session?.user ?? null
+
+  if (!resolvedUser) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    resolvedUser = user ?? null
+  }
+
+  if (!resolvedUser) {
     return { session: null, userId: null }
   }
 
   await prisma.user.upsert({
-    where: { id: session.user.id },
+    where: { id: resolvedUser.id },
     update: {
-      email: session.user.email ?? undefined,
+      email: resolvedUser.email ?? undefined,
     },
     create: {
-      id: session.user.id,
-      email: session.user.email ?? `${session.user.id}@local.invalid`,
-      name: session.user.user_metadata?.name ?? session.user.email ?? 'User',
+      id: resolvedUser.id,
+      email: resolvedUser.email ?? `${resolvedUser.id}@local.invalid`,
+      name: resolvedUser.user_metadata?.name ?? resolvedUser.email ?? 'User',
     },
   })
 
-  return { session, userId: session.user.id }
+  return { session, userId: resolvedUser.id }
 }

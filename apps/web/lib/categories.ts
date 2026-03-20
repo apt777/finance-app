@@ -15,6 +15,34 @@ function mapDefaultCategories() {
   }))
 }
 
+function mergeCategoryVariants<
+  T extends {
+    key: string
+    userId?: string | null
+    isDefault?: boolean | null
+    name: string
+    type?: string | null
+    color?: string | null
+    icon?: string | null
+  },
+>(categories: T[]) {
+  const merged = new Map<string, T>()
+
+  for (const category of categories.filter((item) => item.isDefault || item.userId == null)) {
+    merged.set(category.key, category)
+  }
+
+  for (const category of categories.filter((item) => item.userId != null)) {
+    merged.set(category.key, category)
+  }
+
+  return Array.from(merged.values()).sort((a, b) => {
+    const typeCompare = (a.type ?? '').localeCompare(b.type ?? '')
+    if (typeCompare !== 0) return typeCompare
+    return a.name.localeCompare(b.name)
+  })
+}
+
 function normalizeLegacyCategories(
   categories: Array<{ id: string; name: string; key: string; icon: string | null; createdAt: Date }>
 ) {
@@ -59,12 +87,14 @@ export async function ensureDefaultCategories(userId: string) {
       })
     }
 
-    return await prisma.transactionCategory.findMany({
+    const categories = await prisma.transactionCategory.findMany({
       where: {
         OR: [{ userId }, { isDefault: true, userId: null }],
       },
       orderBy: [{ isDefault: 'desc' }, { name: 'asc' }],
     })
+
+    return mergeCategoryVariants(categories)
   } catch {
     // Fallback for databases that haven't applied the new category migration yet.
     const legacyCategories = await prisma.transactionCategory.findMany({
@@ -87,6 +117,6 @@ export async function ensureDefaultCategories(userId: string) {
       }
     }
 
-    return Array.from(merged.values())
+    return Array.from(merged.values()).sort((a, b) => a.name.localeCompare(b.name))
   }
 }

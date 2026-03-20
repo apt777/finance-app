@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { useCategories } from '@/hooks/useCategories'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Tags, Trash2 } from 'lucide-react'
+import { Check, Pencil, Plus, Tags, Trash2, X } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 export default function CategoryManager() {
@@ -13,6 +13,9 @@ export default function CategoryManager() {
   const { data: categories, isLoading, isError } = useCategories()
   const [name, setName] = useState('')
   const [type, setType] = useState<'income' | 'expense'>('expense')
+  const [feedback, setFeedback] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingName, setEditingName] = useState('')
 
   const createCategory = useMutation({
     mutationFn: async () => {
@@ -30,7 +33,12 @@ export default function CategoryManager() {
     },
     onSuccess: () => {
       setName('')
+      setFeedback(null)
       queryClient.invalidateQueries({ queryKey: ['categories'] })
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+    },
+    onError: (error: Error) => {
+      setFeedback(error.message || '카테고리를 추가하지 못했습니다.')
     },
   })
 
@@ -47,7 +55,38 @@ export default function CategoryManager() {
       return result
     },
     onSuccess: () => {
+      setFeedback(null)
       queryClient.invalidateQueries({ queryKey: ['categories'] })
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+    },
+    onError: (error: Error) => {
+      setFeedback(error.message || '카테고리를 삭제하지 못했습니다.')
+    },
+  })
+
+  const updateCategory = useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const response = await fetch('/api/categories', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, name }),
+      })
+
+      const result = await response.json()
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to update category')
+      }
+      return result
+    },
+    onSuccess: () => {
+      setFeedback(null)
+      setEditingId(null)
+      setEditingName('')
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+    },
+    onError: (error: Error) => {
+      setFeedback(error.message || '카테고리를 수정하지 못했습니다.')
     },
   })
 
@@ -88,6 +127,9 @@ export default function CategoryManager() {
             카테고리 추가
           </button>
         </div>
+        {feedback && (
+          <p className="mt-3 text-sm text-rose-600">{feedback}</p>
+        )}
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-100 p-6">
@@ -98,22 +140,67 @@ export default function CategoryManager() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {(categories || []).map((category) => (
             <div key={category.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-              <div>
-                <p className="font-semibold text-slate-800">{category.name}</p>
+              <div className="min-w-0 flex-1 pr-3">
+                {editingId === category.id ? (
+                  <input
+                    value={editingName}
+                    onChange={(event) => setEditingName(event.target.value)}
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-semibold text-slate-900"
+                  />
+                ) : (
+                  <p className="font-semibold text-slate-800">{category.name}</p>
+                )}
                 <p className="text-xs text-slate-500 mt-1">
                   {category.type === 'income' ? tTransactions('income') : category.type === 'expense' ? tTransactions('expense') : tTransactions('transfer')}
                   {category.isDefault ? ' · 기본' : ' · 사용자'}
                 </p>
               </div>
-              {!category.isDefault && (
-                <button
-                  onClick={() => deleteCategory.mutate(category.id)}
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-red-200 bg-red-50 text-red-600"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  {tCommon('delete')}
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                {editingId === category.id ? (
+                  <>
+                    <button
+                      onClick={() => updateCategory.mutate({ id: category.id, name: editingName })}
+                      disabled={!editingName.trim() || updateCategory.isPending}
+                      className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-600 transition-all hover:border-emerald-300 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <Check className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingId(null)
+                        setEditingName('')
+                        setFeedback(null)
+                      }}
+                      className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-500 transition-all hover:border-slate-300 hover:bg-slate-100"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => {
+                        setEditingId(category.id)
+                        setEditingName(category.name)
+                        setFeedback(null)
+                      }}
+                      className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-600 transition-all hover:border-slate-300 hover:bg-slate-100"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    {!category.isDefault && (
+                      <button
+                        onClick={() => deleteCategory.mutate(category.id)}
+                        disabled={deleteCategory.isPending}
+                        className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-600 transition-all hover:border-red-300 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        {deleteCategory.isPending ? tCommon('loading') : tCommon('delete')}
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           ))}
         </div>

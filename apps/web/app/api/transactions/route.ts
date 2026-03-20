@@ -15,6 +15,54 @@ interface TransactionData {
   currency: string
   categoryKey?: string
   notes?: string
+  applyBalanceAdjustment?: boolean
+}
+
+const NO_BALANCE_SYNC_MARKER = '[[KABLUS_NO_BALANCE_SYNC]]'
+
+function getLocalTodayDateString() {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function normalizeDateInput(date: string) {
+  return date.includes('T') ? date.split('T')[0] ?? date : date
+}
+
+function isTodayTransaction(date: string) {
+  return normalizeDateInput(date) === getLocalTodayDateString()
+}
+
+function shouldApplyBalanceAdjustment(date: string, requested?: boolean) {
+  if (isTodayTransaction(date)) {
+    return true
+  }
+
+  return Boolean(requested)
+}
+
+function serializeNotes(notes: string | undefined, applyBalanceAdjustment: boolean) {
+  const cleaned = (notes || '').replace(NO_BALANCE_SYNC_MARKER, '').trim()
+
+  if (applyBalanceAdjustment) {
+    return cleaned || null
+  }
+
+  return cleaned ? `${cleaned}\n${NO_BALANCE_SYNC_MARKER}` : NO_BALANCE_SYNC_MARKER
+}
+
+function stripInternalNotes(notes?: string | null) {
+  if (!notes) return null
+
+  const cleaned = notes.replace(NO_BALANCE_SYNC_MARKER, '').trim()
+  return cleaned || null
+}
+
+function transactionAffectsBalance(transaction: { notes?: string | null }) {
+  return !transaction.notes?.includes(NO_BALANCE_SYNC_MARKER)
 }
 
 function unauthorized() {
@@ -77,6 +125,7 @@ export async function GET() {
     return NextResponse.json(
       transactions.map((transaction) => ({
         ...transaction,
+        notes: stripInternalNotes(transaction.notes),
         category: transaction.categoryKey ? categoryMap.get(transaction.categoryKey) ?? null : null,
       }))
     )
@@ -94,8 +143,10 @@ export async function POST(request: Request) {
 
   try {
     const body: TransactionData = await request.json()
-    const { date, description, type, amount: rawAmount, currency, categoryKey, notes } = body
+    const { date, description, type, amount: rawAmount, currency, categoryKey, notes, applyBalanceAdjustment } = body
     const transactionAmount = Number(rawAmount)
+    const applyBalance = shouldApplyBalanceAdjustment(date, applyBalanceAdjustment)
+    const storedNotes = serializeNotes(notes, applyBalance)
 
     if (!date || !description || !type || !currency || Number.isNaN(transactionAmount) || transactionAmount <= 0) {
       return NextResponse.json({ error: 'Invalid transaction payload' }, { status: 400 })
@@ -125,16 +176,23 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Account not found' }, { status: 404 })
       }
 
-      const newFromBalance = fromAccount.type === 'credit_card'
-        ? fromAccount.balance + transactionAmount
-        : fromAccount.balance - transactionAmount
-      const newToBalance = toAccount.type === 'credit_card'
-        ? toAccount.balance - transactionAmount
-        : toAccount.balance + transactionAmount
+      const transactionOperations = []
 
-      const [, , newTransaction] = await prisma.$transaction([
-        prisma.account.update({ where: { id: fromAccountId }, data: { balance: newFromBalance } }),
-        prisma.account.update({ where: { id: toAccountId }, data: { balance: newToBalance } }),
+      if (applyBalance) {
+        const newFromBalance = fromAccount.type === 'credit_card'
+          ? fromAccount.balance + transactionAmount
+          : fromAccount.balance - transactionAmount
+        const newToBalance = toAccount.type === 'credit_card'
+          ? toAccount.balance - transactionAmount
+          : toAccount.balance + transactionAmount
+
+        transactionOperations.push(
+          prisma.account.update({ where: { id: fromAccountId }, data: { balance: newFromBalance } }),
+          prisma.account.update({ where: { id: toAccountId }, data: { balance: newToBalance } }),
+        )
+      }
+
+      transactionOperations.push(
         prisma.transaction.create({
           data: {
             userId,
@@ -146,10 +204,13 @@ export async function POST(request: Request) {
             amount: transactionAmount,
             currency,
             categoryKey: categoryKey || 'transfer',
-            notes,
+            notes: storedNotes,
           },
-        }),
-      ])
+        })
+      )
+
+      const created = await prisma.$transaction(transactionOperations)
+      const newTransaction = created[created.length - 1]
 
       return NextResponse.json(newTransaction, { status: 201 })
     }
@@ -168,16 +229,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Account not found' }, { status: 404 })
     }
 
-    const newBalance = account.type === 'credit_card'
-      ? type === 'income'
-        ? account.balance - transactionAmount
-        : account.balance + transactionAmount
-      : type === 'income'
-        ? account.balance + transactionAmount
-        : account.balance - transactionAmount
+    const transactionOperations = []
 
-    const [, newTransaction] = await prisma.$transaction([
-      prisma.account.update({ where: { id: accountId }, data: { balance: newBalance } }),
+    if (applyBalance) {
+      const newBalance = account.type === 'credit_card'
+        ? type === 'income'
+          ? account.balance - transactionAmount
+          : account.balance + transactionAmount
+        : type === 'income'
+          ? account.balance + transactionAmount
+          : account.balance - transactionAmount
+
+      transactionOperations.push(
+        prisma.account.update({ where: { id: accountId }, data: { balance: newBalance } }),
+      )
+    }
+
+    transactionOperations.push(
       prisma.transaction.create({
         data: {
           userId,
@@ -188,10 +256,13 @@ export async function POST(request: Request) {
           amount: type === 'expense' ? -transactionAmount : transactionAmount,
           currency,
           categoryKey,
-          notes,
+          notes: storedNotes,
         },
       }),
-    ])
+    )
+
+    const created = await prisma.$transaction(transactionOperations)
+    const newTransaction = created[created.length - 1]
 
     return NextResponse.json(newTransaction, { status: 201 })
   } catch (error: any) {
@@ -227,6 +298,10 @@ export async function DELETE(request: Request) {
 
     await prisma.$transaction(async (tx) => {
       for (const transaction of transactions) {
+        if (!transactionAffectsBalance(transaction)) {
+          continue
+        }
+
         if (transaction.type === 'transfer' && transaction.fromAccount && transaction.toAccount) {
           const restoredFromBalance = transaction.fromAccount.type === 'credit_card'
             ? transaction.fromAccount.balance - transaction.amount

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
 import prisma from '@lib/prisma'
+import { requireRouteSession } from '@/lib/server-auth'
 
 // Note: We are omitting userId from this interface as it will be handled by the session
 interface AccountData {
@@ -12,18 +11,16 @@ interface AccountData {
 }
 
 export async function GET(request: Request) {
-  const cookieStore = await cookies()
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore as any })
   try {
-    const { data: { session } } = await supabase.auth.getSession()
+    const { userId } = await requireRouteSession()
 
-    if (!session) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const accounts = await prisma.account.findMany({
       where: {
-        userId: session.user.id,
+        userId,
       },
       orderBy: {
         name: 'asc'
@@ -36,22 +33,20 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const cookieStore = await cookies()
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore as any })
   try {
-    const { data: { session } } = await supabase.auth.getSession()
+    const { userId, session } = await requireRouteSession()
 
-    if (!session) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Ensure a user record exists in the public schema
     await prisma.user.upsert({
-      where: { id: session.user.id },
+      where: { id: userId },
       update: {},
       create: {
-        id: session.user.id,
-        email: session.user.email!, // email is guaranteed to exist for a logged in user
+        id: userId,
+        email: session?.user.email ?? `${userId}@local.invalid`,
       },
     });
 
@@ -59,7 +54,7 @@ export async function POST(request: Request) {
 
     const newAccount = await prisma.account.create({
       data: {
-        userId: session.user.id, // Use the ID from the session
+        userId,
         name,
         type,
         balance,

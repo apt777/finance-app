@@ -19,7 +19,18 @@ interface TransactionFormData {
   currency: string;
   categoryKey?: string;
   notes?: string;
+  applyBalanceAdjustment?: boolean;
 }
+
+const getTodayDateString = () => {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const isTodayDate = (date: string) => date === getTodayDateString()
 
 const createTransaction = async (transactionData: TransactionFormData) => {
   const res = await fetch('/api/transactions', {
@@ -63,6 +74,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
     currency: '',
     categoryKey: 'food',
     notes: '',
+    applyBalanceAdjustment: true,
   })
 
   const searchParams = useSearchParams()
@@ -79,6 +91,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
         type: 'transfer',
         toAccountId,
         amount: amount || prev.amount,
+        applyBalanceAdjustment: true,
       }))
       if (amount) setIsFullPayment(true)
     }
@@ -100,6 +113,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
         currency: '',
         categoryKey: 'food',
         notes: '',
+        applyBalanceAdjustment: true,
       })
       setFormError(null)
       onTransactionAdded?.();
@@ -123,6 +137,12 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
         ...formData,
         fromAccountId: value,
         currency: selectedAccount ? selectedAccount.currency : '',
+      });
+    } else if (name === 'date') {
+      setFormData({
+        ...formData,
+        date: value,
+        applyBalanceAdjustment: isTodayDate(value),
       });
     } else {
       setFormData({ ...formData, [name]: value });
@@ -167,6 +187,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
   const selectedAccount = accounts?.find(acc => acc.id === formData.accountId)
   const selectedToAccount = accounts?.find(acc => acc.id === formData.toAccountId)
   const isCreditCardPayment = formData.type === 'transfer' && selectedToAccount?.type === 'credit_card'
+  const isTodayEntry = isTodayDate(formData.date)
   const filteredCategories = useMemo(
     () => (categories || []).filter((category) => category.type === formData.type),
     [categories, formData.type]
@@ -281,6 +302,29 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
               </select>
             </div>
           )}
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-slate-800">현재 계좌 잔액에 반영</p>
+                <p className="mt-1 text-xs leading-6 text-slate-500">
+                  오늘 거래는 자동으로 잔액에 반영됩니다. 과거 거래는 기본적으로 거래 내역만 기록하고, 필요할 때만 수동으로 반영할 수 있습니다.
+                </p>
+              </div>
+              <label className="inline-flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={isTodayEntry ? true : Boolean(formData.applyBalanceAdjustment)}
+                  onChange={(event) => setFormData((prev) => ({ ...prev, applyBalanceAdjustment: event.target.checked }))}
+                  disabled={isTodayEntry}
+                  className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+                />
+              </label>
+            </div>
+            <p className={`mt-3 text-xs font-medium ${isTodayEntry ? 'text-emerald-600' : 'text-slate-500'}`}>
+              {isTodayEntry ? '오늘 거래라서 잔액이 자동 반영됩니다.' : '과거 거래입니다. 체크하면 현재 잔액까지 함께 보정합니다.'}
+            </p>
+          </div>
 
           {/* Date and Type */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
