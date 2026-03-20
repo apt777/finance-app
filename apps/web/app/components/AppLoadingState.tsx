@@ -1,9 +1,9 @@
 'use client'
 
 import React from 'react'
-import { Wallet } from 'lucide-react'
 import { useColorMode } from '@/context/ColorModeContext'
 import { useUiTheme } from '@/context/UiThemeContext'
+import KablusMark from '@/components/KablusMark'
 
 interface AppLoadingStateProps {
   label: string
@@ -15,11 +15,12 @@ export default function AppLoadingState({ label, fullScreen = false }: AppLoadin
   const { theme } = useUiTheme()
   const isDark = colorMode === 'dark'
   const isModern = theme === 'modern'
+  const loadingLabel = label.includes('로딩') ? label : `${label} 로딩중...`
 
   return (
-    <div className={`${fullScreen ? 'min-h-screen' : 'min-h-[320px]'} flex items-center justify-center px-4 py-8`}>
+    <div className={`${fullScreen ? 'min-h-screen' : 'min-h-[320px]'} flex items-center justify-center px-5 py-10 md:px-8 md:py-12`}>
       <div
-        className={`w-full max-w-xl rounded-[36px] p-6 md:p-8 ${
+        className={`mx-auto w-full max-w-xl rounded-[36px] p-5 md:p-8 ${
           isModern
             ? isDark
               ? 'border border-white/10 bg-white/5 shadow-[0_24px_60px_rgba(0,0,0,0.24)] backdrop-blur-xl'
@@ -34,17 +35,17 @@ export default function AppLoadingState({ label, fullScreen = false }: AppLoadin
             className={`relative flex h-14 w-14 items-center justify-center rounded-2xl ${
               isModern
                 ? isDark
-                  ? 'bg-white/10 text-white'
-                  : 'bg-slate-900 text-white'
+                  ? 'bg-white/10'
+                  : 'bg-white/80 shadow-sm'
                 : 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white'
             }`}
           >
-            <Wallet className="h-6 w-6" />
-            <span className="absolute inset-0 animate-ping rounded-2xl bg-current opacity-10" />
+            <KablusMark className="h-8 w-8" />
+            <span className={`absolute inset-0 animate-ping rounded-2xl ${isDark ? 'bg-white/10' : 'bg-slate-900/10'}`} />
           </div>
           <div className="min-w-0 flex-1">
             <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Kablus</p>
-            <p className={`mt-1 text-lg font-bold ${isDark ? 'text-white' : 'text-slate-950'}`}>{label}</p>
+            <p className={`mt-1 text-lg font-bold ${isDark ? 'text-white' : 'text-slate-950'}`}>{loadingLabel}</p>
           </div>
         </div>
 
