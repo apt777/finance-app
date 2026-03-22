@@ -37,22 +37,18 @@ export async function GET() {
   }
 
   try {
-    const transactionsPromise = prisma.transaction.findMany({
+    const transactions = await prisma.transaction.findMany({
       where: {
         userId,
       },
       orderBy: { date: 'asc' },
     })
 
-    const budgetsPromise = prisma.budget.findMany({
+    const budgets = await prisma.budget.findMany({
       where: { userId },
     }).catch(() => [])
 
-    const [transactions, budgets, categories] = await Promise.all([
-      transactionsPromise,
-      budgetsPromise,
-      ensureDefaultCategories(userId),
-    ])
+    const categories = await ensureDefaultCategories(userId).catch(() => [])
 
     const categoryMap = new Map(categories.map((category) => [category.key, category.name]))
     const categoryTypeMap = new Map(categories.map((category) => [category.key, category.type]))
@@ -151,6 +147,7 @@ export async function GET() {
       budgetStatus,
     })
   } catch (error: any) {
+    console.error('Failed to build analysis summary:', error)
     return NextResponse.json(
       {
         monthly: [],
