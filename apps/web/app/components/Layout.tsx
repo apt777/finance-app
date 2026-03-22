@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Link } from '@/navigation'
 import { usePathname, useRouter } from '@/navigation'
+import { useSearchParams } from 'next/navigation'
 import { useOverviewData } from '@/hooks/useOverviewData'
 import { useExchangeRates, ExchangeRate } from '@/hooks/useExchangeRates'
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus'
@@ -62,6 +63,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const pathname = usePathname()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const setupManageMode = searchParams.get('manage') === '1'
   const { user, loading, signOut } = useAuth()
   const { colorMode } = useColorMode()
   const { theme, mounted } = useUiTheme()
@@ -143,10 +146,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       router.push('/setup')
     }
 
-    if (isSetupPage && setupStatus?.completed) {
+    if (isSetupPage && setupStatus?.completed && !setupManageMode) {
       router.push('/')
     }
-  }, [isAuthPage, isSetupPage, loading, router, setupLoading, setupStatus, user])
+  }, [isAuthPage, isSetupPage, loading, router, setupLoading, setupManageMode, setupStatus, user])
 
   useEffect(() => {
     setIsSidebarOpen(false)

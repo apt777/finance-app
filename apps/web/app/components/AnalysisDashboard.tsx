@@ -5,6 +5,7 @@ import { Link } from '@/navigation'
 import { useAnalysisSummary } from '@/hooks/useAnalysisSummary'
 import { useRecurringTransactions } from '@/hooks/useRecurringTransactions'
 import { useBudgets } from '@/hooks/useBudgets'
+import { useCategories } from '@/hooks/useCategories'
 import { BarChart, Bar, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, LineChart, Line } from 'recharts'
 import { ChartColumnIncreasing, ChevronRight, PiggyBank, Repeat, TriangleAlert } from 'lucide-react'
 import { useColorMode } from '@/context/ColorModeContext'
@@ -17,6 +18,7 @@ export default function AnalysisDashboard() {
   const { data, isLoading, isError } = useAnalysisSummary()
   const { data: recurringTransactions } = useRecurringTransactions()
   const { data: budgets } = useBudgets()
+  const { data: categories = [] } = useCategories()
   const [selectedMonth, setSelectedMonth] = useState('')
   const monthlyOptions = data?.monthlyCategoryBreakdown?.map((item) => item.month) ?? []
 
@@ -65,9 +67,14 @@ export default function AnalysisDashboard() {
   const previousMonth = data.monthly[data.monthly.length - 2]
   const expenseDelta = currentMonth && previousMonth ? currentMonth.expense - previousMonth.expense : 0
   const overBudgetCount = data.budgetStatus.filter((item) => item.usagePercentage >= 100).length
+  const categoryNameMap = new Map(categories.map((category) => [category.key, category.name]))
   const selectedMonthValue = selectedMonth || monthlyOptions[monthlyOptions.length - 1] || currentMonth?.month || ''
   const selectedMonthBreakdown = data.monthlyCategoryBreakdown.find((item) => item.month === selectedMonthValue)
-  const selectedMonthTotal = selectedMonthBreakdown?.categories.reduce((sum, item) => sum + item.amount, 0) ?? 0
+  const selectedMonthCategories = (selectedMonthBreakdown?.categories ?? []).map((category) => ({
+    ...category,
+    name: categoryNameMap.get(category.key) ?? category.name,
+  }))
+  const selectedMonthTotal = selectedMonthCategories.reduce((sum, item) => sum + item.amount, 0)
   const activeBudgetCount = budgets?.length ?? 0
   const activeRecurringCount = recurringTransactions?.length ?? 0
 
@@ -85,9 +92,9 @@ export default function AnalysisDashboard() {
         <article className={`rounded-3xl p-6 ${theme === 'modern' ? isDark ? 'border border-blue-400/20 bg-blue-500/10 text-white shadow-lg' : 'border border-blue-200 bg-blue-50 text-slate-950 shadow-sm' : 'bg-gradient-to-br from-slate-900 to-slate-800 text-white'}`}>
           <div className="flex items-center justify-between mb-4">
             <ChartColumnIncreasing className="w-6 h-6" />
-            <span className="text-xs text-slate-300">이번 달</span>
+            <span className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>이번 달</span>
           </div>
-          <p className="text-sm text-slate-300">순저축</p>
+          <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>순저축</p>
           <p className={`mt-2 text-3xl font-black ${netTone}`}>{Math.round(currentMonth?.net ?? 0).toLocaleString()}</p>
         </article>
 
@@ -102,10 +109,14 @@ export default function AnalysisDashboard() {
           </p>
         </article>
 
-        <Link href="/setup?step=2" className={`rounded-3xl border p-6 transition-all hover:-translate-y-0.5 ${theme === 'modern' ? isDark ? 'border-white/10 bg-white/5 shadow-sm hover:border-white/20 hover:bg-white/[0.08]' : 'border-white/80 bg-white/80 shadow-sm hover:bg-white hover:shadow-md' : 'border-slate-200 bg-white hover:shadow-md'}`}>
+        <Link href="/setup?manage=1&step=2" className={`rounded-3xl border p-6 transition-all hover:-translate-y-0.5 ${theme === 'modern' ? isDark ? 'border-white/10 bg-white/5 shadow-sm hover:border-white/20 hover:bg-white/[0.08]' : 'border-white/80 bg-white/80 shadow-sm hover:bg-white hover:shadow-md' : 'border-slate-200 bg-white hover:shadow-md'}`}>
           <div className="flex items-center justify-between mb-4">
-            <PiggyBank className="w-6 h-6 text-amber-500" />
-            <ChevronRight className="h-4 w-4 text-slate-400" />
+            <span className={`flex h-11 w-11 items-center justify-center rounded-2xl ${isDark ? 'bg-amber-500/15 text-amber-300' : 'bg-amber-100 text-amber-700'}`}>
+              <PiggyBank className="w-6 h-6" />
+            </span>
+            <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${isDark ? 'bg-white/10 text-slate-200' : 'bg-slate-100 text-slate-700'}`}>
+              설정 열기
+            </span>
           </div>
           <p className="text-sm text-slate-500">예산 설정</p>
           <p className={`text-3xl font-black mt-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{activeBudgetCount}</p>
@@ -114,10 +125,14 @@ export default function AnalysisDashboard() {
           </p>
         </Link>
 
-        <Link href="/setup?step=3" className={`rounded-3xl border p-6 transition-all hover:-translate-y-0.5 ${theme === 'modern' ? isDark ? 'border-white/10 bg-white/5 shadow-sm hover:border-white/20 hover:bg-white/[0.08]' : 'border-white/80 bg-white/80 shadow-sm hover:bg-white hover:shadow-md' : 'border-slate-200 bg-white hover:shadow-md'}`}>
+        <Link href="/setup?manage=1&step=3" className={`rounded-3xl border p-6 transition-all hover:-translate-y-0.5 ${theme === 'modern' ? isDark ? 'border-white/10 bg-white/5 shadow-sm hover:border-white/20 hover:bg-white/[0.08]' : 'border-white/80 bg-white/80 shadow-sm hover:bg-white hover:shadow-md' : 'border-slate-200 bg-white hover:shadow-md'}`}>
           <div className="flex items-center justify-between mb-4">
-            <Repeat className="w-6 h-6 text-indigo-500" />
-            <ChevronRight className="h-4 w-4 text-slate-400" />
+            <span className={`flex h-11 w-11 items-center justify-center rounded-2xl ${isDark ? 'bg-indigo-500/15 text-indigo-300' : 'bg-indigo-100 text-indigo-700'}`}>
+              <Repeat className="w-6 h-6" />
+            </span>
+            <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${isDark ? 'bg-white/10 text-slate-200' : 'bg-slate-100 text-slate-700'}`}>
+              설정 열기
+            </span>
           </div>
           <p className="text-sm text-slate-500">반복거래 설정</p>
           <p className={`text-3xl font-black mt-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{activeRecurringCount}</p>
@@ -164,11 +179,11 @@ export default function AnalysisDashboard() {
             </select>
           </div>
           <div className="space-y-4">
-            {(selectedMonthBreakdown?.categories ?? []).length === 0 && (
+            {selectedMonthCategories.length === 0 && (
               <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>선택한 달의 카테고리 지출이 아직 없습니다.</p>
             )}
-            {(selectedMonthBreakdown?.categories ?? []).map((category) => {
-              const maxAmount = selectedMonthBreakdown?.categories[0]?.amount ?? 1
+            {selectedMonthCategories.slice(0, 4).map((category) => {
+              const maxAmount = selectedMonthCategories[0]?.amount ?? 1
               const share = selectedMonthTotal > 0 ? Math.round((category.amount / selectedMonthTotal) * 100) : 0
               return (
                 <div key={category.key}>
@@ -188,6 +203,15 @@ export default function AnalysisDashboard() {
                 </div>
               )
             })}
+            {selectedMonthCategories.length > 4 ? (
+              <Link
+                href={`/analysis/categories?month=${selectedMonthValue}`}
+                className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold ${isDark ? 'bg-white/10 text-slate-200 hover:bg-white/15' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+              >
+                전체 카테고리 보기
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+            ) : null}
           </div>
         </article>
       </section>
@@ -218,7 +242,7 @@ export default function AnalysisDashboard() {
                 <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>예산 상태</h2>
                 <p className={`mt-1 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>현재 월 예산과 실제 지출을 비교합니다.</p>
               </div>
-              <Link href="/setup?step=2" className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-semibold ${isDark ? 'bg-white/10 text-slate-200' : 'bg-slate-100 text-slate-700'}`}>
+              <Link href="/setup?manage=1&step=2" className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-semibold ${isDark ? 'bg-white/10 text-slate-200' : 'bg-slate-100 text-slate-700'}`}>
                 예산 설정
               </Link>
             </div>
