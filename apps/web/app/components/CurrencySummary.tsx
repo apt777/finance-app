@@ -10,7 +10,9 @@ import {
   SUPPORTED_CURRENCIES 
 } from '@/lib/currency'
 import { Wallet, TrendingUp, PieChart } from 'lucide-react'
+import { useLocale, useTranslations } from 'next-intl'
 import AppLoadingState from '@/components/AppLoadingState'
+import { getUiCopy } from '@/lib/uiCopy'
 
 interface CurrencyBalance {
   currency: string
@@ -19,6 +21,10 @@ interface CurrencyBalance {
 }
 
 const CurrencySummary = ({ baseCurrency = 'JPY' }: { baseCurrency?: string }) => {
+  const locale = useLocale()
+  const tDashboard = useTranslations('dashboard')
+  const tAccounts = useTranslations('accounts')
+  const ui = getUiCopy(locale)
   const { data: accounts, isLoading: accountsLoading } = useAccounts()
   const { data: exchangeRates, isLoading: ratesLoading } = useExchangeRates()
 
@@ -82,7 +88,7 @@ const CurrencySummary = ({ baseCurrency = 'JPY' }: { baseCurrency?: string }) =>
   }, [accounts, exchangeRates, baseCurrency])
 
   if (accountsLoading || ratesLoading) {
-    return <AppLoadingState label="자산 요약" />
+    return <AppLoadingState label={ui.overview.assetOverview} />
   }
 
   return (
@@ -91,7 +97,7 @@ const CurrencySummary = ({ baseCurrency = 'JPY' }: { baseCurrency?: string }) =>
       <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl p-8 shadow-lg text-white">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <p className="text-blue-100 text-sm">총자산 ({baseCurrency})</p>
+            <p className="text-blue-100 text-sm">{tDashboard('totalAssets')} ({baseCurrency})</p>
             <h2 className="text-4xl font-bold mt-2">
               {Math.round(summary.totalInBaseCurrency).toLocaleString()}
             </h2>
@@ -128,7 +134,7 @@ const CurrencySummary = ({ baseCurrency = 'JPY' }: { baseCurrency?: string }) =>
 
             {/* Balance */}
             <div className="bg-slate-50 rounded-xl p-4 mb-4">
-              <p className="text-xs text-slate-600 mb-1">잔액</p>
+              <p className="text-xs text-slate-600 mb-1">{tAccounts('balance')}</p>
               <p className="text-2xl font-bold text-slate-800">
                 {Math.round(item.balance).toLocaleString()}
               </p>
@@ -140,11 +146,11 @@ const CurrencySummary = ({ baseCurrency = 'JPY' }: { baseCurrency?: string }) =>
             {/* Breakdown */}
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
-                <span className="text-slate-600">계좌 수</span>
-                <span className="font-medium text-slate-800">{item.accounts}개</span>
+                <span className="text-slate-600">{tAccounts('totalAccounts')}</span>
+                <span className="font-medium text-slate-800">{item.accounts}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-600">전체 비율</span>
+                <span className="text-slate-600">{ui.investmentPortfolio.diversification}</span>
                 <span className="font-medium text-slate-800">{item.percentage.toFixed(1)}%</span>
               </div>
             </div>
@@ -167,7 +173,7 @@ const CurrencySummary = ({ baseCurrency = 'JPY' }: { baseCurrency?: string }) =>
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
           <div className="flex items-center space-x-3 mb-6">
             <PieChart className="w-5 h-5 text-blue-600" />
-            <h3 className="text-lg font-bold text-slate-800">자산 구성</h3>
+            <h3 className="text-lg font-bold text-slate-800">{ui.overview.assetOverview}</h3>
           </div>
 
           <div className="space-y-4">
@@ -193,7 +199,7 @@ const CurrencySummary = ({ baseCurrency = 'JPY' }: { baseCurrency?: string }) =>
       {summary.currencyBreakdown.length === 0 && (
         <div className="bg-white rounded-2xl p-12 shadow-sm border border-slate-100 text-center">
           <Wallet className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-600 font-medium">계좌가 없습니다.</p>
+          <p className="text-slate-600 font-medium">{tAccounts('noAccounts')}</p>
         </div>
       )}
     </div>

@@ -19,6 +19,14 @@ export default function SettingsPage() {
   const { colorMode, setColorMode } = useColorMode()
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState('theme')
+  const languageNames =
+    locale === 'en'
+      ? { ko: 'Korean', ja: 'Japanese', en: 'English', zh: 'Chinese' }
+      : locale === 'ja'
+        ? { ko: '韓国語', ja: '日本語', en: '英語', zh: '中国語' }
+        : locale === 'zh'
+          ? { ko: '韩语', ja: '日语', en: '英语', zh: '中文' }
+          : { ko: '한국어', ja: '일본어', en: '영어', zh: '중국어' }
 
   useEffect(() => {
     const requestedTab = searchParams.get('tab')
@@ -172,14 +180,14 @@ export default function SettingsPage() {
                   <div className="flex items-center space-x-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <span className="text-3xl">🇰🇷</span>
                     <div>
-                      <p className="font-semibold text-slate-800">{locale === 'ko' ? '한국어' : 'Korean'}</p>
+                      <p className="font-semibold text-slate-800">{languageNames.ko}</p>
                       <p className="text-xs text-slate-500">Korean</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <span className="text-3xl">🇯🇵</span>
                     <div>
-                      <p className="font-semibold text-slate-800">日本語</p>
+                      <p className="font-semibold text-slate-800">{languageNames.ja}</p>
                       <p className="text-xs text-slate-500">Japanese</p>
                     </div>
                   </div>
@@ -188,14 +196,14 @@ export default function SettingsPage() {
                       <Globe className="h-5 w-5" />
                     </span>
                     <div>
-                      <p className="font-semibold text-slate-800">English</p>
+                      <p className="font-semibold text-slate-800">{languageNames.en}</p>
                       <p className="text-xs text-slate-500">English</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <span className="text-3xl">🇨🇳</span>
                     <div>
-                      <p className="font-semibold text-slate-800">中文</p>
+                      <p className="font-semibold text-slate-800">{languageNames.zh}</p>
                       <p className="text-xs text-slate-500">Chinese</p>
                     </div>
                   </div>

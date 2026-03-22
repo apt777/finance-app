@@ -18,9 +18,15 @@ import {
   Globe,
   ChevronRight
 } from 'lucide-react'
+import { useLocale, useTranslations } from 'next-intl'
 import AppLoadingState from '@/components/AppLoadingState'
+import { getUiCopy } from '@/lib/uiCopy'
 
 const InvestmentPortfolio = () => {
+  const locale = useLocale()
+  const tHoldings = useTranslations('holdings')
+  const tCommon = useTranslations('common')
+  const ui = getUiCopy(locale)
   const { data: holdings, isLoading, isError } = useHoldings()
 
   const analysis = useMemo(() => {
@@ -60,13 +66,13 @@ const InvestmentPortfolio = () => {
   }, [holdings])
 
   if (isLoading) {
-    return <AppLoadingState label="투자" />
+    return <AppLoadingState label={tHoldings('title')} />
   }
 
   if (isError) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-        <p className="text-red-600 font-medium">투자 정보를 불러오는 중 오류 발생</p>
+        <p className="text-red-600 font-medium">{ui.investmentPortfolio.loadError}</p>
       </div>
     )
   }
@@ -77,7 +83,7 @@ const InvestmentPortfolio = () => {
         <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
           <TrendingUp className="w-8 h-8 text-slate-200" />
         </div>
-        <p className="text-slate-500 font-medium">등록된 투자가 없습니다.</p>
+        <p className="text-slate-500 font-medium">{ui.investmentPortfolio.empty}</p>
       </div>
     )
   }
@@ -92,8 +98,8 @@ const InvestmentPortfolio = () => {
           <TrendingUp className="w-6 h-6" />
         </div>
         <div>
-          <h2 className="text-xl md:text-2xl font-bold text-slate-800">투자</h2>
-          <p className="text-slate-500 text-xs md:text-sm mt-0.5">총 {normalizedHoldings.length}개의 투자 종목</p>
+          <h2 className="text-xl md:text-2xl font-bold text-slate-800">{tHoldings('title')}</h2>
+          <p className="text-slate-500 text-xs md:text-sm mt-0.5">{ui.investmentPortfolio.totalCount(normalizedHoldings.length)}</p>
         </div>
       </div>
 
@@ -102,13 +108,13 @@ const InvestmentPortfolio = () => {
         {/* Total Value */}
         <div className="min-w-[240px] flex-1 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-5 shadow-lg text-white snap-start">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-blue-100 text-[10px] font-bold uppercase tracking-wider">포트폴리오 가치</p>
+            <p className="text-blue-100 text-[10px] font-bold uppercase tracking-wider">{ui.investmentPortfolio.portfolioValue}</p>
             <Wallet className="w-4 h-4 text-blue-200" />
           </div>
           <p className="text-2xl font-black">
             {Math.round(summary.totalValue).toLocaleString()}
           </p>
-          <p className="text-blue-100 text-[10px] mt-2 font-medium">자동 갱신 현재가 기준 평가 금액 (JPY)</p>
+          <p className="text-blue-100 text-[10px] mt-2 font-medium">{ui.investmentPortfolio.marketValueHint}</p>
         </div>
 
         {/* Gain/Loss */}
@@ -121,7 +127,7 @@ const InvestmentPortfolio = () => {
             <p className={`text-[10px] font-bold uppercase tracking-wider ${
               summary.totalGainLoss >= 0 ? 'text-emerald-600' : 'text-rose-600'
             }`}>
-              총 손익
+              {ui.investmentPortfolio.totalGainLoss}
             </p>
             {summary.totalGainLoss >= 0 ? (
               <TrendingUp className="w-4 h-4 text-emerald-500" />
@@ -142,7 +148,7 @@ const InvestmentPortfolio = () => {
               ({summary.gainLossPercentage >= 0 ? '+' : ''}{summary.gainLossPercentage.toFixed(2)}%)
             </p>
           </div>
-          <p className="text-slate-400 text-[10px] mt-2 font-medium">누적 투자 수익</p>
+          <p className="text-slate-400 text-[10px] mt-2 font-medium">{ui.investmentPortfolio.cumulativeReturn}</p>
         </div>
       </div>
 
@@ -151,9 +157,9 @@ const InvestmentPortfolio = () => {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Award className="w-5 h-5 text-amber-500" />
-            <h3 className="text-sm font-bold text-slate-800">NISA 투자 한도 (성장투자전략)</h3>
+            <h3 className="text-sm font-bold text-slate-800">{ui.investmentPortfolio.nisaLimit}</h3>
           </div>
-          <span className="text-[10px] font-bold text-slate-400">연간 120만엔</span>
+          <span className="text-[10px] font-bold text-slate-400">{ui.investmentPortfolio.annualLimit}</span>
         </div>
         <div className="space-y-3">
           <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
@@ -166,11 +172,11 @@ const InvestmentPortfolio = () => {
           </div>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] text-slate-400 font-bold uppercase">사용 금액</p>
+              <p className="text-[10px] text-slate-400 font-bold uppercase">{ui.investmentPortfolio.usedAmount}</p>
               <p className="text-sm font-black text-slate-800">{Math.round(nisaLimit.totalCost).toLocaleString()} JPY</p>
             </div>
             <div className="text-right">
-              <p className="text-[10px] text-slate-400 font-bold uppercase">잔여 한도</p>
+              <p className="text-[10px] text-slate-400 font-bold uppercase">{ui.investmentPortfolio.remainingLimit}</p>
               <p className="text-sm font-black text-amber-600">{Math.round(nisaLimit.remainingLimit).toLocaleString()} JPY</p>
             </div>
           </div>
@@ -183,20 +189,20 @@ const InvestmentPortfolio = () => {
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
           <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
             <PieChart className="w-4 h-4 text-blue-500" />
-            투자 유형별
+            {ui.investmentPortfolio.byType}
           </h3>
           <div className="space-y-3">
             {Object.entries(investmentTypeStats).map(([type, stats]) => (
               <div key={type} className="p-3 bg-slate-50 rounded-xl flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">{type === 'nisa' ? 'NISA' : '일반'}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">{type === 'nisa' ? 'NISA' : ui.investmentPortfolio.regular}</p>
                   <p className="text-sm font-bold text-slate-800">{Math.round(stats.totalValue).toLocaleString()} JPY</p>
                 </div>
                 <div className="text-right">
                   <p className={`text-xs font-bold ${stats.gainLoss >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                     {stats.gainLoss >= 0 ? '+' : ''}{Math.round(stats.gainLoss).toLocaleString()}
                   </p>
-                  <p className="text-[10px] text-slate-400">{stats.count}개 종목</p>
+                  <p className="text-[10px] text-slate-400">{ui.investmentPortfolio.itemCount(stats.count)}</p>
                 </div>
               </div>
             ))}
@@ -207,20 +213,20 @@ const InvestmentPortfolio = () => {
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
           <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
             <Globe className="w-4 h-4 text-indigo-500" />
-            시장별 분포
+            {ui.investmentPortfolio.byMarket}
           </h3>
           <div className="space-y-3">
             {Object.entries(stockTypeStats).map(([type, stats]) => (
               <div key={type} className="p-3 bg-slate-50 rounded-xl flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">{type === 'japanese' ? '일본 시장' : '미국 시장'}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">{type === 'japanese' ? ui.investmentPortfolio.jpMarket : ui.investmentPortfolio.usMarket}</p>
                   <p className="text-sm font-bold text-slate-800">{Math.round(stats.totalValue).toLocaleString()} JPY</p>
                 </div>
                 <div className="text-right">
                   <p className={`text-xs font-bold ${stats.gainLoss >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                     {stats.gainLoss >= 0 ? '+' : ''}{Math.round(stats.gainLoss).toLocaleString()}
                   </p>
-                  <p className="text-[10px] text-slate-400">{stats.count}개 종목</p>
+                  <p className="text-[10px] text-slate-400">{ui.investmentPortfolio.itemCount(stats.count)}</p>
                 </div>
               </div>
             ))}
@@ -233,7 +239,7 @@ const InvestmentPortfolio = () => {
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
             <PieChart className="w-4 h-4 text-blue-600" />
-            투자 비중
+            {ui.investmentPortfolio.diversification}
           </h3>
         </div>
 

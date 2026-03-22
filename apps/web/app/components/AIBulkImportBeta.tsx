@@ -3,11 +3,12 @@
 import React, { useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Sparkles, Wand2, AlertCircle, CheckCircle2, Trash2 } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useAccounts } from '@/hooks/useAccounts'
 import { useCategories } from '@/hooks/useCategories'
 import { useTransactions } from '@/hooks/useTransactions'
 import { findDuplicateTransaction } from '@/lib/transactionDuplicates'
+import { getUiCopy } from '@/lib/uiCopy'
 
 interface ParsedRow {
   id: string
@@ -65,9 +66,43 @@ const createTransaction = async (payload: {
 }
 
 export default function AIBulkImportBeta() {
+  const locale = useLocale()
   const tSettings = useTranslations('settings')
   const tTransactions = useTranslations('transactions')
   const tCommon = useTranslations('common')
+  const ui = getUiCopy(locale)
+  const duplicateDraftMessage =
+    locale === 'en'
+      ? 'Duplicate inside this draft list.'
+      : locale === 'ja'
+        ? 'この下書き一覧の中で重複しています。'
+        : locale === 'zh'
+          ? '与本次草稿列表中的交易重复。'
+          : '이번 일괄 등록 목록 안에서 중복됩니다.'
+  const duplicateBadgeLabel =
+    locale === 'en'
+      ? 'Possible duplicate'
+      : locale === 'ja'
+        ? '重複候補'
+        : locale === 'zh'
+          ? '疑似重复'
+          : '중복 후보'
+  const betaExampleText =
+    locale === 'en'
+      ? `3/1 Starbucks 5800
+3/2 Salary 250000
+3/3 Subway 1400`
+      : locale === 'ja'
+        ? `3/1 スターバックス 5800
+3/2 給与 250000
+3/3 電車 1400`
+        : locale === 'zh'
+          ? `3/1 星巴克 5800
+3/2 工资 250000
+3/3 地铁 1400`
+          : `3/1 스타벅스 5800
+3/2 월급 250000
+3/3 전철 1400`
   const queryClient = useQueryClient()
   const { data: accounts = [] } = useAccounts()
   const { data: categories = [] } = useCategories()
@@ -109,7 +144,7 @@ export default function AIBulkImportBeta() {
       )
 
       if (duplicateInExisting) {
-        result.set(row.id, '이미 등록된 거래와 중복됩니다.')
+        result.set(row.id, ui.transactionForm.duplicateError)
         continue
       }
 
@@ -126,7 +161,7 @@ export default function AIBulkImportBeta() {
       )
 
       if (duplicateInDraft) {
-        result.set(row.id, '이번 일괄 등록 목록 안에서 중복됩니다.')
+        result.set(row.id, duplicateDraftMessage)
         continue
       }
 
@@ -185,7 +220,12 @@ export default function AIBulkImportBeta() {
         } catch (error) {
           const message = error instanceof Error ? error.message : ''
 
-          if (message.includes('이미 같은 날짜') || message.includes('duplicate')) {
+          if (
+            message.includes('이미 같은 날짜') ||
+            message.includes('duplicate') ||
+            message.includes('same date') ||
+            message.includes('already exists')
+          ) {
             skippedDuplicateCount += 1
             continue
           }
@@ -203,7 +243,13 @@ export default function AIBulkImportBeta() {
       queryClient.invalidateQueries({ queryKey: ['overview'] })
       setFeedback(
         skippedDuplicateCount > 0
-          ? `${importedCount}건 등록, ${skippedDuplicateCount}건 중복으로 건너뜀`
+          ? (locale === 'en'
+              ? `${importedCount} imported, ${skippedDuplicateCount} skipped as duplicates`
+              : locale === 'ja'
+                ? `${importedCount}件登録、${skippedDuplicateCount}件は重複のためスキップ`
+                : locale === 'zh'
+                  ? `已导入 ${importedCount} 条，${skippedDuplicateCount} 条因重复被跳过`
+                  : `${importedCount}건 등록, ${skippedDuplicateCount}건 중복으로 건너뜀`)
           : tSettings('betaImportDone', { count: importedCount })
       )
       setErrorMessage(null)
@@ -240,9 +286,7 @@ export default function AIBulkImportBeta() {
             <div className="rounded-2xl border border-amber-200 bg-white/80 px-4 py-3 text-xs leading-6 text-slate-600">
               <p>{tSettings('betaExampleTitle')}</p>
               <pre className="mt-2 whitespace-pre-wrap font-sans text-[12px] text-slate-700">
-{`3/1 스타벅스 5800
-3/2 월급 250000
-3/3 전철 1400`}
+{betaExampleText}
               </pre>
             </div>
           </div>
@@ -402,7 +446,7 @@ export default function AIBulkImportBeta() {
                       </span>
                       {duplicateState.has(row.id) ? (
                         <span className="rounded-full bg-rose-100 px-2.5 py-1 text-xs font-semibold text-rose-700">
-                          중복 후보
+                          {duplicateBadgeLabel}
                         </span>
                       ) : null}
                       <button type="button" onClick={() => removeRow(row.id)} className="text-slate-400 transition-colors hover:text-rose-600">

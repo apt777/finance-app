@@ -4,6 +4,7 @@ import React from 'react'
 import { useColorMode } from '@/context/ColorModeContext'
 import { useUiTheme } from '@/context/UiThemeContext'
 import KablusMark from '@/components/KablusMark'
+import { useLocale } from 'next-intl'
 
 interface AppLoadingStateProps {
   label: string
@@ -13,9 +14,13 @@ interface AppLoadingStateProps {
 export default function AppLoadingState({ label, fullScreen = false }: AppLoadingStateProps) {
   const { colorMode } = useColorMode()
   const { theme } = useUiTheme()
+  const locale = useLocale()
   const isDark = colorMode === 'dark'
   const isModern = theme === 'modern'
-  const loadingLabel = label.includes('로딩') ? label : `${label} 로딩중...`
+  const loadingSuffix = locale === 'en' ? 'loading...' : locale === 'ja' ? '読み込み中...' : locale === 'zh' ? '加载中...' : '로딩중...'
+  const loadingLabel = label.toLowerCase().includes('loading') || label.includes('로딩') || label.includes('読み込み') || label.includes('加载')
+    ? label
+    : `${label} ${loadingSuffix}`
 
   return (
     <div className={`${fullScreen ? 'min-h-screen' : 'min-h-[320px]'} flex items-center justify-center px-5 py-10 md:px-8 md:py-12`}>

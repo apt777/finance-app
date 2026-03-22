@@ -4,15 +4,24 @@ import React from 'react'
 import { Target, Plus } from 'lucide-react'
 import GoalList from '@/components/GoalList'
 import { Link } from '@/navigation'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useColorMode } from '@/context/ColorModeContext'
 import { useUiTheme } from '@/context/UiThemeContext'
 
 export default function GoalsPage() {
   const t = useTranslations('goals')
+  const locale = useLocale()
   const { theme } = useUiTheme()
   const { colorMode } = useColorMode()
   const isDark = colorMode === 'dark'
+  const modernSubtitle =
+    locale === 'en'
+      ? 'See goal progress and the remaining amount in one tidy workspace.'
+      : locale === 'ja'
+        ? '目標の進捗と残り金額を、ひと目で整理して確認できます。'
+        : locale === 'zh'
+          ? '在一个更整洁的视图里查看目标进度和剩余金额。'
+          : '목표 진행률과 남은 금액을 한 눈에 정리해서 볼 수 있게 다시 정돈했습니다.'
 
   if (theme === 'modern') {
     return (
@@ -27,7 +36,7 @@ export default function GoalsPage() {
                 <p className={`text-[11px] font-bold uppercase tracking-[0.24em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Goal workspace</p>
                 <h1 className={`mt-2 text-[2rem] font-bold tracking-[-0.02em] ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('title')}</h1>
                 <p className={`mt-2 max-w-2xl text-sm leading-7 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  목표 진행률과 남은 금액을 한 눈에 정리해서 볼 수 있게 다시 정돈했습니다.
+                  {modernSubtitle}
                 </p>
               </div>
             </div>

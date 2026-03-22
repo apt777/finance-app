@@ -4,6 +4,8 @@ import React, { useState, useRef } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Upload, FileText, Plus, Trash2, AlertCircle, CheckCircle } from 'lucide-react'
 import { useAccounts } from '../hooks/useAccounts'
+import { useLocale, useTranslations } from 'next-intl'
+import { getUiCopy } from '@/lib/uiCopy'
 
 interface BulkTransaction {
   date: string
@@ -24,6 +26,29 @@ interface ParsedRow {
 }
 
 const BulkTransactionImport = () => {
+  const locale = useLocale()
+  const tTransactions = useTranslations('transactions')
+  const ui = getUiCopy(locale)
+  const csvExample =
+    locale === 'en'
+      ? `date,description,type,amount,accountName,currency
+2024-12-16,Lunch,expense,5000,Japan Account,JPY
+2024-12-15,Salary,income,1000000,Korea Account,KRW
+2024-12-14,Online shopping,expense,50,US Account,USD`
+      : locale === 'ja'
+        ? `日付,説明,種類,金額,口座名,通貨
+2024-12-16,昼食,expense,5000,日本口座,JPY
+2024-12-15,給与,income,1000000,韓国口座,KRW
+2024-12-14,オンラインショッピング,expense,50,米国口座,USD`
+        : locale === 'zh'
+          ? `日期,说明,类型,金额,账户名,货币
+2024-12-16,午餐,expense,5000,日本账户,JPY
+2024-12-15,工资,income,1000000,韩国账户,KRW
+2024-12-14,在线购物,expense,50,美国账户,USD`
+          : `날짜,설명,유형,금액,계좌명,통화
+2024-12-16,점심 식사,expense,5000,일본 통장,JPY
+2024-12-15,급여,income,1000000,한국 통장,KRW
+2024-12-14,온라인 쇼핑,expense,50,미국 계좌,USD`
   const queryClient = useQueryClient()
   const { data: accounts } = useAccounts()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -64,7 +89,7 @@ const BulkTransactionImport = () => {
       })
       if (!res.ok) {
         const errorData = await res.json()
-        throw new Error(errorData.error || '거래 내역 일괄 입력 실패')
+        throw new Error(errorData.error || ui.bulkImport.failed)
       }
       return res.json()
     },
@@ -80,7 +105,7 @@ const BulkTransactionImport = () => {
         accountId: '',
         currency: 'JPY',
       })
-      setSuccessMessage('거래 내역이 성공적으로 입력되었습니다!')
+      setSuccessMessage(ui.bulkImport.success)
       setTimeout(() => setSuccessMessage(''), 3000)
     },
   })
@@ -90,22 +115,22 @@ const BulkTransactionImport = () => {
     const newErrors = { ...errors }
 
     if (!txn.date) {
-      newErrors[index] = '날짜를 입력해 주세요.'
+      newErrors[index] = ui.bulkImport.dateRequired
       return false
     }
 
     if (!txn.description) {
-      newErrors[index] = '설명을 입력해 주세요.'
+      newErrors[index] = ui.bulkImport.descriptionRequired
       return false
     }
 
     if (!txn.amount || isNaN(txn.amount)) {
-      newErrors[index] = '유효한 금액을 입력해 주세요.'
+      newErrors[index] = ui.bulkImport.amountRequired
       return false
     }
 
     if (!txn.accountId) {
-      newErrors[index] = '계좌를 선택해 주세요.'
+      newErrors[index] = ui.bulkImport.accountRequired
       return false
     }
 
@@ -117,7 +142,7 @@ const BulkTransactionImport = () => {
   // Add transaction manually
   const handleAddTransaction = () => {
     if (!formData.accountId || !formData.description || !formData.amount) {
-      alert('모든 필드를 입력해 주세요.')
+      alert(ui.bulkImport.fillAll)
       return
     }
 
@@ -170,7 +195,7 @@ const BulkTransactionImport = () => {
           )
 
           if (!account) {
-            newErrors[index] = `계좌를 찾을 수 없습니다: ${accountName}`
+            newErrors[index] = ui.bulkImport.accountNotFound(accountName || '')
             return
           }
 
@@ -194,7 +219,7 @@ const BulkTransactionImport = () => {
 
         setTransactions(importedTxns)
       } catch (error) {
-        alert('CSV 파일 파싱 오류: ' + (error as Error).message)
+        alert(ui.bulkImport.csvParseError((error as Error).message))
       }
     }
 
@@ -212,7 +237,7 @@ const BulkTransactionImport = () => {
   // Submit
   const handleSubmit = () => {
     if (transactions.length === 0) {
-      alert('입력할 거래 내역이 없습니다.')
+      alert(ui.bulkImport.noTransactions)
       return
     }
 
@@ -227,7 +252,7 @@ const BulkTransactionImport = () => {
     })
 
     if (hasErrors) {
-      alert('오류가 있는 거래 내역이 있습니다. 수정해 주세요.')
+      alert(ui.bulkImport.fixErrors)
       return
     }
 
@@ -244,14 +269,14 @@ const BulkTransactionImport = () => {
           <Upload className="w-6 h-6" />
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">거래 내역 일괄 입력</h2>
-          <p className="text-slate-600 text-sm mt-1">여러 거래 내역을 한 번에 입력하세요</p>
+          <h2 className="text-2xl font-bold text-slate-800">{ui.bulkImport.title}</h2>
+          <p className="text-slate-600 text-sm mt-1">{ui.bulkImport.subtitle}</p>
         </div>
       </div>
 
       {/* Import Method Selector */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-        <h3 className="text-lg font-bold text-slate-800 mb-4">입력 방법 선택</h3>
+        <h3 className="text-lg font-bold text-slate-800 mb-4">{ui.bulkImport.methodTitle}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <button
             onClick={() => setImportMethod('manual')}
@@ -262,8 +287,8 @@ const BulkTransactionImport = () => {
             }`}
           >
             <Plus className="w-6 h-6 mb-2" />
-            <p className="font-semibold text-slate-800">수동 입력</p>
-            <p className="text-xs text-slate-600 mt-1">한 번에 하나씩 입력</p>
+            <p className="font-semibold text-slate-800">{ui.bulkImport.manual}</p>
+            <p className="text-xs text-slate-600 mt-1">{ui.bulkImport.manualDesc}</p>
           </button>
           <button
             onClick={() => setImportMethod('csv')}
@@ -274,8 +299,8 @@ const BulkTransactionImport = () => {
             }`}
           >
             <FileText className="w-6 h-6 mb-2" />
-            <p className="font-semibold text-slate-800">CSV 업로드</p>
-            <p className="text-xs text-slate-600 mt-1">파일에서 일괄 입력</p>
+            <p className="font-semibold text-slate-800">{ui.bulkImport.csv}</p>
+            <p className="text-xs text-slate-600 mt-1">{ui.bulkImport.csvDesc}</p>
           </button>
         </div>
       </div>
@@ -283,11 +308,11 @@ const BulkTransactionImport = () => {
       {/* Manual Input Form */}
       {importMethod === 'manual' && (
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-          <h3 className="text-lg font-bold text-slate-800 mb-4">거래 내역 추가</h3>
+          <h3 className="text-lg font-bold text-slate-800 mb-4">{ui.bulkImport.addEntryTitle}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                날짜
+                {ui.bulkImport.date}
               </label>
               <input
                 type="date"
@@ -298,14 +323,14 @@ const BulkTransactionImport = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                계좌
+                {ui.bulkImport.account}
               </label>
               <select
                 value={formData.accountId}
                 onChange={(e) => setFormData({ ...formData, accountId: e.target.value })}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">계좌 선택</option>
+                <option value="">{ui.bulkImport.selectAccount}</option>
                 {accountsList.map((account) => (
                   <option key={account.id} value={account.id}>
                     {account.name} ({account.currency})
@@ -315,7 +340,7 @@ const BulkTransactionImport = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                설명
+                {ui.bulkImport.description}
               </label>
               <input
                 type="text"
@@ -324,12 +349,12 @@ const BulkTransactionImport = () => {
                   setFormData({ ...formData, description: e.target.value })
                 }
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="예: 점심 식사"
+                placeholder={ui.bulkImport.descriptionPlaceholder}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                금액
+                {ui.bulkImport.amount}
               </label>
               <input
                 type="number"
@@ -342,16 +367,16 @@ const BulkTransactionImport = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                유형
+                {ui.bulkImport.type}
               </label>
               <select
                 value={formData.type}
                 onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="expense">지출</option>
-                <option value="income">수입</option>
-                <option value="transfer">이체</option>
+                <option value="expense">{tTransactions('expense')}</option>
+                <option value="income">{tTransactions('income')}</option>
+                <option value="transfer">{tTransactions('transfer')}</option>
               </select>
             </div>
           </div>
@@ -359,7 +384,7 @@ const BulkTransactionImport = () => {
             onClick={handleAddTransaction}
             className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
           >
-            거래 추가
+            {ui.bulkImport.addRow}
           </button>
         </div>
       )}
@@ -367,16 +392,16 @@ const BulkTransactionImport = () => {
       {/* CSV Upload Form */}
       {importMethod === 'csv' && (
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-          <h3 className="text-lg font-bold text-slate-800 mb-4">CSV 파일 업로드</h3>
+          <h3 className="text-lg font-bold text-slate-800 mb-4">{ui.bulkImport.csvUploadTitle}</h3>
           <div className="space-y-4">
             <div
               onClick={() => fileInputRef.current?.click()}
               className="border-2 border-dashed border-blue-300 rounded-xl p-8 text-center cursor-pointer hover:border-blue-500 transition-colors"
             >
               <Upload className="w-12 h-12 text-blue-400 mx-auto mb-2" />
-              <p className="font-semibold text-slate-800">CSV 파일을 여기에 드래그하거나 클릭</p>
+              <p className="font-semibold text-slate-800">{ui.bulkImport.csvDrop}</p>
               <p className="text-xs text-slate-600 mt-1">
-                형식: 날짜, 설명, 유형, 금액, 계좌명, 통화
+                {ui.bulkImport.csvFormat}
               </p>
             </div>
             <input
@@ -389,12 +414,9 @@ const BulkTransactionImport = () => {
 
             {/* CSV Format Example */}
             <div className="bg-slate-50 rounded-lg p-4">
-              <p className="text-sm font-medium text-slate-800 mb-2">CSV 형식 예시:</p>
+              <p className="text-sm font-medium text-slate-800 mb-2">{ui.bulkImport.csvExample}:</p>
               <pre className="text-xs text-slate-600 overflow-x-auto">
-{`날짜,설명,유형,금액,계좌명,통화
-2024-12-16,점심 식사,expense,5000,일본 통장,JPY
-2024-12-15,급여,income,1000000,한국 통장,KRW
-2024-12-14,온라인 쇼핑,expense,50,미국 계좌,USD`}
+{csvExample}
               </pre>
             </div>
           </div>
@@ -405,7 +427,7 @@ const BulkTransactionImport = () => {
       {transactions.length > 0 && (
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
           <h3 className="text-lg font-bold text-slate-800 mb-4">
-            입력 예정 거래 ({transactions.length}개)
+            {ui.bulkImport.scheduled(transactions.length)}
           </h3>
           <div className="space-y-3 max-h-96 overflow-y-auto">
             {transactions.map((txn, index) => (
@@ -435,15 +457,9 @@ const BulkTransactionImport = () => {
                       </span>
                     </div>
                     <div className="text-xs text-slate-600 space-y-1">
-                      <p>날짜: {txn.date}</p>
-                      <p>
-                        계좌:{' '}
-                        {
-                          accountsList.find((acc) => acc.id === txn.accountId)
-                            ?.name
-                        }
-                      </p>
-                      <p>유형: {txn.type}</p>
+                      <p>{ui.bulkImport.dateLabel(txn.date)}</p>
+                      <p>{ui.bulkImport.accountLabel(accountsList.find((acc) => acc.id === txn.accountId)?.name || 'Unknown')}</p>
+                      <p>{ui.bulkImport.typeLabel(txn.type)}</p>
                     </div>
                     {errors[index] && (
                       <div className="flex items-start space-x-2 mt-2 text-red-600 text-xs">
@@ -472,12 +488,12 @@ const BulkTransactionImport = () => {
             {importMutation.isPending ? (
               <>
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                <span>입력 중...</span>
+                <span>{ui.bulkImport.importing}</span>
               </>
             ) : (
               <>
                 <CheckCircle className="w-5 h-5" />
-                <span>거래 내역 입력 ({transactions.length}개)</span>
+                <span>{ui.bulkImport.submit(transactions.length)}</span>
               </>
             )}
           </button>
@@ -495,7 +511,7 @@ const BulkTransactionImport = () => {
       {/* Error Message */}
       {importMutation.isError && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-600 text-sm">
-          <p className="font-medium">거래 내역 입력 오류</p>
+          <p className="font-medium">{ui.bulkImport.errorTitle}</p>
           <p className="text-xs mt-1">{importMutation.error.message}</p>
         </div>
       )}

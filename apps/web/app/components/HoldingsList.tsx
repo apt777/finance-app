@@ -6,9 +6,10 @@ import { useHoldings } from '../hooks/useHoldings'
 import { useAccounts } from '../hooks/useAccounts'
 import { useExchangeRates, ExchangeRate } from '../hooks/useExchangeRates'
 import { TrendingUp, Filter } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useUiTheme } from '@/context/UiThemeContext'
 import AppLoadingState from '@/components/AppLoadingState'
+import { getUiCopy } from '@/lib/uiCopy'
 
 interface Account {
   id: string;
@@ -36,6 +37,8 @@ const HoldingsList = () => {
   const tHoldings = useTranslations('holdings')
   const tCommon = useTranslations('common')
   const tTransactions = useTranslations('transactions')
+  const locale = useLocale()
+  const ui = getUiCopy(locale)
   
   const { data: holdingsData, error: holdingsError, isLoading: holdingsLoading } = useHoldings()
   const { data: accountsData, error: accountsError, isLoading: accountsLoading } = useAccounts()
@@ -183,13 +186,13 @@ const HoldingsList = () => {
                         href={`/holdings/add?mode=buy&holdingId=${holding.id}`}
                         className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
                       >
-                        추가 매수
+                        {ui.holdingsForm.buyTitle}
                       </Link>
                       <Link
                         href={`/holdings/add?mode=sell&holdingId=${holding.id}`}
                         className="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition-colors hover:bg-rose-100"
                       >
-                        매도
+                        {ui.holdingsForm.sellTitle}
                       </Link>
                     </div>
                   </div>
@@ -202,7 +205,7 @@ const HoldingsList = () => {
         <div className={`rounded-2xl p-12 text-center ${theme === 'modern' ? 'border border-white/80 bg-white shadow-[0_14px_34px_rgba(148,163,184,0.14)]' : 'border border-slate-100 bg-white shadow-sm'}`}>
           <TrendingUp className="w-16 h-16 text-slate-300 mx-auto mb-4" />
           <p className="text-slate-600 font-medium">{tHoldings('noHoldings')}</p>
-          <p className="text-slate-500 text-sm mt-1">Add new investment to start your portfolio!</p>
+          <p className="text-slate-500 text-sm mt-1">{ui.investmentPortfolio.holdingsCta}</p>
         </div>
       )}
     </div>

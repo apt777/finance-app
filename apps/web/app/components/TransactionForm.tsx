@@ -7,8 +7,9 @@ import { useAccounts } from '../hooks/useAccounts'
 import { useCategories } from '../hooks/useCategories'
 import { useTransactions } from '../hooks/useTransactions'
 import { ArrowUpRight, ArrowDownLeft, AlertCircle, CheckCircle, ArrowRightLeft } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { findDuplicateTransaction } from '@/lib/transactionDuplicates'
+import { getUiCopy } from '@/lib/uiCopy'
 
 interface TransactionFormData {
   accountId?: string;
@@ -61,6 +62,8 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
   const tCommon = useTranslations('common')
   const tAccounts = useTranslations('accounts')
   const tValidation = useTranslations('validation')
+  const locale = useLocale()
+  const ui = getUiCopy(locale)
   const queryClient = useQueryClient()
   const { data: accounts, isLoading: isLoadingAccounts, error: accountsError } = useAccounts()
   const { data: categories } = useCategories()
@@ -185,7 +188,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
     }
 
     if (duplicateTransaction) {
-      setFormError('이미 같은 날짜, 금액, 유형, 내용의 거래가 등록되어 있습니다.');
+      setFormError(ui.transactionForm.duplicateError);
       return;
     }
 
@@ -353,9 +356,9 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
           <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold text-slate-800">현재 계좌 잔액에 반영</p>
+                <p className="text-sm font-semibold text-slate-800">{ui.transactionForm.applyBalance}</p>
                 <p className="mt-1 text-xs leading-6 text-slate-500">
-                  오늘 거래는 자동으로 잔액에 반영됩니다. 과거 거래는 기본적으로 거래 내역만 기록하고, 필요할 때만 수동으로 반영할 수 있습니다.
+                  {ui.transactionForm.applyBalanceDesc}
                 </p>
               </div>
               <label className="inline-flex items-center gap-2">
@@ -369,7 +372,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
               </label>
             </div>
             <p className={`mt-3 text-xs font-medium ${isTodayEntry ? 'text-emerald-600' : 'text-slate-500'}`}>
-              {isTodayEntry ? '오늘 거래라서 잔액이 자동 반영됩니다.' : '과거 거래입니다. 체크하면 현재 잔액까지 함께 보정합니다.'}
+              {isTodayEntry ? ui.transactionForm.todayAuto : ui.transactionForm.pastOptional}
             </p>
           </div>
 
@@ -586,7 +589,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 flex items-start space-x-3">
               <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
               <div className="text-sm text-amber-700">
-                <p className="font-semibold">중복 가능성이 높은 거래가 이미 있습니다.</p>
+                <p className="font-semibold">{ui.transactionForm.duplicateHint}</p>
                 <p className="mt-1">
                   {duplicateTransaction.description} / {Math.abs(duplicateTransaction.amount).toLocaleString()} {duplicateTransaction.currency}
                 </p>

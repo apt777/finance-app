@@ -18,7 +18,7 @@ export interface Holding {
 const fetchHoldings = async (): Promise<Holding[]> => {
   const res = await fetch('/api/holdings')
   if (!res.ok) {
-    throw new Error('투자 데이터를 불러오는 중 오류 발생')
+    throw new Error('Failed to load holdings')
   }
   return res.json()
 }

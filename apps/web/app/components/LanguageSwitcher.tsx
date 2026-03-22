@@ -19,6 +19,13 @@ const languages: Language[] = [
   { code: 'zh', name: '中文', flag: '🇨🇳' },
 ]
 
+const localizedNames: Record<string, Record<string, string>> = {
+  ko: { ko: '한국어', ja: '일본어', en: '영어', zh: '중국어' },
+  en: { ko: 'Korean', ja: 'Japanese', en: 'English', zh: 'Chinese' },
+  ja: { ko: '韓国語', ja: '日本語', en: '英語', zh: '中国語' },
+  zh: { ko: '韩语', ja: '日语', en: '英语', zh: '中文' },
+}
+
 export default function LanguageSwitcher({ align = 'start' }: { align?: 'start' | 'end' }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -34,7 +41,8 @@ export default function LanguageSwitcher({ align = 'start' }: { align?: 'start' 
     })
   }
 
-  const currentLanguage = languages.find((lang) => lang.code === locale) ?? languages[0]!;
+  const currentLanguage = languages.find((lang) => lang.code === locale) ?? languages[0]!
+  const displayNames = localizedNames[locale] ?? localizedNames.en
 
   return (
     <div className="relative">
@@ -46,7 +54,7 @@ export default function LanguageSwitcher({ align = 'start' }: { align?: 'start' 
       >
         <Globe className="w-5 h-5 text-slate-500" />
         {currentLanguage.flag ? <span className="text-lg">{currentLanguage.flag}</span> : null}
-        <span className="hidden md:inline text-sm font-medium">{currentLanguage.name}</span>
+        <span className="hidden md:inline text-sm font-medium">{displayNames[currentLanguage.code] || currentLanguage.name}</span>
       </button>
 
       {isOpen && (
@@ -74,7 +82,7 @@ export default function LanguageSwitcher({ align = 'start' }: { align?: 'start' 
                 >
                   <div className="flex items-center space-x-3">
                     {language.flag ? <span className="text-xl">{language.flag}</span> : <span className="w-5" />}
-                    <span className="text-sm font-medium">{language.name}</span>
+                    <span className="text-sm font-medium">{displayNames[language.code] || language.name}</span>
                   </div>
                   {locale === language.code && (
                     <Check className="w-4 h-4 text-slate-900" />
