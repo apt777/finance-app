@@ -102,6 +102,11 @@ export default function RecurringManager() {
           </button>
         </div>
         {feedback ? <p className="mt-3 text-sm text-rose-600">{feedback}</p> : null}
+        {feedback?.includes('반복거래 기능은 아직') ? (
+          <p className="mt-2 text-xs leading-6 text-slate-500">
+            현재는 일반 거래 등록으로 계속 사용할 수 있고, 반복거래 테이블이 운영 DB에 적용되면 같은 화면에서 바로 등록할 수 있습니다.
+          </p>
+        ) : null}
       </div>
 
       <div className="rounded-[28px] border border-slate-200 bg-white p-6">

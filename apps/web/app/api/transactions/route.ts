@@ -3,6 +3,7 @@ import prisma from '@lib/prisma'
 import { requireRouteSession } from '@/lib/server-auth'
 import { ensureDefaultCategories } from '@/lib/categories'
 import { DEFAULT_TRANSACTION_CATEGORIES } from '@/lib/defaultCategories'
+import { findDuplicateTransaction } from '@/lib/transactionDuplicates'
 
 interface TransactionData {
   accountId?: string
@@ -67,6 +68,74 @@ function transactionAffectsBalance(transaction: { notes?: string | null }) {
 
 function unauthorized() {
   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+}
+
+function getDayRange(date: string) {
+  const normalized = new Date(date)
+
+  if (Number.isNaN(normalized.getTime())) {
+    return null
+  }
+
+  const start = new Date(normalized)
+  start.setHours(0, 0, 0, 0)
+
+  const end = new Date(normalized)
+  end.setHours(23, 59, 59, 999)
+
+  return { start, end }
+}
+
+async function findExistingDuplicate(userId: string, body: TransactionData, transactionAmount: number) {
+  const dayRange = getDayRange(body.date)
+
+  if (!dayRange) {
+    return null
+  }
+
+  const candidates = await prisma.transaction.findMany({
+    where: {
+      userId,
+      type: body.type,
+      date: {
+        gte: dayRange.start,
+        lte: dayRange.end,
+      },
+      ...(body.type === 'transfer'
+        ? {
+            fromAccountId: body.fromAccountId || null,
+            toAccountId: body.toAccountId || null,
+          }
+        : {
+            accountId: body.accountId || null,
+          }),
+    },
+    select: {
+      id: true,
+      accountId: true,
+      fromAccountId: true,
+      toAccountId: true,
+      date: true,
+      description: true,
+      type: true,
+      amount: true,
+      currency: true,
+    },
+  })
+
+  return findDuplicateTransaction(
+    {
+      accountId: body.accountId,
+      fromAccountId: body.fromAccountId,
+      toAccountId: body.toAccountId,
+      date: body.date,
+      description: body.description,
+      type: body.type,
+      amount: transactionAmount,
+      currency: body.currency,
+    },
+    candidates
+  )
 }
 
 async function findCategoryForUser(userId: string, categoryKey: string) {
@@ -176,6 +245,19 @@ export async function POST(request: Request) {
       if (!category) {
         return NextResponse.json({ error: 'Category not found' }, { status: 400 })
       }
+    }
+
+    const duplicateTransaction = await findExistingDuplicate(userId, body, transactionAmount)
+
+    if (duplicateTransaction) {
+      return NextResponse.json(
+        {
+          error: '이미 같은 날짜, 금액, 유형, 내용의 거래가 등록되어 있습니다.',
+          duplicate: true,
+          transactionId: duplicateTransaction.id,
+        },
+        { status: 409 }
+      )
     }
 
     if (type === 'transfer') {

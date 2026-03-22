@@ -6,6 +6,8 @@ import { Sparkles, Wand2, AlertCircle, CheckCircle2, Trash2 } from 'lucide-react
 import { useTranslations } from 'next-intl'
 import { useAccounts } from '@/hooks/useAccounts'
 import { useCategories } from '@/hooks/useCategories'
+import { useTransactions } from '@/hooks/useTransactions'
+import { findDuplicateTransaction } from '@/lib/transactionDuplicates'
 
 interface ParsedRow {
   id: string
@@ -69,6 +71,7 @@ export default function AIBulkImportBeta() {
   const queryClient = useQueryClient()
   const { data: accounts = [] } = useAccounts()
   const { data: categories = [] } = useCategories()
+  const { data: existingTransactions = [] } = useTransactions()
 
   const [input, setInput] = useState('')
   const [rows, setRows] = useState<ParsedRow[]>([])
@@ -77,7 +80,69 @@ export default function AIBulkImportBeta() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const selectedAccount = accounts.find((account) => account.id === selectedAccountId)
-  const validRows = rows.filter((row) => !row.error && row.type !== 'transfer')
+  const duplicateState = useMemo(() => {
+    const result = new Map<string, string>()
+    const seenDraftRows: Array<{
+      id: string
+      accountId?: string | null
+      date: string
+      description: string
+      type: 'income' | 'expense' | 'transfer'
+      amount: number
+    }> = []
+
+    for (const row of rows) {
+      if (!selectedAccountId || row.error || row.type === 'transfer' || !row.date || !row.description || !row.amount || !row.type) {
+        continue
+      }
+
+      const duplicateInExisting = findDuplicateTransaction(
+        {
+          accountId: selectedAccountId,
+          date: row.date,
+          description: row.description,
+          type: row.type,
+          amount: Number(row.amount),
+          currency: selectedAccount?.currency,
+        },
+        existingTransactions
+      )
+
+      if (duplicateInExisting) {
+        result.set(row.id, '이미 등록된 거래와 중복됩니다.')
+        continue
+      }
+
+      const duplicateInDraft = findDuplicateTransaction(
+        {
+          accountId: selectedAccountId,
+          date: row.date,
+          description: row.description,
+          type: row.type,
+          amount: Number(row.amount),
+          currency: selectedAccount?.currency,
+        },
+        seenDraftRows
+      )
+
+      if (duplicateInDraft) {
+        result.set(row.id, '이번 일괄 등록 목록 안에서 중복됩니다.')
+        continue
+      }
+
+      seenDraftRows.push({
+        id: row.id,
+        accountId: selectedAccountId,
+        date: row.date,
+        description: row.description,
+        type: row.type,
+        amount: Number(row.amount),
+      })
+    }
+
+    return result
+  }, [existingTransactions, rows, selectedAccount?.currency, selectedAccountId])
+  const validRows = rows.filter((row) => !row.error && row.type !== 'transfer' && !duplicateState.has(row.id))
 
   const parseMutation = useMutation({
     mutationFn: parseTransactions,
@@ -98,28 +163,49 @@ export default function AIBulkImportBeta() {
         throw new Error(tSettings('betaSelectAccount'))
       }
 
+      let importedCount = 0
+      let skippedDuplicateCount = 0
+
       for (const row of validRows) {
         if (!row.date || !row.description || !row.amount || !row.type || row.type === 'transfer') {
           continue
         }
 
-        await createTransaction({
-          accountId: selectedAccount.id,
-          date: row.date,
-          description: row.description,
-          type: row.type,
-          amount: Number(row.amount),
-          currency: selectedAccount.currency,
-          categoryKey: row.categoryKey || undefined,
-        })
+        try {
+          await createTransaction({
+            accountId: selectedAccount.id,
+            date: row.date,
+            description: row.description,
+            type: row.type,
+            amount: Number(row.amount),
+            currency: selectedAccount.currency,
+            categoryKey: row.categoryKey || undefined,
+          })
+          importedCount += 1
+        } catch (error) {
+          const message = error instanceof Error ? error.message : ''
+
+          if (message.includes('이미 같은 날짜') || message.includes('duplicate')) {
+            skippedDuplicateCount += 1
+            continue
+          }
+
+          throw error
+        }
       }
+
+      return { importedCount, skippedDuplicateCount }
     },
-    onSuccess: () => {
+    onSuccess: ({ importedCount, skippedDuplicateCount }) => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
       queryClient.invalidateQueries({ queryKey: ['analysis-summary'] })
       queryClient.invalidateQueries({ queryKey: ['overview'] })
-      setFeedback(tSettings('betaImportDone', { count: validRows.length }))
+      setFeedback(
+        skippedDuplicateCount > 0
+          ? `${importedCount}건 등록, ${skippedDuplicateCount}건 중복으로 건너뜀`
+          : tSettings('betaImportDone', { count: importedCount })
+      )
       setErrorMessage(null)
       setRows([])
       setInput('')
@@ -314,6 +400,11 @@ export default function AIBulkImportBeta() {
                       }`}>
                         {tSettings('betaConfidence')} {Math.round((row.confidence || 0) * 100)}%
                       </span>
+                      {duplicateState.has(row.id) ? (
+                        <span className="rounded-full bg-rose-100 px-2.5 py-1 text-xs font-semibold text-rose-700">
+                          중복 후보
+                        </span>
+                      ) : null}
                       <button type="button" onClick={() => removeRow(row.id)} className="text-slate-400 transition-colors hover:text-rose-600">
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -325,6 +416,11 @@ export default function AIBulkImportBeta() {
                     {row.categoryKey ? (
                       <span className="rounded-full bg-white px-2.5 py-1 text-slate-600 shadow-sm">
                         {categoryMap.get(row.categoryKey)?.name || row.categoryName || row.categoryKey}
+                      </span>
+                    ) : null}
+                    {duplicateState.get(row.id) ? (
+                      <span className="rounded-full bg-rose-100 px-2.5 py-1 text-rose-700 shadow-sm">
+                        {duplicateState.get(row.id)}
                       </span>
                     ) : null}
                   </div>

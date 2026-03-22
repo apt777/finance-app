@@ -5,8 +5,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'next/navigation'
 import { useAccounts } from '../hooks/useAccounts'
 import { useCategories } from '../hooks/useCategories'
+import { useTransactions } from '../hooks/useTransactions'
 import { ArrowUpRight, ArrowDownLeft, AlertCircle, CheckCircle, ArrowRightLeft } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { findDuplicateTransaction } from '@/lib/transactionDuplicates'
 
 interface TransactionFormData {
   accountId?: string;
@@ -62,6 +64,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
   const queryClient = useQueryClient()
   const { data: accounts, isLoading: isLoadingAccounts, error: accountsError } = useAccounts()
   const { data: categories } = useCategories()
+  const { data: existingTransactions = [] } = useTransactions()
   const [formError, setFormError] = useState<string | null>(null);
   const [formData, setFormData] = useState<TransactionFormData>({
     accountId: '',
@@ -181,6 +184,11 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
       return;
     }
 
+    if (duplicateTransaction) {
+      setFormError('이미 같은 날짜, 금액, 유형, 내용의 거래가 등록되어 있습니다.');
+      return;
+    }
+
     mutation.mutate(formData)
   }
 
@@ -192,6 +200,45 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
     () => (categories || []).filter((category) => category.type === formData.type),
     [categories, formData.type]
   )
+  const duplicateTransaction = useMemo(() => {
+    const normalizedAmount = Number(formData.amount)
+
+    if (!formData.date || !formData.description.trim() || !Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
+      return null
+    }
+
+    if (formData.type === 'transfer') {
+      if (!formData.fromAccountId || !formData.toAccountId) {
+        return null
+      }
+    } else if (!formData.accountId) {
+      return null
+    }
+
+    return findDuplicateTransaction(
+      {
+        accountId: formData.accountId,
+        fromAccountId: formData.fromAccountId,
+        toAccountId: formData.toAccountId,
+        date: formData.date,
+        description: formData.description,
+        type: formData.type as 'income' | 'expense' | 'transfer',
+        amount: normalizedAmount,
+        currency: formData.currency,
+      },
+      existingTransactions
+    )
+  }, [
+    existingTransactions,
+    formData.accountId,
+    formData.amount,
+    formData.currency,
+    formData.date,
+    formData.description,
+    formData.fromAccountId,
+    formData.toAccountId,
+    formData.type,
+  ])
   const fieldClassName =
     'w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-slate-50 text-slate-900 placeholder-slate-400'
 
@@ -531,6 +578,18 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
                     <ArrowUpRight className="w-6 h-6 text-red-600" />
                   )}
                 </div>
+              </div>
+            </div>
+          )}
+
+          {duplicateTransaction && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 flex items-start space-x-3">
+              <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-amber-700">
+                <p className="font-semibold">중복 가능성이 높은 거래가 이미 있습니다.</p>
+                <p className="mt-1">
+                  {duplicateTransaction.description} / {Math.abs(duplicateTransaction.amount).toLocaleString()} {duplicateTransaction.currency}
+                </p>
               </div>
             </div>
           )}

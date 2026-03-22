@@ -2,6 +2,17 @@ import { NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 import { requireRouteSession } from '@/lib/server-auth'
 
+function isMissingRecurringTable(error: unknown) {
+  if (!error || typeof error !== 'object') {
+    return false
+  }
+
+  const code = 'code' in error ? String(error.code) : ''
+  const message = 'message' in error ? String(error.message) : ''
+
+  return code === 'P2021' || message.includes('RecurringTransaction') || message.includes('does not exist')
+}
+
 function calculateNextRunDate(startDate: Date, interval: string, dayOfMonth?: number | null, dayOfWeek?: number | null) {
   const next = new Date(startDate)
 
@@ -126,6 +137,16 @@ export async function POST(request: Request) {
 
     return NextResponse.json(recurringTransaction, { status: 201 })
   } catch (error: any) {
+    if (isMissingRecurringTable(error)) {
+      return NextResponse.json(
+        {
+          error: '반복거래 기능은 아직 현재 데이터베이스에 활성화되지 않았습니다. 운영 DB 마이그레이션 후 사용할 수 있어요.',
+          unsupported: true,
+        },
+        { status: 503 }
+      )
+    }
+
     return NextResponse.json({ error: error.message || 'Failed to save recurring transaction' }, { status: 500 })
   }
 }
