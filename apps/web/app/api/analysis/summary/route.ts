@@ -7,6 +7,28 @@ function monthKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
 }
 
+function normalizeTransactionType(
+  rawType: string | null | undefined,
+  amount: number,
+  categoryType?: string | null
+) {
+  const normalizedType = rawType?.toLowerCase()
+
+  if (normalizedType === 'income' || normalizedType === 'expense') {
+    return normalizedType
+  }
+
+  if (normalizedType === 'transfer') {
+    return 'transfer'
+  }
+
+  if (categoryType === 'income' || categoryType === 'expense') {
+    return categoryType
+  }
+
+  return amount < 0 ? 'expense' : 'income'
+}
+
 export async function GET() {
   const { userId } = await requireRouteSession()
 
@@ -18,7 +40,6 @@ export async function GET() {
     const transactionsPromise = prisma.transaction.findMany({
       where: {
         userId,
-        type: { in: ['income', 'expense'] },
       },
       orderBy: { date: 'asc' },
     })
@@ -34,26 +55,42 @@ export async function GET() {
     ])
 
     const categoryMap = new Map(categories.map((category) => [category.key, category.name]))
+    const categoryTypeMap = new Map(categories.map((category) => [category.key, category.type]))
     const monthlyMap = new Map<string, { month: string; income: number; expense: number; net: number }>()
     const categoryTotals = new Map<string, number>()
     const yearlyMap = new Map<number, { year: number; income: number; expense: number; net: number }>()
 
     for (const transaction of transactions) {
       const date = new Date(transaction.date)
+      if (Number.isNaN(date.getTime())) {
+        continue
+      }
+
+      const transactionType = normalizeTransactionType(
+        transaction.type,
+        transaction.amount,
+        transaction.categoryKey ? categoryTypeMap.get(transaction.categoryKey) : null
+      )
+
+      if (transactionType === 'transfer') {
+        continue
+      }
+
       const key = monthKey(date)
       const monthly = monthlyMap.get(key) ?? { month: key, income: 0, expense: 0, net: 0 }
       const yearly = yearlyMap.get(date.getFullYear()) ?? { year: date.getFullYear(), income: 0, expense: 0, net: 0 }
+      const normalizedAmount = Math.abs(transaction.amount)
 
-      if (transaction.type === 'income') {
-        monthly.income += transaction.amount
-        yearly.income += transaction.amount
+      if (transactionType === 'income') {
+        monthly.income += normalizedAmount
+        yearly.income += normalizedAmount
       } else {
-        monthly.expense += Math.abs(transaction.amount)
-        yearly.expense += Math.abs(transaction.amount)
+        monthly.expense += normalizedAmount
+        yearly.expense += normalizedAmount
         if (transaction.categoryKey) {
           categoryTotals.set(
             transaction.categoryKey,
-            (categoryTotals.get(transaction.categoryKey) ?? 0) + Math.abs(transaction.amount)
+            (categoryTotals.get(transaction.categoryKey) ?? 0) + normalizedAmount
           )
         }
       }
@@ -85,8 +122,14 @@ export async function GET() {
       const actual = transactions
         .filter((transaction) => {
           const date = new Date(transaction.date)
+          const transactionType = normalizeTransactionType(
+            transaction.type,
+            transaction.amount,
+            transaction.categoryKey ? categoryTypeMap.get(transaction.categoryKey) : null
+          )
           return (
-            transaction.type === 'expense' &&
+            !Number.isNaN(date.getTime()) &&
+            transactionType === 'expense' &&
             date.getFullYear() === budget.year &&
             date.getMonth() + 1 === budget.month &&
             transaction.categoryKey === budget.categoryKey
