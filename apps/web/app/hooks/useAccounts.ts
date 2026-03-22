@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/context/AuthProviderClient'
 
 interface Account {
@@ -23,5 +23,8 @@ export const useAccounts = () => {
     queryKey: ['accounts'],
     queryFn: fetchAccounts,
     enabled: !!user && !loading,
+    staleTime: 1000 * 60 * 2,
+    gcTime: 1000 * 60 * 30,
+    placeholderData: keepPreviousData,
   })
 }

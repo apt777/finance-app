@@ -98,15 +98,15 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
     return <AppLoadingState label={tTransactions('title')} />
   }
 
-  if (error) {
+  const transactions: Transaction[] = (data as Transaction[]) || []
+
+  if (error && transactions.length === 0) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
         <p className="text-red-600 font-medium">{tCommon('error')}</p>
       </div>
     )
   }
-
-  const transactions: Transaction[] = (data as Transaction[]) || []
 
   // Filter transactions
   const filteredTransactions = transactions.filter((t) => {

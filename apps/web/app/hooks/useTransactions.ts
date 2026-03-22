@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'; import { useAuth } from '@/context/AuthProviderClient'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'; import { useAuth } from '@/context/AuthProviderClient'
 
 interface Transaction {
   id: string;
@@ -48,5 +48,8 @@ export const useTransactions = (accountId?: string) => {
     queryKey: accountId ? ['transactions', accountId] : ['transactions', 'all'], // Adjust queryKey
     queryFn: () => fetchTransactions(accountId),
     enabled: !!user && !loading,
+    staleTime: 1000 * 60,
+    gcTime: 1000 * 60 * 30,
+    placeholderData: keepPreviousData,
   });
 };

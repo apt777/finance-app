@@ -60,15 +60,15 @@ const AccountList = () => {
     return <AppLoadingState label={tAccounts('title')} />
   }
 
-  if (error) {
+  const accounts: Account[] = (data as Account[]) || []
+
+  if (error && accounts.length === 0) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
         <p className="text-red-600 font-medium">{tCommon('error')}</p>
       </div>
     )
   }
-
-  const accounts: Account[] = (data as Account[]) || []
 
   const filteredAccounts = accounts.filter((account: Account) => {
     return (
