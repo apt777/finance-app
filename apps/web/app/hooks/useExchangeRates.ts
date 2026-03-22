@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'; import { useAuth } from '@/context/AuthProviderClient'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'; import { useAuth } from '@/context/AuthProviderClient'
 
 export interface ExchangeRate {
   id: string;
@@ -35,5 +35,6 @@ export const useExchangeRates = () => {
     enabled: !!user && !loading,
     staleTime: 1000 * 60 * 60, // 1시간
     gcTime: 1000 * 60 * 60 * 24, // 24시간
+    placeholderData: keepPreviousData,
   })
 }

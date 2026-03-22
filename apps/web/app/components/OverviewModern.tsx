@@ -106,11 +106,16 @@ export default function OverviewModern() {
   const transactions = overviewData.transactions || []
   const rates: ExchangeRate[] = exchangeRates || []
   const BASE_CURRENCY = 'JPY'
+  const hasExchangeRates = rates.length > 0
 
   const convertToBaseCurrency = (amount: number, currency: string): number => {
     if (currency === BASE_CURRENCY) return amount
     const rate = rates.find((item) => item.fromCurrency === currency && item.toCurrency === BASE_CURRENCY)?.rate
-    return rate ? amount * rate : 0
+    if (rate) return amount * rate
+
+    // Avoid collapsing the whole dashboard to zero while initial exchange-rate
+    // data is still empty in production.
+    return hasExchangeRates ? 0 : amount
   }
 
   const totalNonCreditBalancesByCurrency: Record<string, number> = {}
@@ -143,6 +148,10 @@ export default function OverviewModern() {
   const totalPositiveAssetsKRW = totalPositiveAssetsBaseCurrency * rateJPYToKRW
   const japaneseAccountsTotal = totalNonCreditBalancesByCurrency.JPY || 0
   const koreanAccountsTotal = totalNonCreditBalancesByCurrency.KRW || 0
+  const usesEstimatedValues = !hasExchangeRates && (
+    accounts.some((account) => account.currency !== BASE_CURRENCY) ||
+    holdings.some((holding) => holding.currency !== BASE_CURRENCY)
+  )
 
   const goalsWithProgress = goals.map((goal) => ({
     ...goal,
@@ -203,6 +212,11 @@ export default function OverviewModern() {
                     <div className={`inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium ${isDark ? 'border border-white/10 bg-white/5 text-slate-300' : 'border border-white/80 bg-white/80 text-slate-600'}`}>
                       최근 30일 기준
                     </div>
+                    {usesEstimatedValues ? (
+                      <div className={`inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium ${isDark ? 'border border-amber-400/20 bg-amber-400/10 text-amber-200' : 'border border-amber-200 bg-amber-50 text-amber-700'}`}>
+                        환율 동기화 전 추정값
+                      </div>
+                    ) : null}
                   </div>
                 </div>
                 <h2 className={`mt-5 max-w-4xl text-[clamp(2.05rem,4.3vw,3.45rem)] font-bold leading-[1.02] tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>
