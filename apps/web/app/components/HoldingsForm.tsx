@@ -38,6 +38,7 @@ interface ExistingHoldingOption {
   costBasis: number
   currency: string
   region?: string | null
+  marketPrice?: number | null
 }
 
 const createHolding = async (holdingData: HoldingFormData) => {
@@ -95,24 +96,27 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
 
   useEffect(() => {
     const mode = searchParams.get('mode')
+    const holdingId = searchParams.get('holdingId')
+    const holdingFromQuery = (holdings as ExistingHoldingOption[]).find((holding) => holding.id === holdingId)
 
     if (mode === 'buy' || mode === 'sell') {
       setFormData((prev) => ({
         ...prev,
         action: mode,
-        holdingId: '',
-        symbol: '',
-        name: '',
-        shares: '',
-        costBasis: '',
-        currency: '',
-        region: '',
+        holdingId: holdingFromQuery?.id || '',
+        accountId: holdingFromQuery?.accountId || prev.accountId,
+        symbol: holdingFromQuery?.symbol || '',
+        name: holdingFromQuery?.name || '',
+        shares: mode === 'sell' ? String(holdingFromQuery?.shares || '') : '',
+        costBasis: holdingFromQuery ? String(holdingFromQuery.marketPrice || holdingFromQuery.costBasis) : '',
+        currency: holdingFromQuery?.currency || '',
+        region: holdingFromQuery?.region || '',
       }))
       setSelectedSuggestion(null)
       setSuggestions([])
-      setSymbolQuery('')
+      setSymbolQuery(holdingFromQuery?.symbol || '')
     }
-  }, [searchParams])
+  }, [holdings, searchParams])
 
   const mutation = useMutation<any, Error, HoldingFormData>({
     mutationFn: createHolding,
@@ -176,6 +180,8 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
         holdingId: value,
         symbol: selectedHolding?.symbol || '',
         name: selectedHolding?.name || '',
+        shares: formData.action === 'sell' ? String(selectedHolding?.shares || '') : formData.shares,
+        costBasis: selectedHolding ? String(selectedHolding.marketPrice || selectedHolding.costBasis) : formData.costBasis,
         currency: selectedHolding?.currency || '',
         region: selectedHolding?.region || '',
         accountId: selectedHolding?.accountId || formData.accountId,

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { Link } from '@/navigation'
 import { useHoldings } from '../hooks/useHoldings'
 import { useAccounts } from '../hooks/useAccounts'
 import { useExchangeRates, ExchangeRate } from '../hooks/useExchangeRates'
@@ -175,6 +176,21 @@ const HoldingsList = () => {
                       <p className="text-2xl font-bold text-blue-600">
                         {Math.round(value).toLocaleString()}
                       </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <Link
+                        href={`/holdings/add?mode=buy&holdingId=${holding.id}`}
+                        className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                      >
+                        추가 매수
+                      </Link>
+                      <Link
+                        href={`/holdings/add?mode=sell&holdingId=${holding.id}`}
+                        className="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition-colors hover:bg-rose-100"
+                      >
+                        매도
+                      </Link>
                     </div>
                   </div>
                 </div>
