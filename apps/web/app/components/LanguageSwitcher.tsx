@@ -42,7 +42,7 @@ export default function LanguageSwitcher({ align = 'start' }: { align?: 'start' 
   }
 
   const currentLanguage = languages.find((lang) => lang.code === locale) ?? languages[0]!
-  const displayNames = localizedNames[locale] ?? localizedNames.en
+  const displayNames = localizedNames[locale] ?? localizedNames.en ?? localizedNames.ko
 
   return (
     <div className="relative">
