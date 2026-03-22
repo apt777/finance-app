@@ -4,6 +4,8 @@ import { requireRouteSession } from '@/lib/server-auth'
 import { fetchQuote, getHoldingQuoteUpdateIntervalMs } from '@/lib/alphaVantage'
 
 interface HoldingData {
+  action?: 'create' | 'buy' | 'sell';
+  holdingId?: string;
   accountId: string;
   symbol: string;
   name?: string;
@@ -110,7 +112,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { accountId, symbol, name, shares, costBasis, currency, investmentType, region }: HoldingData = await request.json()
+    const { action = 'create', holdingId, accountId, symbol, name, shares, costBasis, currency, investmentType, region }: HoldingData = await request.json()
 
     // Verify the account belongs to the user
     const account = await prisma.account.findFirst({
@@ -124,14 +126,84 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Account not found or you do not have permission' }, { status: 404 })
     }
 
-    const newHolding = await prisma.holding.create({
-      data: { 
+    if (action === 'buy' || action === 'sell') {
+      if (!holdingId) {
+        return NextResponse.json({ error: 'Holding is required' }, { status: 400 })
+      }
+
+      const existingHolding = await prisma.holding.findFirst({
+        where: {
+          id: holdingId,
+          userId,
+          accountId,
+        },
+      })
+
+      if (!existingHolding) {
+        return NextResponse.json({ error: 'Holding not found' }, { status: 404 })
+      }
+
+      if (action === 'sell') {
+        if (shares > existingHolding.shares) {
+          return NextResponse.json({ error: '매도 수량이 현재 보유 수량보다 많습니다.' }, { status: 400 })
+        }
+
+        if (shares === existingHolding.shares) {
+          await prisma.holding.delete({
+            where: { id: existingHolding.id },
+          })
+
+          return NextResponse.json({ deleted: true, id: existingHolding.id }, { status: 200 })
+        }
+
+        const soldHolding = await prisma.holding.update({
+          where: { id: existingHolding.id },
+          data: {
+            shares: existingHolding.shares - shares,
+          },
+        })
+
+        return NextResponse.json(soldHolding, { status: 200 })
+      }
+
+      const totalExistingCost = existingHolding.shares * existingHolding.costBasis
+      const totalBuyCost = shares * costBasis
+      const nextShares = existingHolding.shares + shares
+      const nextCostBasis = nextShares > 0 ? (totalExistingCost + totalBuyCost) / nextShares : existingHolding.costBasis
+
+      const boughtHolding = await prisma.holding.update({
+        where: { id: existingHolding.id },
+        data: {
+          shares: nextShares,
+          costBasis: nextCostBasis,
+          marketPrice: existingHolding.marketPrice,
+        },
+      })
+
+      return NextResponse.json(boughtHolding, { status: 200 })
+    }
+
+    const normalizedSymbol = symbol.trim().toUpperCase()
+    const duplicateHolding = await prisma.holding.findFirst({
+      where: {
         userId,
-        accountId, 
-        symbol: symbol.trim().toUpperCase(),
+        accountId,
+        symbol: normalizedSymbol,
+      },
+    })
+
+    if (duplicateHolding) {
+      return NextResponse.json({ error: '이미 같은 계좌에 등록된 투자입니다. 추가 매수를 사용해 주세요.' }, { status: 409 })
+    }
+
+    const newHolding = await prisma.holding.create({
+      data: {
+        userId,
+        accountId,
+        symbol: normalizedSymbol,
         name: name?.trim() || null,
-        shares, 
-        costBasis, 
+        shares,
+        costBasis,
         currency,
         investmentType: investmentType || 'stock',
         region: region?.trim() || null,

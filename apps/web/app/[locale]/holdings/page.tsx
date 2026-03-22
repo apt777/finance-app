@@ -23,13 +23,27 @@ export default function HoldingsPage() {
             <p className="text-slate-600 text-sm mt-1">Manage your investment portfolio</p>
           </div>
         </div>
-        <Link
-          href="/holdings/add"
-          className={`flex items-center space-x-2 rounded-xl px-4 py-2 font-semibold text-white transition-all duration-200 ${theme === 'modern' ? 'bg-slate-950 shadow-lg hover:bg-slate-800' : 'bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg hover:shadow-xl hover:from-blue-700 hover:to-indigo-700'}`}
-        >
-          <Plus className="w-5 h-5" />
-          <span>{t('addHolding')}</span>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/holdings/add?mode=buy"
+            className={`rounded-xl px-4 py-2 font-semibold transition-all duration-200 ${theme === 'modern' ? 'border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50' : 'border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50'}`}
+          >
+            추가 매수
+          </Link>
+          <Link
+            href="/holdings/add?mode=sell"
+            className={`rounded-xl px-4 py-2 font-semibold transition-all duration-200 ${theme === 'modern' ? 'border border-rose-200 bg-rose-50 text-rose-700 shadow-sm hover:bg-rose-100' : 'border border-rose-200 bg-rose-50 text-rose-700 shadow-sm hover:bg-rose-100'}`}
+          >
+            매도
+          </Link>
+          <Link
+            href="/holdings/add"
+            className={`flex items-center space-x-2 rounded-xl px-4 py-2 font-semibold text-white transition-all duration-200 ${theme === 'modern' ? 'bg-slate-950 shadow-lg hover:bg-slate-800' : 'bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg hover:shadow-xl hover:from-blue-700 hover:to-indigo-700'}`}
+          >
+            <Plus className="w-5 h-5" />
+            <span>{t('addHolding')}</span>
+          </Link>
+        </div>
       </div>
 
       {/* Holdings List */}
