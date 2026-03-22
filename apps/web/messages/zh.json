@@ -70,6 +70,7 @@
   },
   "accounts": {
     "title": "账户管理",
+    "navTitle": "账户",
     "totalAccounts": "总账户数",
     "accountName": "账户名称",
     "accountType": "账户类型",
@@ -95,6 +96,7 @@
   },
   "transactions": {
     "title": "交易",
+    "navTitle": "交易",
     "totalTransactions": "总交易数",
     "date": "日期",
     "description": "描述",
@@ -145,8 +147,10 @@
   },
   "settings": {
     "title": "设置",
+    "navTitle": "设置",
     "manageSettings": "管理应用程序设置",
     "exchangeRates": "汇率管理",
+    "exchangeRatesShort": "汇率",
     "currencies": "货币",
     "from": "从",
     "to": "到",

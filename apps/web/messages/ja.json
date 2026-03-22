@@ -70,6 +70,7 @@
   },
   "accounts": {
     "title": "口座管理",
+    "navTitle": "口座",
     "totalAccounts": "総口座数",
     "accountName": "口座名",
     "accountType": "口座種別",
@@ -95,6 +96,7 @@
   },
   "transactions": {
     "title": "取引履歴",
+    "navTitle": "取引",
     "totalTransactions": "総取引数",
     "date": "日付",
     "description": "説明",
@@ -145,8 +147,10 @@
   },
   "settings": {
     "title": "設定",
+    "navTitle": "設定",
     "manageSettings": "アプリケーション設定を管理します",
     "exchangeRates": "為替レート管理",
+    "exchangeRatesShort": "為替",
     "currencies": "通貨",
     "from": "出発地",
     "to": "目的地",

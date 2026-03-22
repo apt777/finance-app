@@ -80,6 +80,7 @@
   },
   "accounts": {
     "title": "Account Management",
+    "navTitle": "Accounts",
     "totalAccounts": "Total Accounts",
     "accountName": "Account Name",
     "accountType": "Account Type",
@@ -111,6 +112,7 @@
   },
   "transactions": {
     "title": "Transactions",
+    "navTitle": "Transactions",
     "totalTransactions": "Total Transactions",
     "date": "Date",
     "description": "Description",
@@ -167,8 +169,10 @@
   },
   "settings": {
     "title": "Settings",
+    "navTitle": "Settings",
     "manageSettings": "Manage application settings",
     "exchangeRates": "Exchange Rate Management",
+    "exchangeRatesShort": "Rates",
     "exchangeRateDesc": "Manage your exchange rates manually",
     "rateSettings": "Rate Settings",
     "currencies": "Currencies",

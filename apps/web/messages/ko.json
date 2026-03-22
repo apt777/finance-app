@@ -80,6 +80,7 @@
   },
   "accounts": {
     "title": "계좌 관리",
+    "navTitle": "계좌",
     "totalAccounts": "총 계좌",
     "accountName": "계좌 이름",
     "accountType": "계좌 종류",
@@ -111,6 +112,7 @@
   },
   "transactions": {
     "title": "거래 내역",
+    "navTitle": "거래",
     "totalTransactions": "총 거래",
     "date": "날짜",
     "description": "내용",
@@ -167,8 +169,10 @@
   },
   "settings": {
     "title": "설정",
+    "navTitle": "설정",
     "manageSettings": "애플리케이션 설정을 관리하세요",
     "exchangeRates": "환율 관리",
+    "exchangeRatesShort": "환율",
     "exchangeRateDesc": "수동으로 환율을 설정하고 관리하세요",
     "rateSettings": "환율 설정",
     "currencies": "통화",
