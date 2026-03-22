@@ -5,7 +5,7 @@ export type DuplicateComparableTransaction = {
   toAccountId?: string | null
   date: string | Date
   description: string
-  type: 'income' | 'expense' | 'transfer'
+  type: string
   amount: number
   currency?: string | null
 }
@@ -19,6 +19,14 @@ export type DuplicateCheckInput = {
   type: 'income' | 'expense' | 'transfer'
   amount: number
   currency?: string | null
+}
+
+function normalizeType(value: string) {
+  if (value === 'income' || value === 'expense' || value === 'transfer') {
+    return value
+  }
+
+  return null
 }
 
 function normalizeDate(value: string | Date) {
@@ -48,7 +56,7 @@ function normalizeAmount(type: DuplicateComparableTransaction['type'], amount: n
 }
 
 function hasSameAccountScope(a: DuplicateCheckInput, b: DuplicateComparableTransaction) {
-  if (a.type === 'transfer' || b.type === 'transfer') {
+  if (a.type === 'transfer' || normalizeType(b.type) === 'transfer') {
     return (a.fromAccountId || null) === (b.fromAccountId || null)
       && (a.toAccountId || null) === (b.toAccountId || null)
   }
@@ -60,7 +68,9 @@ export function isDuplicateTransactionCandidate(
   input: DuplicateCheckInput,
   existing: DuplicateComparableTransaction
 ) {
-  if (input.type !== existing.type) {
+  const normalizedExistingType = normalizeType(existing.type)
+
+  if (!normalizedExistingType || input.type !== normalizedExistingType) {
     return false
   }
 
@@ -76,7 +86,7 @@ export function isDuplicateTransactionCandidate(
     return false
   }
 
-  return normalizeAmount(input.type, input.amount) === normalizeAmount(existing.type, existing.amount)
+  return normalizeAmount(input.type, input.amount) === normalizeAmount(normalizedExistingType, existing.amount)
 }
 
 export function findDuplicateTransaction<T extends DuplicateComparableTransaction>(
