@@ -1,8 +1,8 @@
 import prisma from '@lib/prisma'
-import { DEFAULT_TRANSACTION_CATEGORIES } from './defaultCategories'
+import { DEFAULT_TRANSACTION_CATEGORIES, getDefaultTransactionCategories } from './defaultCategories'
 
-function mapDefaultCategories() {
-  return DEFAULT_TRANSACTION_CATEGORIES.map((category, index) => ({
+function mapDefaultCategories(locale = 'ko') {
+  return getDefaultTransactionCategories(locale).map((category, index) => ({
     id: `default-${index}`,
     userId: null,
     name: category.name,
@@ -63,7 +63,7 @@ function normalizeLegacyCategories(
   })
 }
 
-export async function ensureDefaultCategories(userId: string) {
+export async function ensureDefaultCategories(userId: string, locale = 'ko') {
   try {
     const existing = await prisma.transactionCategory.findMany({
       where: {
@@ -74,7 +74,8 @@ export async function ensureDefaultCategories(userId: string) {
 
     const existingKeys = new Set(existing.map((category) => `${category.userId ?? 'default'}:${category.key}`))
 
-    const missingDefaults = DEFAULT_TRANSACTION_CATEGORIES.filter(
+    const localizedDefaults = getDefaultTransactionCategories(locale)
+    const missingDefaults = localizedDefaults.filter(
       (category) => !existingKeys.has(`default:${category.key}`)
     )
 
@@ -111,7 +112,7 @@ export async function ensureDefaultCategories(userId: string) {
     }>>('SELECT "id", "name", "key", "icon", "createdAt" FROM "TransactionCategory" ORDER BY "name" ASC')
 
     if (legacyCategories.length === 0) {
-      return mapDefaultCategories()
+      return mapDefaultCategories(locale)
     }
 
     const merged = new Map<string, ReturnType<typeof normalizeLegacyCategories>[number]>()
@@ -120,7 +121,7 @@ export async function ensureDefaultCategories(userId: string) {
       merged.set(category.key, category)
     }
 
-    for (const category of mapDefaultCategories()) {
+    for (const category of mapDefaultCategories(locale)) {
       if (!merged.has(category.key)) {
         merged.set(category.key, category)
       }

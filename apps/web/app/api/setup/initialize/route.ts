@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 import { requireRouteSession } from '@/lib/server-auth'
 import { ensureDefaultCategories } from '@/lib/categories'
+import { normalizeAppLocale } from '@/lib/defaultCategories'
 
 interface AccountInput {
   name: string
@@ -68,18 +69,19 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { accounts, exchangeRates, budgets, recurringTransactions } = await request.json() as {
+    const { accounts, exchangeRates, budgets, recurringTransactions, locale } = await request.json() as {
       accounts: AccountInput[]
       exchangeRates: ExchangeRateInput[]
       budgets?: BudgetInput[]
       recurringTransactions?: RecurringInput[]
+      locale?: string
     }
 
     if (!Array.isArray(accounts) || !Array.isArray(exchangeRates)) {
       return NextResponse.json({ error: 'Invalid setup payload' }, { status: 400 })
     }
 
-    await ensureDefaultCategories(userId)
+    await ensureDefaultCategories(userId, normalizeAppLocale(locale))
 
     const accountIdMap = new Map<string, string>()
 

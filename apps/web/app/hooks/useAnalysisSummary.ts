@@ -9,6 +9,7 @@ export interface AnalysisSummary {
     month: string
     categories: Array<{ key: string; name: string; amount: number }>
   }>
+  baseCurrency: string
   budgetStatus: Array<{
     id: string
     name: string

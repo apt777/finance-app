@@ -215,6 +215,8 @@
     "privacy": "Privacy",
     "security": "Security",
     "categories": "Categories",
+    "budgetSettings": "Budgets",
+    "recurringSettings": "Recurring",
     "beta": "Beta",
     "betaTitle": "AI Bulk Entry",
     "betaDesc": "Paste past transactions line by line and Kablus will draft dates, amounts, income or expense types, and categories before you save them in one batch.",
@@ -234,7 +236,11 @@
     "betaImportDone": "{count} transactions were added.",
     "changePassword": "Change Password",
     "currentPassword": "Current Password",
-    "newPassword": "New Password"
+    "newPassword": "New Password",
+    "currentPasswordPlaceholder": "Enter current password",
+    "newPasswordPlaceholder": "Enter new password",
+    "confirmPassword": "Confirm Password",
+    "confirmPasswordPlaceholder": "Re-enter password"
   },
   "holdings": {
     "title": "Investments",

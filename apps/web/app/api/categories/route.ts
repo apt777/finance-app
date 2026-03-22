@@ -2,9 +2,16 @@ import { NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 import { ensureDefaultCategories } from '@/lib/categories'
 import { requireRouteSession } from '@/lib/server-auth'
-import { DEFAULT_TRANSACTION_CATEGORIES } from '@/lib/defaultCategories'
+import { DEFAULT_TRANSACTION_CATEGORIES, normalizeAppLocale } from '@/lib/defaultCategories'
 
-export async function GET() {
+function resolveLocaleFromRequest(request: Request) {
+  const cookieHeader = request.headers.get('cookie') ?? ''
+  const cookieMatch = cookieHeader.match(/NEXT_LOCALE=([^;]+)/)
+  const refererMatch = request.headers.get('referer')?.match(/\/(ko|en|ja|zh)(\/|$)/)
+  return normalizeAppLocale(cookieMatch?.[1] ?? refererMatch?.[1] ?? 'ko')
+}
+
+export async function GET(request: Request) {
   const { userId } = await requireRouteSession()
 
   if (!userId) {
@@ -12,7 +19,7 @@ export async function GET() {
   }
 
   try {
-    const categories = await ensureDefaultCategories(userId)
+    const categories = await ensureDefaultCategories(userId, resolveLocaleFromRequest(request))
     return NextResponse.json(categories)
   } catch (error: any) {
     return NextResponse.json([], { status: 200 })

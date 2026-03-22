@@ -95,7 +95,10 @@ export default function AnalysisDashboard() {
             <span className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>이번 달</span>
           </div>
           <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>순저축</p>
-          <p className={`mt-2 text-3xl font-black ${netTone}`}>{Math.round(currentMonth?.net ?? 0).toLocaleString()}</p>
+          <p className={`mt-2 text-3xl font-black ${netTone}`}>
+            {Math.round(currentMonth?.net ?? 0).toLocaleString()}
+            <span className={`ml-2 text-base font-semibold ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{data.baseCurrency}</span>
+          </p>
         </article>
 
         <article className={`rounded-3xl border p-6 ${theme === 'modern' ? isDark ? 'border-white/10 bg-white/5 shadow-sm' : 'border-white/80 bg-white/80 shadow-sm' : 'border-slate-200 bg-white'}`}>
@@ -106,10 +109,11 @@ export default function AnalysisDashboard() {
           <p className="text-sm text-slate-500">지출 변화</p>
           <p className={`text-3xl font-black mt-2 ${expenseTone}`}>
             {expenseDelta > 0 ? '+' : ''}{Math.round(expenseDelta).toLocaleString()}
+            <span className={`ml-2 text-base font-semibold ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{data.baseCurrency}</span>
           </p>
         </article>
 
-        <Link href="/setup?manage=1&step=2" className={`rounded-3xl border p-6 transition-all hover:-translate-y-0.5 ${theme === 'modern' ? isDark ? 'border-white/10 bg-white/5 shadow-sm hover:border-white/20 hover:bg-white/[0.08]' : 'border-white/80 bg-white/80 shadow-sm hover:bg-white hover:shadow-md' : 'border-slate-200 bg-white hover:shadow-md'}`}>
+        <Link href="/settings?tab=budgets" className={`rounded-3xl border p-6 transition-all hover:-translate-y-0.5 ${theme === 'modern' ? isDark ? 'border-white/10 bg-white/5 shadow-sm hover:border-white/20 hover:bg-white/[0.08]' : 'border-white/80 bg-white/80 shadow-sm hover:bg-white hover:shadow-md' : 'border-slate-200 bg-white hover:shadow-md'}`}>
           <div className="flex items-center justify-between mb-4">
             <span className={`flex h-11 w-11 items-center justify-center rounded-2xl ${isDark ? 'bg-amber-500/15 text-amber-300' : 'bg-amber-100 text-amber-700'}`}>
               <PiggyBank className="w-6 h-6" />
@@ -125,7 +129,7 @@ export default function AnalysisDashboard() {
           </p>
         </Link>
 
-        <Link href="/setup?manage=1&step=3" className={`rounded-3xl border p-6 transition-all hover:-translate-y-0.5 ${theme === 'modern' ? isDark ? 'border-white/10 bg-white/5 shadow-sm hover:border-white/20 hover:bg-white/[0.08]' : 'border-white/80 bg-white/80 shadow-sm hover:bg-white hover:shadow-md' : 'border-slate-200 bg-white hover:shadow-md'}`}>
+        <Link href="/settings?tab=recurring" className={`rounded-3xl border p-6 transition-all hover:-translate-y-0.5 ${theme === 'modern' ? isDark ? 'border-white/10 bg-white/5 shadow-sm hover:border-white/20 hover:bg-white/[0.08]' : 'border-white/80 bg-white/80 shadow-sm hover:bg-white hover:shadow-md' : 'border-slate-200 bg-white hover:shadow-md'}`}>
           <div className="flex items-center justify-between mb-4">
             <span className={`flex h-11 w-11 items-center justify-center rounded-2xl ${isDark ? 'bg-indigo-500/15 text-indigo-300' : 'bg-indigo-100 text-indigo-700'}`}>
               <Repeat className="w-6 h-6" />
@@ -192,7 +196,7 @@ export default function AnalysisDashboard() {
                       <span className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-slate-700'}`}>{category.name}</span>
                       <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{share}%</p>
                     </div>
-                    <span className={`text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{Math.round(category.amount).toLocaleString()}</span>
+                    <span className={`text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{Math.round(category.amount).toLocaleString()} {data.baseCurrency}</span>
                   </div>
                   <div className={`w-full h-2 overflow-hidden rounded-full ${isDark ? 'bg-white/10' : 'bg-slate-100'}`}>
                     <div
@@ -242,7 +246,7 @@ export default function AnalysisDashboard() {
                 <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>예산 상태</h2>
                 <p className={`mt-1 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>현재 월 예산과 실제 지출을 비교합니다.</p>
               </div>
-              <Link href="/setup?manage=1&step=2" className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-semibold ${isDark ? 'bg-white/10 text-slate-200' : 'bg-slate-100 text-slate-700'}`}>
+              <Link href="/settings?tab=budgets" className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-semibold ${isDark ? 'bg-white/10 text-slate-200' : 'bg-slate-100 text-slate-700'}`}>
                 예산 설정
               </Link>
             </div>

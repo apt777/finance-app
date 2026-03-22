@@ -1,10 +1,12 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { Bell, Globe, Languages, Lock, Settings, Sparkles, Tags } from 'lucide-react'
+import { Bell, Globe, Languages, Lock, PiggyBank, Repeat, Settings, Sparkles, Tags } from 'lucide-react'
 import CategoryManager from '@/components/CategoryManager'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import AIBulkImportBeta from '@/components/AIBulkImportBeta'
+import BudgetManager from '@/components/BudgetManager'
+import RecurringManager from '@/components/RecurringManager'
 import { useColorMode } from '@/context/ColorModeContext'
 import { useUiTheme } from '@/context/UiThemeContext'
 import { useTranslations } from 'next-intl'
@@ -21,7 +23,7 @@ export default function SettingsPage() {
     const requestedTab = searchParams.get('tab')
     if (!requestedTab) return
 
-    const allowedTabs = new Set(['theme', 'language', 'categories', 'beta', 'security', 'notifications'])
+    const allowedTabs = new Set(['theme', 'language', 'categories', 'budgets', 'recurring', 'beta', 'security', 'notifications'])
     if (allowedTabs.has(requestedTab)) {
       setActiveTab(requestedTab)
     }
@@ -31,6 +33,8 @@ export default function SettingsPage() {
     { id: 'theme', label: tSettings('theme'), icon: Settings },
     { id: 'language', label: tSettings('language'), icon: Languages },
     { id: 'categories', label: tSettings('categories'), icon: Tags },
+    { id: 'budgets', label: tSettings('budgetSettings'), icon: PiggyBank },
+    { id: 'recurring', label: tSettings('recurringSettings'), icon: Repeat },
     { id: 'beta', label: tSettings('beta'), icon: Sparkles },
     { id: 'security', label: tSettings('security'), icon: Lock },
     { id: 'notifications', label: tSettings('notifications'), icon: Bell },
@@ -201,48 +205,52 @@ export default function SettingsPage() {
 
           {activeTab === 'categories' && <CategoryManager />}
 
+          {activeTab === 'budgets' && <BudgetManager />}
+
+          {activeTab === 'recurring' && <RecurringManager />}
+
           {activeTab === 'beta' && <AIBulkImportBeta />}
 
           {activeTab === 'security' && (
             <div className="space-y-6">
               <div className="rounded-[28px] border border-slate-200 bg-white p-6">
-                <h3 className="mb-4 text-lg font-black tracking-[-0.03em] text-slate-950">Change Password</h3>
+                <h3 className="mb-4 text-lg font-black tracking-[-0.03em] text-slate-950">{tSettings('changePassword')}</h3>
                 <form className="space-y-4">
                   <div>
                     <label htmlFor="current-password" className="mb-2 block text-sm font-medium text-slate-700">
-                      Current Password
+                      {tSettings('currentPassword')}
                     </label>
                     <input
                       id="current-password"
                       type="password"
                       className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 placeholder-slate-400 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter current password"
+                      placeholder={tSettings('currentPasswordPlaceholder')}
                     />
                   </div>
                   <div>
                     <label htmlFor="new-password" className="mb-2 block text-sm font-medium text-slate-700">
-                      New Password
+                      {tSettings('newPassword')}
                     </label>
                     <input
                       id="new-password"
                       type="password"
                       className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 placeholder-slate-400 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter new password"
+                      placeholder={tSettings('newPasswordPlaceholder')}
                     />
                   </div>
                   <div>
                     <label htmlFor="confirm-password" className="mb-2 block text-sm font-medium text-slate-700">
-                      Confirm Password
+                      {tSettings('confirmPassword')}
                     </label>
                     <input
                       id="confirm-password"
                       type="password"
                       className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 placeholder-slate-400 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Re-enter password"
+                      placeholder={tSettings('confirmPasswordPlaceholder')}
                     />
                   </div>
                   <button type="submit" className="rounded-2xl bg-slate-950 px-6 py-3 font-semibold text-white transition-colors hover:bg-slate-800">
-                    Change Password
+                    {tSettings('changePassword')}
                   </button>
                 </form>
               </div>
@@ -252,26 +260,26 @@ export default function SettingsPage() {
           {activeTab === 'notifications' && (
             <div className="space-y-6">
               <div className="rounded-[28px] border border-slate-200 bg-white p-6">
-                <h3 className="mb-4 text-lg font-black tracking-[-0.03em] text-slate-950">Notification Settings</h3>
+                <h3 className="mb-4 text-lg font-black tracking-[-0.03em] text-slate-950">{tSettings('notificationSettings')}</h3>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between rounded-2xl bg-slate-50 p-4">
                     <div>
-                      <p className="font-medium text-slate-800">Email Notifications</p>
-                      <p className="text-sm text-slate-600">Receive emails for important transactions</p>
+                      <p className="font-medium text-slate-800">{tSettings('emailNotifications')}</p>
+                      <p className="text-sm text-slate-600">{tSettings('emailDesc')}</p>
                     </div>
                     <input type="checkbox" defaultChecked className="h-5 w-5 rounded" />
                   </div>
                   <div className="flex items-center justify-between rounded-2xl bg-slate-50 p-4">
                     <div>
-                      <p className="font-medium text-slate-800">Goal Notifications</p>
-                      <p className="text-sm text-slate-600">Alerts when goals are reached</p>
+                      <p className="font-medium text-slate-800">{tSettings('goalNotifications')}</p>
+                      <p className="text-sm text-slate-600">{tSettings('goalDesc')}</p>
                     </div>
                     <input type="checkbox" defaultChecked className="h-5 w-5 rounded" />
                   </div>
                   <div className="flex items-center justify-between rounded-2xl bg-slate-50 p-4">
                     <div>
-                      <p className="font-medium text-slate-800">Weekly Report</p>
-                      <p className="text-sm text-slate-600">Weekly summary of your assets</p>
+                      <p className="font-medium text-slate-800">{tSettings('weeklyReport')}</p>
+                      <p className="text-sm text-slate-600">{tSettings('weeklyDesc')}</p>
                     </div>
                     <input type="checkbox" className="h-5 w-5 rounded" />
                   </div>

@@ -69,8 +69,20 @@ export async function GET() {
     const budgets = await prisma.budget.findMany({
       where: { userId },
     }).catch(() => [])
+    const exchangeRates = await prisma.exchangeRate.findMany({
+      where: { userId },
+    }).catch(() => [])
 
     const categories = await ensureDefaultCategories(userId).catch(() => [])
+    const baseCurrency = 'JPY'
+    const convertAmount = (amount: number, fromCurrency: string, toCurrency: string) => {
+      if (!fromCurrency || fromCurrency === toCurrency) return amount
+      const direct = exchangeRates.find((item) => item.fromCurrency === fromCurrency && item.toCurrency === toCurrency)?.rate
+      if (direct) return amount * direct
+      const inverse = exchangeRates.find((item) => item.fromCurrency === toCurrency && item.toCurrency === fromCurrency)?.rate
+      if (inverse) return amount / inverse
+      return amount
+    }
 
     const categoryMap = new Map(categories.map((category) => [category.key, category.name]))
     const categoryTypeMap = new Map(categories.map((category) => [category.key, category.type]))
@@ -98,7 +110,7 @@ export async function GET() {
       const key = monthKey(date)
       const monthly = monthlyMap.get(key) ?? { month: key, income: 0, expense: 0, net: 0 }
       const yearly = yearlyMap.get(date.getFullYear()) ?? { year: date.getFullYear(), income: 0, expense: 0, net: 0 }
-      const normalizedAmount = Math.abs(transaction.amount)
+      const normalizedAmount = Math.abs(convertAmount(transaction.amount, transaction.currency, baseCurrency))
 
       if (transactionType === 'income') {
         monthly.income += normalizedAmount
@@ -174,7 +186,7 @@ export async function GET() {
             transaction.categoryKey === budget.categoryKey
           )
         })
-        .reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0)
+        .reduce((sum, transaction) => sum + Math.abs(convertAmount(transaction.amount, transaction.currency, budget.currency)), 0)
 
       return {
         ...budget,
@@ -188,6 +200,7 @@ export async function GET() {
       yearly: Array.from(yearlyMap.values()).sort((a, b) => a.year - b.year),
       topCategories,
       monthlyCategoryBreakdown,
+      baseCurrency,
       budgetStatus,
     })
   } catch (error: any) {
@@ -198,6 +211,7 @@ export async function GET() {
         yearly: [],
         topCategories: [],
         monthlyCategoryBreakdown: [],
+        baseCurrency: 'JPY',
         budgetStatus: [],
       },
       { status: 200 }

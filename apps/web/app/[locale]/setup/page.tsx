@@ -2,10 +2,12 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 import { useRouter } from '@/navigation'
+import { useLocale } from 'next-intl'
 import { useSearchParams } from 'next/navigation'
 import { Settings, Plus, Trash2, Wallet, Repeat, PiggyBank, ArrowRight, ArrowLeft, ShieldCheck } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
-import { DEFAULT_TRANSACTION_CATEGORIES } from '@/lib/defaultCategories'
+import { getDefaultTransactionCategories } from '@/lib/defaultCategories'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
 
 interface AccountInput {
   name?: string
@@ -50,6 +52,7 @@ const today = new Date()
 
 export default function SetupPage() {
   const router = useRouter()
+  const locale = useLocale()
   const searchParams = useSearchParams()
   const queryClient = useQueryClient()
   const [step, setStep] = useState(1)
@@ -113,14 +116,14 @@ export default function SetupPage() {
         const categoryData = await categoryResponse.json()
         setCategories(categoryData)
       } else {
-        setCategories(DEFAULT_TRANSACTION_CATEGORIES)
+        setCategories(getDefaultTransactionCategories(locale))
       }
     }
 
     fetchData().catch(() => {
-      setCategories(DEFAULT_TRANSACTION_CATEGORIES)
+      setCategories(getDefaultTransactionCategories(locale))
     })
-  }, [])
+  }, [locale])
 
   useEffect(() => {
     const requestedStep = Number(searchParams.get('step'))
@@ -160,6 +163,7 @@ export default function SetupPage() {
         body: JSON.stringify({
           accounts: normalizedAccounts,
           exchangeRates: [],
+          locale,
           budgets: budgets.filter((budget) => Number(budget.amount) > 0),
           recurringTransactions: recurringTransactions
             .filter((item) => item.name && item.description && Number(item.amount) > 0)
@@ -226,6 +230,7 @@ export default function SetupPage() {
         body: JSON.stringify({
           accounts: [],
           exchangeRates: [],
+          locale,
           budgets: [],
           recurringTransactions: [],
         }),
@@ -291,6 +296,13 @@ export default function SetupPage() {
             <p className="text-sm text-slate-500 mt-3">
               지금 다 입력하지 않아도 됩니다. 필요한 것만 적고 나머지는 나중에 추가해도 돼요.
             </p>
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-semibold text-slate-800">언어 설정</p>
+              <p className="mt-1 text-xs text-slate-500">먼저 언어를 정하면 기본 카테고리와 초기 예시도 그 언어 기준으로 맞춰집니다.</p>
+              <div className="mt-3">
+                <LanguageSwitcher align="start" />
+              </div>
+            </div>
           </div>
           <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 max-w-sm">
             <div className="flex items-center gap-3 text-emerald-700 font-semibold">

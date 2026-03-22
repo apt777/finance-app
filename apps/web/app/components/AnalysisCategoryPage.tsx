@@ -89,7 +89,7 @@ export default function AnalysisCategoryPage() {
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>카테고리별 금액</h2>
-            <p className={`mt-1 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>총 지출 {Math.round(total).toLocaleString()}</p>
+            <p className={`mt-1 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>총 지출 {Math.round(total).toLocaleString()} {data.baseCurrency}</p>
           </div>
         </div>
 
@@ -111,7 +111,7 @@ export default function AnalysisCategoryPage() {
                     <p className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{share}%</p>
                   </div>
                   <div className="text-right">
-                    <p className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{Math.round(row.amount).toLocaleString()}</p>
+                    <p className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{Math.round(row.amount).toLocaleString()} {data.baseCurrency}</p>
                   </div>
                 </div>
                 <div className={`mt-3 h-2 overflow-hidden rounded-full ${isDark ? 'bg-white/10' : 'bg-slate-100'}`}>
