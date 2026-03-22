@@ -10,6 +10,28 @@ function stripInternalNotes(notes?: string | null) {
   return cleaned || null
 }
 
+async function getCategoryMapSafely(userId: string) {
+  try {
+    const categories = await ensureDefaultCategories(userId)
+
+    return new Map(
+      categories.map((category) => [
+        category.key,
+        {
+          key: category.key,
+          name: category.name,
+          icon: 'icon' in category ? category.icon : null,
+          color: 'color' in category ? category.color : null,
+          type: 'type' in category ? category.type : 'expense',
+        },
+      ])
+    )
+  } catch (error) {
+    console.error('Failed to resolve account transaction categories:', error)
+    return new Map()
+  }
+}
+
 export async function GET(_request: Request, props: { params: Promise<{ id: string }> }) {
   const { userId } = await requireRouteSession()
 
@@ -34,7 +56,7 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
       return NextResponse.json({ error: 'Account not found or does not belong to user' }, { status: 404 })
     }
 
-    const [transactions, categories] = await Promise.all([
+    const [transactions, categoryMap] = await Promise.all([
       prisma.transaction.findMany({
         where: {
           userId,
@@ -55,21 +77,8 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
           },
         },
       }),
-      ensureDefaultCategories(userId),
+      getCategoryMapSafely(userId),
     ])
-
-    const categoryMap = new Map(
-      categories.map((category) => [
-        category.key,
-        {
-          key: category.key,
-          name: category.name,
-          icon: 'icon' in category ? category.icon : null,
-          color: 'color' in category ? category.color : null,
-          type: 'type' in category ? category.type : 'expense',
-        },
-      ])
-    )
 
     return NextResponse.json(
       transactions.map((transaction) => ({

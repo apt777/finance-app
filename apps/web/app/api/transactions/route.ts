@@ -88,28 +88,11 @@ async function findCategoryForUser(userId: string, categoryKey: string) {
   }
 }
 
-export async function GET() {
-  const { userId } = await requireRouteSession()
-
-  if (!userId) {
-    return unauthorized()
-  }
-
+async function getCategoryMapSafely(userId: string) {
   try {
-    const [transactions, categories] = await Promise.all([
-      prisma.transaction.findMany({
-        where: { userId },
-        orderBy: { date: 'desc' },
-        include: {
-          account: { select: { id: true, name: true, currency: true } },
-          fromAccount: { select: { id: true, name: true, currency: true } },
-          toAccount: { select: { id: true, name: true, currency: true } },
-        },
-      }),
-      ensureDefaultCategories(userId),
-    ])
+    const categories = await ensureDefaultCategories(userId)
 
-    const categoryMap = new Map(
+    return new Map(
       categories.map((category) => [
         category.key,
         {
@@ -121,6 +104,32 @@ export async function GET() {
         },
       ])
     )
+  } catch (error) {
+    console.error('Failed to resolve transaction categories:', error)
+    return new Map()
+  }
+}
+
+export async function GET() {
+  const { userId } = await requireRouteSession()
+
+  if (!userId) {
+    return unauthorized()
+  }
+
+  try {
+    const [transactions, categoryMap] = await Promise.all([
+      prisma.transaction.findMany({
+        where: { userId },
+        orderBy: { date: 'desc' },
+        include: {
+          account: { select: { id: true, name: true, currency: true } },
+          fromAccount: { select: { id: true, name: true, currency: true } },
+          toAccount: { select: { id: true, name: true, currency: true } },
+        },
+      }),
+      getCategoryMapSafely(userId),
+    ])
 
     return NextResponse.json(
       transactions.map((transaction) => ({
