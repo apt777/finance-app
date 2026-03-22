@@ -342,7 +342,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </button>
           </div>
 
-          <div className="-mx-4 mt-3 overflow-x-auto border-t border-slate-200/70 px-4 pt-3 no-scrollbar">
+          <div className="-mx-4 mt-3 overflow-x-auto overflow-y-visible border-t border-slate-200/70 px-4 pt-4 no-scrollbar">
             <div className="flex w-max gap-2 pb-1">
               {navLinks.map((link) => {
                 const Icon = link.icon
@@ -369,7 +369,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="hidden flex-col gap-4 md:flex xl:flex-row xl:items-center xl:justify-between">
-          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 no-scrollbar xl:flex-1">
+          <div className="-mx-1 flex gap-2 overflow-x-auto overflow-y-visible px-1 pb-1 pt-1 no-scrollbar xl:flex-1">
             {navLinks.map((link) => {
               const Icon = link.icon
               const isActive = pathname === link.href
