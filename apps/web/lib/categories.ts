@@ -62,7 +62,7 @@ export async function ensureDefaultCategories(userId: string) {
   try {
     const existing = await prisma.transactionCategory.findMany({
       where: {
-        OR: [{ userId }, { isDefault: true, userId: null }],
+        OR: [{ userId }, { userId: null }],
       },
       select: { key: true, userId: true },
     })
@@ -89,7 +89,7 @@ export async function ensureDefaultCategories(userId: string) {
 
     const categories = await prisma.transactionCategory.findMany({
       where: {
-        OR: [{ userId }, { isDefault: true, userId: null }],
+        OR: [{ userId }, { userId: null }],
       },
       orderBy: [{ isDefault: 'desc' }, { name: 'asc' }],
     })
