@@ -18,6 +18,13 @@ export default function AnalysisDashboard() {
   const { data: recurringTransactions } = useRecurringTransactions()
   const { data: budgets } = useBudgets()
   const [selectedMonth, setSelectedMonth] = useState('')
+  const monthlyOptions = data?.monthlyCategoryBreakdown?.map((item) => item.month) ?? []
+
+  useEffect(() => {
+    if (!selectedMonth && monthlyOptions.length > 0) {
+      setSelectedMonth(monthlyOptions[monthlyOptions.length - 1] ?? '')
+    }
+  }, [monthlyOptions, selectedMonth])
 
   if (isLoading) {
     return <AppLoadingState label="분석" />
@@ -58,7 +65,6 @@ export default function AnalysisDashboard() {
   const previousMonth = data.monthly[data.monthly.length - 2]
   const expenseDelta = currentMonth && previousMonth ? currentMonth.expense - previousMonth.expense : 0
   const overBudgetCount = data.budgetStatus.filter((item) => item.usagePercentage >= 100).length
-  const monthlyOptions = data.monthlyCategoryBreakdown.map((item) => item.month)
   const selectedMonthValue = selectedMonth || monthlyOptions[monthlyOptions.length - 1] || currentMonth?.month || ''
   const selectedMonthBreakdown = data.monthlyCategoryBreakdown.find((item) => item.month === selectedMonthValue)
   const selectedMonthTotal = selectedMonthBreakdown?.categories.reduce((sum, item) => sum + item.amount, 0) ?? 0
@@ -72,12 +78,6 @@ export default function AnalysisDashboard() {
   const expenseTone = expenseDelta > 0
     ? 'text-rose-600'
     : isDark ? 'text-emerald-300' : 'text-emerald-600'
-
-  useEffect(() => {
-    if (!selectedMonth && monthlyOptions.length > 0) {
-      setSelectedMonth(monthlyOptions[monthlyOptions.length - 1] ?? '')
-    }
-  }, [monthlyOptions, selectedMonth])
 
   return (
     <div className={`space-y-6 ${theme === 'modern' ? isDark ? 'rounded-[34px] border border-white/10 bg-white/5 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.24)] backdrop-blur-xl md:p-6' : 'rounded-[34px] border border-white/80 bg-white/50 p-4 shadow-[0_18px_50px_rgba(148,163,184,0.12)] backdrop-blur-xl md:p-6' : ''}`}>
