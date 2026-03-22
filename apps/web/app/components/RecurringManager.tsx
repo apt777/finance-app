@@ -6,10 +6,13 @@ import { Plus, Repeat } from 'lucide-react'
 import { useAccounts } from '@/hooks/useAccounts'
 import { useCategories } from '@/hooks/useCategories'
 import { useRecurringTransactions } from '@/hooks/useRecurringTransactions'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
+import { getUiCopy } from '@/lib/uiCopy'
 
 export default function RecurringManager() {
   const tCommon = useTranslations('common')
+  const locale = useLocale()
+  const ui = getUiCopy(locale)
   const queryClient = useQueryClient()
   const { data: accounts = [] } = useAccounts()
   const { data: categories = [] } = useCategories()
@@ -47,7 +50,7 @@ export default function RecurringManager() {
         }),
       })
       const result = await response.json()
-      if (!response.ok) throw new Error(result.error || 'Failed to save recurring transaction')
+      if (!response.ok) throw new Error(result.error || ui.managers.recurringTitle)
       return result
     },
     onSuccess: () => {
@@ -69,19 +72,19 @@ export default function RecurringManager() {
             <Repeat className="h-6 w-6" />
           </div>
           <div>
-            <h3 className="text-xl font-black tracking-[-0.03em] text-slate-950">반복거래 관리</h3>
-            <p className="mt-2 text-sm text-slate-600">월세, 구독료, 급여처럼 반복되는 거래를 미리 등록해 두면 관리가 훨씬 쉬워집니다.</p>
+            <h3 className="text-xl font-black tracking-[-0.03em] text-slate-950">{ui.managers.recurringTitle}</h3>
+            <p className="mt-2 text-sm text-slate-600">{ui.managers.recurringDesc}</p>
           </div>
         </div>
       </div>
 
       <div className="rounded-[28px] border border-slate-200 bg-white p-6">
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <input value={name} onChange={(event) => setName(event.target.value)} placeholder="예: 월세" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900" />
-          <input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="예: 매월 집세" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900" />
+          <input value={name} onChange={(event) => setName(event.target.value)} placeholder={ui.managers.recurringNamePlaceholder} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900" />
+          <input value={description} onChange={(event) => setDescription(event.target.value)} placeholder={ui.managers.recurringDescPlaceholder} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900" />
           <input value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="0" type="number" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900" />
           <select value={accountId} onChange={(event) => setAccountId(event.target.value)} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900">
-            <option value="">계좌 선택</option>
+            <option value="">{ui.managers.selectAccount}</option>
             {accounts.map((account) => (
               <option key={account.id} value={account.id}>{account.name}</option>
             ))}
@@ -98,22 +101,22 @@ export default function RecurringManager() {
             className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
           >
             <Plus className="h-4 w-4" />
-            반복거래 저장
+            {ui.managers.saveRecurring}
           </button>
         </div>
         {feedback ? <p className="mt-3 text-sm text-rose-600">{feedback}</p> : null}
-        {feedback?.includes('반복거래 기능은 아직') ? (
+        {feedback?.includes('반복거래 기능은 아직') || feedback?.toLowerCase().includes('recurring') ? (
           <p className="mt-2 text-xs leading-6 text-slate-500">
-            현재는 일반 거래 등록으로 계속 사용할 수 있고, 반복거래 테이블이 운영 DB에 적용되면 같은 화면에서 바로 등록할 수 있습니다.
+            {ui.managers.recurringMigrationHint}
           </p>
         ) : null}
       </div>
 
       <div className="rounded-[28px] border border-slate-200 bg-white p-6">
-        <h4 className="text-lg font-bold text-slate-900">현재 반복거래</h4>
+        <h4 className="text-lg font-bold text-slate-900">{ui.managers.currentRecurring}</h4>
         <div className="mt-4 space-y-3">
           {isLoading ? <p className="text-sm text-slate-500">{tCommon('loading')}</p> : null}
-          {!isLoading && items.length === 0 ? <p className="text-sm text-slate-500">등록된 반복거래가 없습니다.</p> : null}
+          {!isLoading && items.length === 0 ? <p className="text-sm text-slate-500">{ui.managers.noRecurring}</p> : null}
           {items.map((item) => (
             <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
               <div className="flex items-center justify-between gap-3">

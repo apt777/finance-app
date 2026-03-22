@@ -13,9 +13,10 @@ import {
   TrendingUp,
   Wallet,
 } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useColorMode } from '@/context/ColorModeContext'
 import AppLoadingState from '@/components/AppLoadingState'
+import { getUiCopy } from '@/lib/uiCopy'
 
 interface Account {
   id: string
@@ -81,6 +82,8 @@ export default function OverviewModern() {
   const tGoals = useTranslations('goals')
   const tTransactions = useTranslations('transactions')
   const tCommon = useTranslations('common')
+  const locale = useLocale()
+  const ui = getUiCopy(locale)
 
   const { data, isLoading, isError } = useOverviewData()
   const { data: exchangeRates, isLoading: ratesLoading, isError: ratesError } = useExchangeRates()
@@ -188,7 +191,7 @@ export default function OverviewModern() {
   const averageGoalProgress = goalsWithProgress.length > 0
     ? Math.round(goalsWithProgress.reduce((sum, goal) => sum + goal.progress, 0) / goalsWithProgress.length)
     : 0
-  const expenseDirectionLabel = expenseMomentum > 0 ? '지출이 늘고 있어요' : '지출이 안정적이에요'
+  const expenseDirectionLabel = expenseMomentum > 0 ? ui.overview.expenseUp : ui.overview.expenseStable
   const expenseDirectionTone = expenseMomentum > 0
     ? 'text-rose-600'
     : isDark
@@ -197,27 +200,27 @@ export default function OverviewModern() {
   const quickActions = [
     {
       href: '/transactions/add',
-      eyebrow: '빠른 추가',
-      title: '거래내역 추가',
-      description: '지출, 수입, 이체를 바로 기록',
+      eyebrow: ui.overview.quickAdd,
+      title: ui.overview.addTransaction,
+      description: ui.overview.addTransactionDesc,
       icon: PlusCircle,
       lightAccent: 'bg-blue-100 text-blue-700',
       darkAccent: 'bg-blue-500/15 text-blue-300',
     },
     {
       href: '/accounts/add',
-      eyebrow: '자산 설정',
-      title: '계좌 추가',
-      description: '새 계좌나 카드 연결',
+      eyebrow: ui.overview.assetSetup,
+      title: ui.overview.addAccount,
+      description: ui.overview.addAccountDesc,
       icon: Wallet,
       lightAccent: 'bg-emerald-100 text-emerald-700',
       darkAccent: 'bg-emerald-500/15 text-emerald-300',
     },
     {
       href: '/holdings/add',
-      eyebrow: '포트폴리오',
-      title: '투자 추가',
-      description: '보유 종목을 빠르게 등록',
+      eyebrow: ui.overview.portfolio,
+      title: ui.overview.addInvestment,
+      description: ui.overview.addInvestmentDesc,
       icon: TrendingUp,
       lightAccent: 'bg-amber-100 text-amber-700',
       darkAccent: 'bg-amber-500/15 text-amber-300',
@@ -233,7 +236,7 @@ export default function OverviewModern() {
               <div className="max-w-4xl space-y-6">
                 <div className="space-y-3">
                   <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    자산 요약
+                    {ui.overview.assetOverview}
                   </p>
                   <div className="flex flex-wrap items-center gap-3">
                     <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold ${isDark ? 'border border-white/10 bg-white/5 text-slate-200' : 'border border-white/80 bg-white/80 text-slate-700'}`}>
@@ -241,11 +244,11 @@ export default function OverviewModern() {
                       <span className={expenseDirectionTone}>{expenseDirectionLabel}</span>
                     </div>
                     <div className={`inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium ${isDark ? 'border border-white/10 bg-white/5 text-slate-300' : 'border border-white/80 bg-white/80 text-slate-600'}`}>
-                      최근 30일 기준
+                      {ui.overview.recent30Days}
                     </div>
                     {usesEstimatedValues ? (
                       <div className={`inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium ${isDark ? 'border border-amber-400/20 bg-amber-400/10 text-amber-200' : 'border border-amber-200 bg-amber-50 text-amber-700'}`}>
-                        환율 동기화 전 추정값
+                        {ui.overview.estimatedBeforeRates}
                       </div>
                     ) : null}
                   </div>
@@ -254,24 +257,24 @@ export default function OverviewModern() {
                   {Math.round(netWorth).toLocaleString()} <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>{BASE_CURRENCY}</span>
                 </h2>
                 <p className={`max-w-2xl text-sm leading-7 md:text-base ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                  오늘 자산 상태와 최근 소비 흐름을 한 번에 보고, 어디를 먼저 손봐야 하는지 빠르게 판단할 수 있게 정리했습니다.
+                  {ui.overview.heroDesc}
                 </p>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <div className={`flex min-h-[112px] flex-col justify-between rounded-[24px] px-4 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
-                    <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>최근 30일 지출</p>
+                    <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.recent30DayExpense}</p>
                     <p className={`mt-2 text-xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
                       {totalExpensesLast30.toLocaleString()}
                     </p>
                   </div>
                   <div className={`flex min-h-[112px] flex-col justify-between rounded-[24px] px-4 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
-                    <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>투자</p>
+                    <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.investment}</p>
                     <p className={`mt-2 text-xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
                       {holdingsValueBaseCurrency.toLocaleString()}
                     </p>
                   </div>
                   <div className={`flex min-h-[112px] flex-col justify-between rounded-[24px] px-4 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
-                    <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>목표 평균 진행률</p>
+                    <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.averageGoalProgress}</p>
                     <p className={`mt-2 text-xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
                       {averageGoalProgress}%
                     </p>
@@ -308,7 +311,7 @@ export default function OverviewModern() {
                               ? 'bg-white/10 text-slate-200 group-hover:bg-white/15'
                               : 'bg-slate-100 text-slate-700 group-hover:bg-slate-200'
                           }`}>
-                            바로 이동
+                            {ui.overview.jumpNow}
                           </span>
                         </div>
                       </Link>
@@ -319,15 +322,15 @@ export default function OverviewModern() {
                 <div className={`rounded-[28px] px-5 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>지금 보면 좋은 포인트</p>
+                      <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.focusPoint}</p>
                       <p className={`mt-2 text-sm leading-6 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                         {expenseMomentum > 0
-                          ? '최근 지출이 직전 흐름보다 커졌습니다. 소비가 늘어난 카테고리를 먼저 확인해보는 게 좋습니다.'
-                          : '지출 흐름이 비교적 안정적입니다. 남는 현금을 목표나 투자 쪽으로 옮길 여지가 있습니다.'}
+                          ? ui.overview.focusDescUp
+                          : ui.overview.focusDescStable}
                       </p>
                     </div>
                     <div className={`rounded-2xl px-4 py-3 text-right ${isDark ? 'bg-white/5 text-white' : 'bg-slate-100 text-slate-900'}`}>
-                      <p className="text-xs font-semibold text-slate-400">순자산 기준</p>
+                      <p className="text-xs font-semibold text-slate-400">{ui.overview.basedOnNetWorth}</p>
                       <p className="mt-1 text-lg font-bold tabular-nums">{Math.round(netWorth).toLocaleString()}</p>
                     </div>
                   </div>
@@ -340,14 +343,14 @@ export default function OverviewModern() {
                   <p className={`mt-3 text-[clamp(1.08rem,1.8vw,1.55rem)] font-bold leading-tight tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
                     {accounts.length}
                   </p>
-                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>연결된 계좌 수</p>
+                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.linkedAccounts}</p>
                 </div>
                 <div className={`flex min-h-[122px] flex-col justify-between rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/80'}`}>
                   <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{tDashboard('totalAssets')}</p>
                   <p className={`mt-3 text-[clamp(1.08rem,1.8vw,1.55rem)] font-bold leading-tight tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
                     {Math.round(totalPositiveAssetsBaseCurrency).toLocaleString()}
                   </p>
-                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>투자 자산 합계</p>
+                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.investmentAssets}</p>
                 </div>
                 <div className={`flex min-h-[122px] flex-col justify-between rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/80'}`}>
                   <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{tTransactions('totalExpense')}</p>
@@ -355,24 +358,24 @@ export default function OverviewModern() {
                     {expenseMomentum > 0 ? '+' : ''}
                     {Math.round(expenseMomentum).toLocaleString()}
                   </p>
-                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>최근 지출 변화</p>
+                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.expenseChange}</p>
                 </div>
                 <div className={`flex min-h-[122px] flex-col justify-between rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/80'}`}>
                   <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>KRW Mirror</p>
                   <p className={`mt-3 text-[clamp(1.18rem,2vw,1.8rem)] font-bold leading-tight tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
                     {Math.round(totalPositiveAssetsKRW).toLocaleString()}
                   </p>
-                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>원화 기준 참고 자산</p>
+                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.krwMirror}</p>
                 </div>
                 <div className={`flex min-h-[122px] flex-col justify-between rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5 text-white' : 'border border-slate-200 bg-blue-50 text-slate-950'}`}>
                   <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-blue-600/70'}`}>{tGoals('totalGoals')}</p>
                   <p className="mt-3 text-[clamp(1.18rem,2vw,1.8rem)] font-bold leading-tight tabular-nums">
                     {goals.length}
                   </p>
-                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-blue-700/70'}`}>활성 목표 수</p>
+                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-blue-700/70'}`}>{ui.overview.activeGoals}</p>
                 </div>
                 <div className={`flex min-h-[122px] flex-col justify-between rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/80'}`}>
-                  <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>현금 잔고</p>
+                  <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.cashBalance}</p>
                   <div className="mt-3 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{tDashboard('japaneseAccounts')}</span>
@@ -387,7 +390,7 @@ export default function OverviewModern() {
                       </span>
                     </div>
                   </div>
-                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>통화별 현금 잔고</p>
+                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.cashByCurrency}</p>
                 </div>
               </div>
             </div>
@@ -449,7 +452,7 @@ export default function OverviewModern() {
               <div className="mb-5 flex items-center justify-between">
                 <div>
                   <p className={`text-[11px] font-bold uppercase tracking-[0.24em] ${isDark ? 'text-slate-400' : 'text-blue-600/70'}`}>{tDashboard('goalSummary')}</p>
-                  <h3 className="mt-2 text-[1.65rem] font-bold tracking-[-0.015em]">Focus now</h3>
+                  <h3 className="mt-2 text-[1.65rem] font-bold tracking-[-0.015em]">{ui.overview.focusNow}</h3>
                 </div>
                 <Target className="h-6 w-6 text-slate-400" />
               </div>
@@ -485,8 +488,8 @@ export default function OverviewModern() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-blue-600/75'}`}>Beta shortcut</p>
-                    <p className={`mt-2 text-base font-bold ${isDark ? 'text-white' : 'text-slate-950'}`}>AI로 등록하기</p>
+                    <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-blue-600/75'}`}>{ui.overview.aiShortcutLabel}</p>
+                    <p className={`mt-2 text-base font-bold ${isDark ? 'text-white' : 'text-slate-950'}`}>{ui.overview.aiShortcutTitle}</p>
                   </div>
                   <span className={`flex h-10 w-10 items-center justify-center rounded-2xl ${isDark ? 'bg-cyan-500/15 text-cyan-300' : 'bg-cyan-100 text-cyan-700'}`}>
                     <Sparkles className="h-5 w-5" />
@@ -494,12 +497,12 @@ export default function OverviewModern() {
                 </div>
                 <div>
                   <p className={`text-xs leading-6 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                    여러 건의 거래를 붙여넣고 카테고리까지 한 번에 초안으로 정리할 수 있습니다.
+                    {ui.overview.aiShortcutDesc}
                   </p>
                   <span className={`mt-3 inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                     isDark ? 'bg-white/10 text-slate-200' : 'bg-blue-100 text-blue-700'
                   }`}>
-                    Beta 열기
+                    {ui.overview.openBeta}
                   </span>
                 </div>
               </Link>
@@ -521,7 +524,7 @@ export default function OverviewModern() {
                 <div key={currency} className={`flex items-center justify-between rounded-[24px] px-4 py-4 ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
                   <div>
                     <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>{currency}</p>
-                    <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>currency bucket</p>
+                    <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.currencyBucket}</p>
                   </div>
                   <p className={`text-xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>{Math.round(balance).toLocaleString()}</p>
                 </div>
@@ -533,7 +536,7 @@ export default function OverviewModern() {
             <div className="mb-6 flex items-center justify-between">
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">{tDashboard('totalTransactions')}</p>
-                <h3 className={`mt-2 text-[1.65rem] font-bold tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>Expense split</h3>
+                <h3 className={`mt-2 text-[1.65rem] font-bold tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>{ui.overview.expenseSplit}</h3>
               </div>
               <TrendingDown className="h-6 w-6 text-slate-400" />
             </div>

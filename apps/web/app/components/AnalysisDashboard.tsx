@@ -10,11 +10,15 @@ import { BarChart, Bar, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { ChartColumnIncreasing, ChevronRight, PiggyBank, Repeat, TriangleAlert } from 'lucide-react'
 import { useColorMode } from '@/context/ColorModeContext'
 import { useUiTheme } from '@/context/UiThemeContext'
+import { useLocale } from 'next-intl'
 import AppLoadingState from '@/components/AppLoadingState'
+import { getUiCopy } from '@/lib/uiCopy'
 
 export default function AnalysisDashboard() {
   const { theme } = useUiTheme()
   const { colorMode } = useColorMode()
+  const locale = useLocale()
+  const ui = getUiCopy(locale)
   const { data, isLoading, isError } = useAnalysisSummary()
   const { data: recurringTransactions } = useRecurringTransactions()
   const { data: budgets } = useBudgets()
@@ -29,14 +33,14 @@ export default function AnalysisDashboard() {
   }, [monthlyOptions, selectedMonth])
 
   if (isLoading) {
-    return <AppLoadingState label="분석" />
+    return <AppLoadingState label={ui.analysis.label} />
   }
 
   if (isError || !data) {
     const isDark = colorMode === 'dark'
     return (
       <div className={`mx-auto w-full rounded-[28px] p-5 md:p-8 ${theme === 'modern' ? isDark ? 'border border-rose-400/20 bg-rose-500/10 text-rose-200 shadow-sm' : 'border border-rose-200 bg-rose-50 text-rose-700 shadow-sm' : 'border border-red-200 bg-red-50 text-red-700'}`}>
-        분석 데이터를 불러오지 못했습니다.
+        {ui.analysis.error}
       </div>
     )
   }
@@ -55,9 +59,9 @@ export default function AnalysisDashboard() {
         <div className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl ${theme === 'modern' ? isDark ? 'bg-white/10 text-slate-300' : 'bg-slate-100 text-slate-500' : 'bg-slate-100 text-slate-500'}`}>
           <ChartColumnIncreasing className="w-7 h-7" />
         </div>
-        <h2 className={`text-xl font-bold md:text-2xl ${isDark ? 'text-white' : 'text-slate-900'}`}>현재 데이터가 존재하지 않습니다.</h2>
+        <h2 className={`text-xl font-bold md:text-2xl ${isDark ? 'text-white' : 'text-slate-900'}`}>{ui.analysis.emptyTitle}</h2>
         <p className={`mt-2 text-sm md:text-base ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-          거래 내역이나 예산을 입력하면 월별 분석과 카테고리 분석이 여기에 표시됩니다.
+          {ui.analysis.emptyDesc}
         </p>
       </div>
     )
@@ -92,9 +96,9 @@ export default function AnalysisDashboard() {
         <article className={`rounded-3xl p-6 ${theme === 'modern' ? isDark ? 'border border-blue-400/20 bg-blue-500/10 text-white shadow-lg' : 'border border-blue-200 bg-blue-50 text-slate-950 shadow-sm' : 'bg-gradient-to-br from-slate-900 to-slate-800 text-white'}`}>
           <div className="flex items-center justify-between mb-4">
             <ChartColumnIncreasing className="w-6 h-6" />
-            <span className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>이번 달</span>
+            <span className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{ui.analysis.thisMonth}</span>
           </div>
-          <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>순저축</p>
+          <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{ui.analysis.netSavings}</p>
           <p className={`mt-2 text-3xl font-black ${netTone}`}>
             {Math.round(currentMonth?.net ?? 0).toLocaleString()}
             <span className={`ml-2 text-base font-semibold ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{data.baseCurrency}</span>
@@ -104,9 +108,9 @@ export default function AnalysisDashboard() {
         <article className={`rounded-3xl border p-6 ${theme === 'modern' ? isDark ? 'border-white/10 bg-white/5 shadow-sm' : 'border-white/80 bg-white/80 shadow-sm' : 'border-slate-200 bg-white'}`}>
           <div className="flex items-center justify-between mb-4">
             <TriangleAlert className={`w-6 h-6 ${expenseDelta > 0 ? 'text-rose-500' : 'text-emerald-500'}`} />
-            <span className="text-xs text-slate-400">전월 대비</span>
+            <span className="text-xs text-slate-400">{ui.analysis.monthOverMonth}</span>
           </div>
-          <p className="text-sm text-slate-500">지출 변화</p>
+          <p className="text-sm text-slate-500">{ui.analysis.expenseChange}</p>
           <p className={`text-3xl font-black mt-2 ${expenseTone}`}>
             {expenseDelta > 0 ? '+' : ''}{Math.round(expenseDelta).toLocaleString()}
             <span className={`ml-2 text-base font-semibold ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{data.baseCurrency}</span>
@@ -119,13 +123,13 @@ export default function AnalysisDashboard() {
               <PiggyBank className="w-6 h-6" />
             </span>
             <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${isDark ? 'bg-white/10 text-slate-200' : 'bg-slate-100 text-slate-700'}`}>
-              설정 열기
+              {ui.analysis.openSettings}
             </span>
           </div>
-          <p className="text-sm text-slate-500">예산 설정</p>
+          <p className="text-sm text-slate-500">{ui.analysis.budgetSetup}</p>
           <p className={`text-3xl font-black mt-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{activeBudgetCount}</p>
           <p className="text-xs text-slate-500 mt-2">
-            {activeBudgetCount > 0 ? `초과 예산 ${overBudgetCount}개` : '월별 예산을 등록하고 초과 여부를 확인하세요'}
+            {activeBudgetCount > 0 ? ui.analysis.overBudgetCount(overBudgetCount) : ui.analysis.budgetHint}
           </p>
         </Link>
 
@@ -135,13 +139,13 @@ export default function AnalysisDashboard() {
               <Repeat className="w-6 h-6" />
             </span>
             <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${isDark ? 'bg-white/10 text-slate-200' : 'bg-slate-100 text-slate-700'}`}>
-              설정 열기
+              {ui.analysis.openSettings}
             </span>
           </div>
-          <p className="text-sm text-slate-500">반복거래 설정</p>
+          <p className="text-sm text-slate-500">{ui.analysis.recurringSetup}</p>
           <p className={`text-3xl font-black mt-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{activeRecurringCount}</p>
           <p className="text-xs text-slate-500 mt-2">
-            {activeRecurringCount > 0 ? '월세, 구독료, 급여처럼 반복되는 거래 관리' : '반복 거래를 등록해 입력 부담을 줄이세요'}
+            {activeRecurringCount > 0 ? ui.analysis.recurringHintActive : ui.analysis.recurringHintEmpty}
           </p>
         </Link>
       </section>
@@ -149,8 +153,8 @@ export default function AnalysisDashboard() {
       <section className="grid grid-cols-1 xl:grid-cols-5 gap-6">
         <article className={`xl:col-span-3 rounded-3xl border p-6 ${theme === 'modern' ? isDark ? 'border-white/10 bg-white/5 shadow-sm' : 'border-white/80 bg-white/80 shadow-sm' : 'border-slate-200 bg-white'}`}>
           <div className="mb-6">
-            <h2 className="text-xl font-bold text-slate-900">월별 현금흐름</h2>
-            <p className="text-sm text-slate-500 mt-1">최근 12개월 기준 수입, 지출, 순저축 추이입니다.</p>
+            <h2 className="text-xl font-bold text-slate-900">{ui.analysis.monthlyCashflow}</h2>
+            <p className="text-sm text-slate-500 mt-1">{ui.analysis.monthlyCashflowDesc}</p>
           </div>
           <ResponsiveContainer width="100%" height={320}>
             <BarChart data={data.monthly}>
@@ -167,8 +171,8 @@ export default function AnalysisDashboard() {
         <article className={`xl:col-span-2 rounded-3xl border p-6 ${theme === 'modern' ? isDark ? 'border-white/10 bg-white/5 shadow-sm' : 'border-white/80 bg-white/80 shadow-sm' : 'border-slate-200 bg-white'}`}>
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>월별 카테고리 분석</h2>
-              <p className={`mt-1 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>이번 달을 기본으로, 원하는 달의 지출 카테고리를 확인할 수 있습니다.</p>
+              <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{ui.analysis.monthlyCategory}</h2>
+              <p className={`mt-1 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.analysis.monthlyCategoryDesc}</p>
             </div>
             <select
               value={selectedMonthValue}
@@ -184,7 +188,7 @@ export default function AnalysisDashboard() {
           </div>
           <div className="space-y-4">
             {selectedMonthCategories.length === 0 && (
-              <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>선택한 달의 카테고리 지출이 아직 없습니다.</p>
+              <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.analysis.noMonthlyCategory}</p>
             )}
             {selectedMonthCategories.slice(0, 4).map((category) => {
               const maxAmount = selectedMonthCategories[0]?.amount ?? 1
@@ -212,7 +216,7 @@ export default function AnalysisDashboard() {
                 href={`/analysis/categories?month=${selectedMonthValue}`}
                 className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold ${isDark ? 'bg-white/10 text-slate-200 hover:bg-white/15' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
               >
-                전체 카테고리 보기
+                {ui.analysis.viewAllCategories}
                 <ChevronRight className="h-4 w-4" />
               </Link>
             ) : null}
@@ -223,8 +227,8 @@ export default function AnalysisDashboard() {
       <section className="grid grid-cols-1 xl:grid-cols-5 gap-6">
         <article className={`xl:col-span-3 rounded-3xl border p-6 ${theme === 'modern' ? isDark ? 'border-white/10 bg-white/5 shadow-sm' : 'border-white/80 bg-white/80 shadow-sm' : 'border-slate-200 bg-white'}`}>
           <div className="mb-6">
-            <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>연도별 추이</h2>
-            <p className={`mt-1 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>연도 단위로 수입과 지출 흐름을 비교합니다.</p>
+            <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{ui.analysis.yearlyTrend}</h2>
+            <p className={`mt-1 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.analysis.yearlyTrendDesc}</p>
           </div>
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={data.yearly}>
@@ -243,18 +247,18 @@ export default function AnalysisDashboard() {
           <div className="mb-6">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>예산 상태</h2>
-                <p className={`mt-1 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>현재 월 예산과 실제 지출을 비교합니다.</p>
+                <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{ui.analysis.budgetStatus}</h2>
+                <p className={`mt-1 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.analysis.budgetStatusDesc}</p>
               </div>
               <Link href="/settings?tab=budgets" className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-semibold ${isDark ? 'bg-white/10 text-slate-200' : 'bg-slate-100 text-slate-700'}`}>
-                예산 설정
+                {ui.analysis.budgetSetup}
               </Link>
             </div>
           </div>
           <div className="space-y-4">
             {data.budgetStatus.length === 0 && (
               <div className={`rounded-2xl p-4 text-sm ${isDark ? 'border border-white/10 bg-white/5 text-slate-400' : 'border border-slate-200 bg-slate-50 text-slate-500'}`}>
-                등록된 월 예산이 아직 없습니다. 예산을 추가하면 초과 여부와 사용률을 여기서 바로 확인할 수 있습니다.
+                {ui.analysis.budgetEmpty}
               </div>
             )}
             {data.budgetStatus.map((budget) => (

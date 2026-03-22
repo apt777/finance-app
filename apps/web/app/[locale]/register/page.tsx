@@ -1,11 +1,13 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { useLocale } from 'next-intl'
 import { useRouter } from '@/navigation'
 import { Link } from '@/navigation'
 import { useAuth } from '@/context/AuthProviderClient'
 import { Mail, Lock, Eye, EyeOff, Wallet, ArrowRight, CheckCircle } from 'lucide-react'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
+import { getUiCopy } from '@/lib/uiCopy'
 
 export default function Register() {
   const [email, setEmail] = useState('')
@@ -18,6 +20,8 @@ export default function Register() {
   const [successMessage, setSuccessMessage] = useState('')
   const router = useRouter()
   const { user, signUp } = useAuth()
+  const locale = useLocale()
+  const ui = getUiCopy(locale)
 
   useEffect(() => {
     if (user) {
@@ -38,7 +42,7 @@ export default function Register() {
   }
 
   const passwordStrength = getPasswordStrength(password)
-  const strengthLabels = ['매우 약함', '약함', '보통', '강함', '매우 강함']
+  const strengthLabels = ui.register.strengthLabels
   const strengthColors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-blue-500', 'bg-green-500']
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -48,13 +52,13 @@ export default function Register() {
     setIsLoading(true)
 
     if (password !== confirmPassword) {
-      setErrorMessage('비밀번호가 일치하지 않습니다.')
+      setErrorMessage(ui.register.passwordMismatch)
       setIsLoading(false)
       return
     }
 
     if (password.length < 8) {
-      setErrorMessage('비밀번호는 최소 8자 이상이어야 합니다.')
+      setErrorMessage(ui.register.passwordMin)
       setIsLoading(false)
       return
     }
@@ -65,7 +69,7 @@ export default function Register() {
       setErrorMessage(error.message)
       setIsLoading(false)
     } else {
-      setSuccessMessage('회원가입이 완료되었습니다! 이메일을 확인해 주세요.')
+      setSuccessMessage(ui.register.registerSuccess)
       setTimeout(() => {
         router.push('/login')
       }, 2000)
@@ -88,7 +92,7 @@ export default function Register() {
               </div>
             </div>
             <h1 className="text-3xl font-bold text-slate-800 mb-2">KABLUS</h1>
-            <p className="text-slate-500 text-sm">계정 생성</p>
+            <p className="text-slate-500 text-sm">{ui.register.createAccount}</p>
           </div>
 
           {/* Form Section */}
@@ -96,7 +100,7 @@ export default function Register() {
             {/* Email Input */}
             <div>
               <label htmlFor="email-address" className="block text-sm font-medium text-slate-700 mb-2">
-                이메일 주소
+                Email
               </label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -118,7 +122,7 @@ export default function Register() {
             {/* Password Input */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">
-                비밀번호
+                Password
               </label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -152,9 +156,9 @@ export default function Register() {
               {password && (
                 <div className="mt-2">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-slate-500">비밀번호 강도</span>
+                    <span className="text-xs text-slate-500">{ui.register.passwordStrength}</span>
                     <span className="text-xs font-medium text-slate-700">
-                      {strengthLabels[passwordStrength - 1] || '입력 중'}
+                      {strengthLabels[passwordStrength - 1] || ui.register.passwordTyping}
                     </span>
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
@@ -163,7 +167,7 @@ export default function Register() {
                       style={{ width: `${(passwordStrength / 5) * 100}%` }}
                     ></div>
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">최소 8자, 대문자, 숫자, 특수문자 포함 권장</p>
+                  <p className="text-xs text-slate-400 mt-1">{ui.register.passwordGuide}</p>
                 </div>
               )}
             </div>
@@ -171,7 +175,7 @@ export default function Register() {
             {/* Confirm Password Input */}
             <div>
               <label htmlFor="confirm-password" className="block text-sm font-medium text-slate-700 mb-2">
-                비밀번호 확인
+                Confirm password
               </label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -207,12 +211,12 @@ export default function Register() {
                   {password === confirmPassword ? (
                     <>
                       <CheckCircle className="w-4 h-4 text-green-600" />
-                      <span className="text-xs text-green-600">비밀번호가 일치합니다</span>
+                      <span className="text-xs text-green-600">{ui.register.passwordMatch}</span>
                     </>
                   ) : (
                     <>
                       <div className="w-4 h-4 rounded-full border-2 border-red-500"></div>
-                      <span className="text-xs text-red-500">비밀번호가 일치하지 않습니다</span>
+                      <span className="text-xs text-red-500">{ui.register.passwordMismatchInline}</span>
                     </>
                   )}
                 </div>
@@ -222,7 +226,7 @@ export default function Register() {
             {/* Error Message */}
             {errorMessage && (
               <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-600 text-sm">
-                <p className="font-medium">회원가입 실패</p>
+                <p className="font-medium">{ui.register.registerFailTitle}</p>
                 <p className="text-xs mt-1">{errorMessage}</p>
               </div>
             )}
@@ -230,7 +234,7 @@ export default function Register() {
             {/* Success Message */}
             {successMessage && (
               <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-green-600 text-sm">
-                <p className="font-medium">성공!</p>
+                <p className="font-medium">{ui.register.successTitle}</p>
                 <p className="text-xs mt-1">{successMessage}</p>
               </div>
             )}
@@ -244,11 +248,11 @@ export default function Register() {
               {isLoading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  <span>가입 중...</span>
+                  <span>{ui.register.signingUp}</span>
                 </>
               ) : (
                 <>
-                  <span>회원가입</span>
+                  <span>{ui.register.signUp}</span>
                   <ArrowRight className="w-5 h-5" />
                 </>
               )}
@@ -261,19 +265,19 @@ export default function Register() {
               <div className="w-full border-t border-slate-200"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-slate-400">또는</span>
+              <span className="px-2 bg-white text-slate-400">{ui.register.or}</span>
             </div>
           </div>
 
           {/* Links Section */}
           <div className="text-center">
             <p className="text-slate-600 text-sm">
-              이미 계정이 있으신가요?{' '}
+              {ui.register.alreadyHaveAccount}{' '}
               <Link 
                 href="/login" 
                 className="text-blue-600 hover:text-blue-700 font-semibold transition-colors"
               >
-                로그인
+                {ui.register.login}
               </Link>
             </p>
           </div>
@@ -281,7 +285,7 @@ export default function Register() {
 
         {/* Footer Info */}
         <div className="mt-8 text-center text-slate-400 text-xs">
-          <p>KABLUS © 2024 · 개인 자산 관리</p>
+          <p>KABLUS © 2024 · {ui.register.footer}</p>
         </div>
       </div>
     </div>

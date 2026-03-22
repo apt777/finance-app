@@ -9,11 +9,12 @@ import BudgetManager from '@/components/BudgetManager'
 import RecurringManager from '@/components/RecurringManager'
 import { useColorMode } from '@/context/ColorModeContext'
 import { useUiTheme } from '@/context/UiThemeContext'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useSearchParams } from 'next/navigation'
 
 export default function SettingsPage() {
   const tSettings = useTranslations('settings')
+  const locale = useLocale()
   const { theme, setTheme } = useUiTheme()
   const { colorMode, setColorMode } = useColorMode()
   const searchParams = useSearchParams()
@@ -171,7 +172,7 @@ export default function SettingsPage() {
                   <div className="flex items-center space-x-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <span className="text-3xl">🇰🇷</span>
                     <div>
-                      <p className="font-semibold text-slate-800">한국어</p>
+                      <p className="font-semibold text-slate-800">{locale === 'ko' ? '한국어' : 'Korean'}</p>
                       <p className="text-xs text-slate-500">Korean</p>
                     </div>
                   </div>

@@ -4,11 +4,14 @@ import React, { useState } from 'react'
 import { useCategories } from '@/hooks/useCategories'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Check, Pencil, Plus, Tags, Trash2, X } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
+import { getUiCopy } from '@/lib/uiCopy'
 
 export default function CategoryManager() {
   const tTransactions = useTranslations('transactions')
   const tCommon = useTranslations('common')
+  const locale = useLocale()
+  const ui = getUiCopy(locale)
   const queryClient = useQueryClient()
   const { data: categories, isLoading, isError } = useCategories()
   const [name, setName] = useState('')
@@ -38,7 +41,7 @@ export default function CategoryManager() {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
     },
     onError: (error: Error) => {
-      setFeedback(error.message || '카테고리를 추가하지 못했습니다.')
+      setFeedback(error.message || ui.managers.createCategoryFailed)
     },
   })
 
@@ -60,7 +63,7 @@ export default function CategoryManager() {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
     },
     onError: (error: Error) => {
-      setFeedback(error.message || '카테고리를 삭제하지 못했습니다.')
+      setFeedback(error.message || ui.managers.deleteCategoryFailed)
     },
   })
 
@@ -86,7 +89,7 @@ export default function CategoryManager() {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
     },
     onError: (error: Error) => {
-      setFeedback(error.message || '카테고리를 수정하지 못했습니다.')
+      setFeedback(error.message || ui.managers.updateCategoryFailed)
     },
   })
 
@@ -101,13 +104,13 @@ export default function CategoryManager() {
   return (
     <div className="space-y-6">
       <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
-        <h3 className="text-lg font-bold text-slate-800 mb-2">카테고리 관리</h3>
-        <p className="text-slate-600 text-sm mb-5">거래 입력에서 사용할 수입/지출 카테고리를 직접 추가할 수 있습니다.</p>
+        <h3 className="text-lg font-bold text-slate-800 mb-2">{ui.managers.categoryTitle}</h3>
+        <p className="text-slate-600 text-sm mb-5">{ui.managers.categoryDesc}</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="예: 반려동물, 경조사"
+            placeholder={ui.managers.categoryPlaceholder}
             className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-white text-slate-900"
           />
           <select
@@ -124,7 +127,7 @@ export default function CategoryManager() {
             className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-600 text-white disabled:opacity-60"
           >
             <Plus className="w-4 h-4" />
-            카테고리 추가
+            {ui.managers.addCategory}
           </button>
         </div>
         {feedback && (
@@ -135,7 +138,7 @@ export default function CategoryManager() {
       <div className="bg-white rounded-2xl border border-slate-100 p-6">
         <div className="flex items-center gap-2 mb-4">
           <Tags className="w-5 h-5 text-blue-600" />
-          <h3 className="text-lg font-bold text-slate-800">현재 카테고리</h3>
+          <h3 className="text-lg font-bold text-slate-800">{ui.managers.currentCategories}</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {(categories || []).map((category) => (
@@ -152,7 +155,7 @@ export default function CategoryManager() {
                 )}
                 <p className="text-xs text-slate-500 mt-1">
                   {category.type === 'income' ? tTransactions('income') : category.type === 'expense' ? tTransactions('expense') : tTransactions('transfer')}
-                  {category.isDefault ? ' · 기본' : ' · 사용자'}
+                  {category.isDefault ? ` · ${ui.managers.defaultTag}` : ` · ${ui.managers.customTag}`}
                 </p>
               </div>
               <div className="flex items-center gap-2">

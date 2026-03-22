@@ -4,11 +4,14 @@ import React from 'react'
 import { Briefcase, Plus } from 'lucide-react'
 import HoldingsList from '@/components/HoldingsList'
 import { Link } from '@/navigation'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useUiTheme } from '@/context/UiThemeContext'
+import { getUiCopy } from '@/lib/uiCopy'
 
 export default function HoldingsPage() {
   const t = useTranslations('holdings')
+  const locale = useLocale()
+  const ui = getUiCopy(locale)
   const { theme } = useUiTheme()
 
   return (
@@ -28,13 +31,13 @@ export default function HoldingsPage() {
             href="/holdings/add?mode=buy"
             className={`rounded-xl px-4 py-2 font-semibold transition-all duration-200 ${theme === 'modern' ? 'border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50' : 'border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50'}`}
           >
-            추가 매수
+            {ui.holdingsForm.buyTitle}
           </Link>
           <Link
             href="/holdings/add?mode=sell"
             className={`rounded-xl px-4 py-2 font-semibold transition-all duration-200 ${theme === 'modern' ? 'border border-rose-200 bg-rose-50 text-rose-700 shadow-sm hover:bg-rose-100' : 'border border-rose-200 bg-rose-50 text-rose-700 shadow-sm hover:bg-rose-100'}`}
           >
-            매도
+            {ui.holdingsForm.sellTitle}
           </Link>
           <Link
             href="/holdings/add"

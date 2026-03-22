@@ -5,11 +5,14 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { PiggyBank, Plus } from 'lucide-react'
 import { useBudgets } from '@/hooks/useBudgets'
 import { useCategories } from '@/hooks/useCategories'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
+import { getUiCopy } from '@/lib/uiCopy'
 
 export default function BudgetManager() {
   const tCommon = useTranslations('common')
   const tTransactions = useTranslations('transactions')
+  const locale = useLocale()
+  const ui = getUiCopy(locale)
   const queryClient = useQueryClient()
   const { data: budgets = [], isLoading } = useBudgets()
   const { data: categories = [] } = useCategories()
@@ -42,7 +45,7 @@ export default function BudgetManager() {
         }),
       })
       const result = await response.json()
-      if (!response.ok) throw new Error(result.error || 'Failed to save budget')
+      if (!response.ok) throw new Error(result.error || ui.managers.budgetTitle)
       return result
     },
     onSuccess: () => {
@@ -65,8 +68,8 @@ export default function BudgetManager() {
             <PiggyBank className="h-6 w-6" />
           </div>
           <div>
-            <h3 className="text-xl font-black tracking-[-0.03em] text-slate-950">예산 관리</h3>
-            <p className="mt-2 text-sm text-slate-600">월별 카테고리 예산을 등록하면 분석 탭에서 초과 여부를 바로 확인할 수 있습니다.</p>
+            <h3 className="text-xl font-black tracking-[-0.03em] text-slate-950">{ui.managers.budgetTitle}</h3>
+            <p className="mt-2 text-sm text-slate-600">{ui.managers.budgetDesc}</p>
           </div>
         </div>
       </div>
@@ -76,7 +79,7 @@ export default function BudgetManager() {
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="예: 식비 예산"
+            placeholder={ui.managers.budgetPlaceholder}
             className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
           />
           <select
@@ -104,17 +107,17 @@ export default function BudgetManager() {
             className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
           >
             <Plus className="h-4 w-4" />
-            예산 저장
+            {ui.managers.saveBudget}
           </button>
         </div>
         {feedback ? <p className="mt-3 text-sm text-rose-600">{feedback}</p> : null}
       </div>
 
       <div className="rounded-[28px] border border-slate-200 bg-white p-6">
-        <h4 className="text-lg font-bold text-slate-900">현재 예산</h4>
+        <h4 className="text-lg font-bold text-slate-900">{ui.managers.currentBudgets}</h4>
         <div className="mt-4 space-y-3">
           {isLoading ? <p className="text-sm text-slate-500">{tCommon('loading')}</p> : null}
-          {!isLoading && budgets.length === 0 ? <p className="text-sm text-slate-500">등록된 예산이 없습니다.</p> : null}
+          {!isLoading && budgets.length === 0 ? <p className="text-sm text-slate-500">{ui.managers.noBudgets}</p> : null}
           {budgets.map((budget) => (
             <div key={budget.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
               <div className="flex items-center justify-between gap-3">

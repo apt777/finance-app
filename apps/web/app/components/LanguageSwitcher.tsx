@@ -4,6 +4,7 @@ import React, { useState, useTransition } from 'react'
 import { Globe, Check } from 'lucide-react'
 import { useLocale } from 'next-intl'
 import { usePathname, useRouter } from '@/navigation'
+import { getUiCopy } from '@/lib/uiCopy'
 
 interface Language {
   code: string
@@ -22,6 +23,7 @@ export default function LanguageSwitcher({ align = 'start' }: { align?: 'start' 
   const router = useRouter()
   const pathname = usePathname()
   const locale = useLocale()
+  const ui = getUiCopy(locale)
   const [isPending, startTransition] = useTransition()
   const [isOpen, setIsOpen] = useState(false)
 
@@ -40,7 +42,7 @@ export default function LanguageSwitcher({ align = 'start' }: { align?: 'start' 
         onClick={() => setIsOpen(!isOpen)}
         disabled={isPending}
         className="flex items-center space-x-2 rounded-2xl border border-white/80 bg-white/80 px-4 py-2.5 text-slate-700 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-white hover:text-slate-950 hover:shadow-md"
-        title="언어 변경"
+        title={ui.language.changeTitle}
       >
         <Globe className="w-5 h-5 text-slate-500" />
         {currentLanguage.flag ? <span className="text-lg">{currentLanguage.flag}</span> : null}

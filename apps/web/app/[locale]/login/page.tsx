@@ -6,12 +6,15 @@ import { Link } from '@/navigation'
 import { useAuth } from '@/context/AuthProviderClient'
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import KablusMark from '@/components/KablusMark'
+import { getUiCopy } from '@/lib/uiCopy'
 
 export default function Login() {
   const t = useTranslations('auth')
   const tCommon = useTranslations('common')
+  const locale = useLocale()
+  const ui = getUiCopy(locale)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -57,8 +60,8 @@ export default function Login() {
             <div className="relative mt-6 flex-1 overflow-hidden rounded-[32px] border border-white/80 bg-white/82 p-5 shadow-[0_18px_50px_rgba(148,163,184,0.14)]">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-semibold text-slate-500">Live workspace</p>
-                  <p className="mt-1 text-lg font-bold text-slate-950">오늘의 금융 화면</p>
+                  <p className="text-xs font-semibold text-slate-500">{ui.login.liveWorkspace}</p>
+                  <p className="mt-1 text-lg font-bold text-slate-950">{ui.login.screenTitle}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
@@ -71,9 +74,9 @@ export default function Login() {
                 <div className="rounded-[28px] border border-white/80 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.96),_rgba(237,243,255,0.92)_45%,_rgba(211,226,255,0.92)_100%)] p-5 shadow-sm">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-xs font-semibold text-slate-500">순자산</p>
+                      <p className="text-xs font-semibold text-slate-500">{ui.login.netWorth}</p>
                       <p className="mt-2 text-3xl font-bold tracking-[-0.03em] text-slate-950">3,820,400</p>
-                      <p className="mt-1 text-xs text-emerald-600">이번 주 +2.4%</p>
+                      <p className="mt-1 text-xs text-emerald-600">{ui.login.weekGain}</p>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       <span className="h-10 w-3 rounded-full bg-slate-900/10 animate-[pulse_1.8s_ease-in-out_infinite]" />
@@ -85,14 +88,14 @@ export default function Login() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="rounded-[24px] border border-white/80 bg-white/85 p-4 shadow-sm">
-                    <p className="text-xs font-semibold text-slate-500">최근 지출</p>
+                    <p className="text-xs font-semibold text-slate-500">{ui.login.recentExpense}</p>
                     <p className="mt-2 text-xl font-bold text-slate-950">124,000</p>
                     <div className="mt-3 h-2 rounded-full bg-slate-100">
                       <div className="h-2 w-[62%] rounded-full bg-slate-900/70 animate-[pulse_2.4s_ease-in-out_infinite]" />
                     </div>
                   </div>
                   <div className="rounded-[24px] border border-white/80 bg-white/85 p-4 shadow-sm">
-                    <p className="text-xs font-semibold text-slate-500">목표 진행</p>
+                    <p className="text-xs font-semibold text-slate-500">{ui.login.goalProgress}</p>
                     <p className="mt-2 text-xl font-bold text-slate-950">68%</p>
                     <div className="mt-3 h-2 rounded-full bg-slate-100">
                       <div className="h-2 w-[68%] rounded-full bg-emerald-500 animate-[pulse_2.6s_ease-in-out_infinite]" />
@@ -102,28 +105,28 @@ export default function Login() {
 
                 <div className="rounded-[24px] border border-white/80 bg-white/85 p-4 shadow-sm">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold text-slate-500">최근 거래</p>
-                    <p className="text-xs text-slate-400">Today</p>
+                    <p className="text-xs font-semibold text-slate-500">{ui.login.recentTransactions}</p>
+                    <p className="text-xs text-slate-400">{ui.login.today}</p>
                   </div>
                   <div className="mt-3 space-y-3">
                     <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-3 animate-[fadeIn_0.9s_ease-in-out]">
                       <div>
                         <p className="text-sm font-semibold text-slate-900">Lunch</p>
-                        <p className="text-xs text-slate-500">식비</p>
+                        <p className="text-xs text-slate-500">{ui.login.food}</p>
                       </div>
                       <p className="text-sm font-bold text-rose-600">-12,000</p>
                     </div>
                     <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-3 animate-[fadeIn_1.2s_ease-in-out]">
                       <div>
                         <p className="text-sm font-semibold text-slate-900">Salary</p>
-                        <p className="text-xs text-slate-500">급여</p>
+                        <p className="text-xs text-slate-500">{ui.login.salary}</p>
                       </div>
                       <p className="text-sm font-bold text-emerald-600">+320,000</p>
                     </div>
                     <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-3 animate-[fadeIn_1.5s_ease-in-out]">
                       <div>
                         <p className="text-sm font-semibold text-slate-900">ETF Buy</p>
-                        <p className="text-xs text-slate-500">투자</p>
+                        <p className="text-xs text-slate-500">{ui.login.investment}</p>
                       </div>
                       <p className="text-sm font-bold text-slate-900">-80,000</p>
                     </div>
@@ -236,7 +239,7 @@ export default function Login() {
                 <div className="w-full border-t border-slate-200"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white/80 text-slate-400">OR</span>
+                <span className="px-2 bg-white/80 text-slate-400">{ui.login.or}</span>
               </div>
             </div>
 

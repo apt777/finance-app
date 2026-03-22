@@ -6,7 +6,8 @@ import { useSearchParams } from 'next/navigation'
 import { useAccounts } from '@/hooks/useAccounts'
 import { useHoldings } from '@/hooks/useHoldings'
 import { TrendingUp, AlertCircle, CheckCircle } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
+import { getUiCopy } from '@/lib/uiCopy'
 
 interface HoldingFormData {
   action?: 'create' | 'buy' | 'sell';
@@ -72,6 +73,8 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
   const tHoldings = useTranslations('holdings')
   const tCommon = useTranslations('common')
   const tAccounts = useTranslations('accounts')
+  const locale = useLocale()
+  const ui = getUiCopy(locale)
   const searchParams = useSearchParams()
   const queryClient = useQueryClient()
   const { data: accounts, isLoading: isLoadingAccounts, error: accountsError } = useAccounts()
@@ -271,27 +274,27 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
     setFormError(null)
 
     if (!formData.accountId || !formData.symbol || !formData.shares || !formData.costBasis || !formData.currency) {
-      setFormError('Please fill in all required fields.')
+      setFormError(ui.holdingsForm.fillRequired)
       return
     }
 
     if ((formData.action === 'buy' || formData.action === 'sell') && !formData.holdingId) {
-      setFormError('추가 매수 또는 매도할 투자 종목을 선택해 주세요.')
+      setFormError(ui.holdingsForm.pickHoldingAction)
       return
     }
 
     if (formData.action === 'create' && !selectedSuggestion) {
-      setFormError('검색 결과에서 종목을 선택해 주세요.')
+      setFormError(ui.holdingsForm.pickSuggestion)
       return
     }
 
     if (isNaN(Number(formData.shares)) || isNaN(Number(formData.costBasis))) {
-      setFormError('Shares and cost basis must be numbers.')
+      setFormError(ui.holdingsForm.numberOnly)
       return;
     }
 
     if (Number(formData.shares) <= 0 || Number(formData.costBasis) <= 0) {
-      setFormError('Shares and cost basis must be greater than 0.')
+      setFormError(ui.holdingsForm.positiveOnly)
       return;
     }
 
@@ -323,14 +326,14 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
         </div>
         <div>
           <h1 className="text-3xl font-bold text-slate-800">
-            {formData.action === 'buy' ? '추가 매수' : formData.action === 'sell' ? '매도' : tHoldings('addHolding')}
+            {formData.action === 'buy' ? ui.holdingsForm.buyTitle : formData.action === 'sell' ? ui.holdingsForm.sellTitle : tHoldings('addHolding')}
           </h1>
           <p className="text-slate-600 text-sm mt-1">
             {formData.action === 'buy'
-              ? '기존 투자 종목에 수량을 추가하고 평단을 자동으로 계산합니다.'
+              ? ui.holdingsForm.buyDesc
               : formData.action === 'sell'
-                ? '보유한 투자 종목의 수량을 줄이거나 전량 매도합니다.'
-                : 'Add stocks or investment products to your portfolio'}
+                ? ui.holdingsForm.sellDesc
+                : ui.holdingsForm.createDesc}
           </p>
         </div>
       </div>
@@ -340,7 +343,7 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label htmlFor="action" className="block text-sm font-semibold text-slate-800 mb-2">
-              투자 작업 <span className="text-red-500">*</span>
+              {ui.holdingsForm.actionLabel} <span className="text-red-500">*</span>
             </label>
             <select
               name="action"
@@ -349,16 +352,16 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
               onChange={handleChange}
               className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900"
             >
-              <option value="create">새 투자 추가</option>
-              <option value="buy">추가 매수</option>
-              <option value="sell">매도</option>
+              <option value="create">{ui.holdingsForm.createOption}</option>
+              <option value="buy">{ui.holdingsForm.buyOption}</option>
+              <option value="sell">{ui.holdingsForm.sellOption}</option>
             </select>
           </div>
 
           {/* Account Selection */}
           <div>
             <label htmlFor="accountId" className="block text-sm font-semibold text-slate-800 mb-2">
-              Account <span className="text-red-500">*</span>
+              {ui.holdingsForm.account} <span className="text-red-500">*</span>
             </label>
             <select
               name="accountId"
@@ -369,8 +372,8 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
               disabled={isLoadingAccounts}
               required
             >
-              <option value="">Select Account</option>
-              {accountsError && <option value="" disabled>Error loading</option>}
+              <option value="">{ui.holdingsForm.selectAccount}</option>
+              {accountsError && <option value="" disabled>{tCommon('error')}</option>}
               {!accountsError && accounts?.map(account => (
                 <option key={account.id} value={account.id}>
                   {account.name} ({Math.round(account.balance).toLocaleString()} {account.currency})
@@ -382,7 +385,7 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
           {(formData.action === 'buy' || formData.action === 'sell') ? (
             <div>
               <label htmlFor="holdingId" className="block text-sm font-semibold text-slate-800 mb-2">
-                대상 투자 <span className="text-red-500">*</span>
+                {ui.holdingsForm.targetHolding} <span className="text-red-500">*</span>
               </label>
               <select
                 name="holdingId"
@@ -392,16 +395,16 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
                 className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900"
                 required
               >
-                <option value="">투자 종목 선택</option>
+                <option value="">{ui.holdingsForm.selectHolding}</option>
                 {existingHoldings.map((holding) => (
                   <option key={holding.id} value={holding.id}>
-                    {holding.symbol} · {holding.name || 'Unnamed'} · {holding.shares.toLocaleString()}주
+                    {holding.symbol} · {holding.name || ui.holdingsForm.unnamed} · {holding.shares.toLocaleString()}
                   </option>
                 ))}
               </select>
               {selectedHolding ? (
                 <p className="mt-2 text-xs text-slate-500">
-                  현재 보유: {selectedHolding.shares.toLocaleString()}주 / 평단 {selectedHolding.costBasis.toFixed(2)} {selectedHolding.currency}
+                  {ui.holdingsForm.currentHolding(selectedHolding.shares.toLocaleString(), selectedHolding.costBasis.toFixed(2), selectedHolding.currency)}
                 </p>
               ) : null}
             </div>
@@ -423,19 +426,19 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
                   autoComplete="off"
                   readOnly={formData.action !== 'create'}
                   className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400 uppercase"
-                  placeholder="종목명 또는 심볼로 검색"
+                  placeholder={ui.holdingsForm.symbolPlaceholder}
                   required
                 />
                 {formData.action === 'create' && (searchLoading || suggestions.length > 0 || searchError) && (
                   <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
                     {searchLoading ? (
-                      <div className="px-4 py-3 text-sm text-slate-500">종목을 찾는 중...</div>
+                      <div className="px-4 py-3 text-sm text-slate-500">{ui.holdingsForm.searchingSymbol}</div>
                     ) : null}
                     {!searchLoading && searchError ? (
                       <div className="px-4 py-3 text-sm text-rose-600">{searchError}</div>
                     ) : null}
                     {!searchLoading && !searchError && suggestions.length === 0 ? (
-                      <div className="px-4 py-3 text-sm text-slate-500">일치하는 종목을 찾지 못했습니다.</div>
+                      <div className="px-4 py-3 text-sm text-slate-500">{ui.holdingsForm.noSymbolResults}</div>
                     ) : null}
                     {!searchLoading && suggestions.map((suggestion) => (
                       <button
@@ -458,8 +461,8 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
               </div>
               <p className="mt-2 text-xs text-slate-500">
                 {formData.action === 'create'
-                  ? '종목명으로 검색 후 목록에서 선택하면 심볼 미스매치를 줄일 수 있습니다.'
-                  : '추가 매수와 매도는 기존 투자 종목을 기준으로 처리됩니다.'}
+                  ? ui.holdingsForm.searchHint
+                  : ui.holdingsForm.existingHoldingHint}
               </p>
             </div>
 
@@ -487,7 +490,7 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="costBasis" className="block text-sm font-semibold text-slate-800 mb-2">
-                {formData.action === 'sell' ? '매도가' : formData.action === 'buy' ? '매수가' : tHoldings('costBasis')} <span className="text-red-500">*</span>
+                {formData.action === 'sell' ? ui.holdingsForm.sellPrice : formData.action === 'buy' ? ui.holdingsForm.buyPrice : tHoldings('costBasis')} <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <span className="absolute left-4 top-3 text-slate-500 font-medium">
@@ -521,7 +524,7 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
                 className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900"
                 required
               >
-                <option value="">Select Currency</option>
+                <option value="">{tAccounts('currency')}</option>
                 {currencies.map(curr => (
                   <option key={curr.value} value={curr.value}>{curr.label}</option>
                 ))}
@@ -532,7 +535,7 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
           {/* Investment Summary */}
           {formData.shares && formData.costBasis && (
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
-              <h3 className="text-sm font-semibold text-slate-800 mb-4">Investment Summary</h3>
+              <h3 className="text-sm font-semibold text-slate-800 mb-4">{tHoldings('title')}</h3>
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <p className="text-xs text-slate-600 mb-1">{tHoldings('symbol')}</p>
@@ -544,7 +547,7 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
                 </div>
                 <div>
                   <p className="text-xs text-slate-600 mb-1">
-                    {formData.action === 'sell' ? '예상 매도 금액' : formData.action === 'buy' ? '추가 매수 금액' : 'Total Cost'}
+                    {formData.action === 'sell' ? ui.holdingsForm.estimatedSellAmount : formData.action === 'buy' ? ui.holdingsForm.estimatedBuyAmount : 'Total Cost'}
                   </p>
                   <p className="text-lg font-bold text-blue-600">{totalCost.toLocaleString()}</p>
                 </div>
@@ -569,7 +572,7 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
           {!selectedSuggestion && formData.action === 'create' && formData.symbol ? (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start space-x-3">
               <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-              <p className="text-amber-700 text-sm">검색 결과에서 종목을 선택해야 정확한 심볼과 주가 갱신이 연결됩니다.</p>
+              <p className="text-amber-700 text-sm">{ui.holdingsForm.symbolLinkWarning}</p>
             </div>
           ) : null}
 
@@ -577,7 +580,7 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
           {mutation.isSuccess && (
             <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-start space-x-3">
               <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-              <p className="text-green-700 text-sm">Investment added successfully!</p>
+              <p className="text-green-700 text-sm">{tCommon('success')}</p>
             </div>
           )}
 
@@ -603,7 +606,7 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
             ) : (
               <>
                 <TrendingUp className="w-5 h-5" />
-                <span>{formData.action === 'buy' ? '추가 매수' : formData.action === 'sell' ? '매도' : tHoldings('addHolding')}</span>
+                <span>{formData.action === 'buy' ? ui.holdingsForm.buyTitle : formData.action === 'sell' ? ui.holdingsForm.sellTitle : tHoldings('addHolding')}</span>
               </>
             )}
           </button>

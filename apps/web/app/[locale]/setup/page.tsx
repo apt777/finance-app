@@ -2,12 +2,13 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 import { useRouter } from '@/navigation'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useSearchParams } from 'next/navigation'
 import { Settings, Plus, Trash2, Wallet, Repeat, PiggyBank, ArrowRight, ArrowLeft, ShieldCheck } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { getDefaultTransactionCategories } from '@/lib/defaultCategories'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
+import { getUiCopy } from '@/lib/uiCopy'
 
 interface AccountInput {
   name?: string
@@ -53,6 +54,8 @@ const today = new Date()
 export default function SetupPage() {
   const router = useRouter()
   const locale = useLocale()
+  const ui = getUiCopy(locale)
+  const tTransactions = useTranslations('transactions')
   const searchParams = useSearchParams()
   const queryClient = useQueryClient()
   const [step, setStep] = useState(1)
@@ -67,7 +70,7 @@ export default function SetupPage() {
   ])
   const [budgets, setBudgets] = useState<BudgetInput[]>([
     {
-      name: '식비 예산',
+      name: ui.setup.defaultBudgetName,
       categoryKey: 'food',
       amount: '',
       currency: 'JPY',
@@ -181,7 +184,7 @@ export default function SetupPage() {
       const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || '초기 설정에 실패했습니다.')
+        throw new Error(result.error || ui.setup.onboardingFailed)
       }
 
       await Promise.all([
@@ -238,7 +241,7 @@ export default function SetupPage() {
 
       const result = await response.json()
       if (!response.ok) {
-        throw new Error(result.error || '온보딩 건너뛰기에 실패했습니다.')
+        throw new Error(result.error || ui.setup.skipFailed)
       }
 
       await queryClient.invalidateQueries({ queryKey: ['setup-status'] })
@@ -271,9 +274,9 @@ export default function SetupPage() {
   }
 
   const stepConfig = [
-    { id: 1, title: '계좌', icon: Wallet },
-    { id: 2, title: '예산', icon: PiggyBank },
-    { id: 3, title: '반복거래', icon: Repeat },
+    { id: 1, title: ui.setup.step1, icon: Wallet },
+    { id: 2, title: ui.setup.step2, icon: PiggyBank },
+    { id: 3, title: ui.setup.step3, icon: Repeat },
   ]
   const fieldClassName =
     'w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
@@ -289,16 +292,16 @@ export default function SetupPage() {
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center mb-4">
               <Settings className="w-7 h-7" />
             </div>
-            <h1 className="text-3xl font-bold text-slate-900">온보딩 설정</h1>
+            <h1 className="text-3xl font-bold text-slate-900">{ui.setup.title}</h1>
             <p className="text-slate-600 mt-2">
-              수동 입력 중심 가계부에 맞춰 계좌, 환율, 예산, 반복거래를 한 번에 준비합니다.
+              {ui.setup.desc}
             </p>
             <p className="text-sm text-slate-500 mt-3">
-              지금 다 입력하지 않아도 됩니다. 필요한 것만 적고 나머지는 나중에 추가해도 돼요.
+              {ui.setup.descSub}
             </p>
             <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-sm font-semibold text-slate-800">언어 설정</p>
-              <p className="mt-1 text-xs text-slate-500">먼저 언어를 정하면 기본 카테고리와 초기 예시도 그 언어 기준으로 맞춰집니다.</p>
+              <p className="text-sm font-semibold text-slate-800">{ui.setup.languageTitle}</p>
+              <p className="mt-1 text-xs text-slate-500">{ui.setup.languageDesc}</p>
               <div className="mt-3">
                 <LanguageSwitcher align="start" />
               </div>
@@ -307,10 +310,10 @@ export default function SetupPage() {
           <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 max-w-sm">
             <div className="flex items-center gap-3 text-emerald-700 font-semibold">
               <ShieldCheck className="w-5 h-5" />
-              보안 우선 설정
+              {ui.setup.securityTitle}
             </div>
             <p className="text-sm text-emerald-700/80 mt-2">
-              모든 데이터는 로그인된 사용자 소유로만 저장되고, 온보딩 완료 전에는 메인 화면으로 진입하지 않도록 구성했습니다.
+              {ui.setup.securityDesc}
             </p>
           </div>
         </div>
@@ -321,7 +324,7 @@ export default function SetupPage() {
             disabled={isLoading}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 disabled:opacity-60"
           >
-            지금은 건너뛰기
+            {ui.setup.skip}
           </button>
         </div>
 
@@ -352,13 +355,13 @@ export default function SetupPage() {
         <section className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900">계좌 등록</h2>
-              <p className="text-slate-600 mt-1">자주 사용하는 계좌와 초기 잔액을 먼저 세팅해 주세요.</p>
-              <p className="text-sm text-slate-500 mt-2">예시: 생활비 통장, 비상금 통장, 카드 결제 계좌. 비워두면 저장하지 않고 넘어갑니다.</p>
+              <h2 className="text-2xl font-bold text-slate-900">{ui.setup.accountTitle}</h2>
+              <p className="text-slate-600 mt-1">{ui.setup.accountDesc}</p>
+              <p className="text-sm text-slate-500 mt-2">{ui.setup.accountDescSub}</p>
             </div>
             <button onClick={addAccount} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 text-white">
               <Plus className="w-4 h-4" />
-              계좌 추가
+              {ui.setup.addAccount}
             </button>
           </div>
 
@@ -372,7 +375,7 @@ export default function SetupPage() {
                     next[index] = { ...next[index], name: event.target.value }
                     setAccounts(next)
                   }}
-                  placeholder="예: 메인 통장"
+                  placeholder={ui.setup.accountPlaceholder}
                   className={fieldClassName}
                 />
                 <select
@@ -423,7 +426,7 @@ export default function SetupPage() {
                       className={deleteButtonClassName}
                     >
                       <Trash2 className="w-4 h-4" />
-                      삭제
+                      {ui.setup.delete}
                     </button>
                   )}
                 </div>
@@ -437,13 +440,13 @@ export default function SetupPage() {
         <section className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900">월별 예산</h2>
-              <p className="text-slate-600 mt-1">카테고리별 예산을 잡아두면 분석 탭에서 바로 초과 여부를 볼 수 있습니다.</p>
-              <p className="text-sm text-slate-500 mt-2">예시: 식비 40,000엔, 교통비 12,000엔. 아직 계획이 없다면 비워둬도 됩니다.</p>
+              <h2 className="text-2xl font-bold text-slate-900">{ui.setup.budgetTitle}</h2>
+              <p className="text-slate-600 mt-1">{ui.setup.budgetDesc}</p>
+              <p className="text-sm text-slate-500 mt-2">{ui.setup.budgetDescSub}</p>
             </div>
             <button onClick={addBudget} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 text-white">
               <Plus className="w-4 h-4" />
-              예산 추가
+              {ui.setup.addBudget}
             </button>
           </div>
 
@@ -457,7 +460,7 @@ export default function SetupPage() {
                     next[index] = { ...next[index], name: event.target.value }
                     setBudgets(next)
                   }}
-                  placeholder="예: 식비 예산"
+                  placeholder={ui.setup.budgetPlaceholder}
                   className={fieldClassName}
                 />
                 <select
@@ -517,7 +520,7 @@ export default function SetupPage() {
                   className={deleteButtonClassName}
                 >
                   <Trash2 className="w-4 h-4" />
-                  삭제
+                  {ui.setup.delete}
                 </button>
               </div>
             ))}
@@ -529,13 +532,13 @@ export default function SetupPage() {
         <section className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900">반복거래</h2>
-              <p className="text-slate-600 mt-1">월세, 급여, 구독료처럼 반복되는 거래를 미리 등록해 두세요.</p>
-              <p className="text-sm text-slate-500 mt-2">예시: 매월 25일 월세, 매월 10일 구독료. 나중에 따로 추가해도 됩니다.</p>
+              <h2 className="text-2xl font-bold text-slate-900">{ui.setup.recurringTitle}</h2>
+              <p className="text-slate-600 mt-1">{ui.setup.recurringDesc}</p>
+              <p className="text-sm text-slate-500 mt-2">{ui.setup.recurringDescSub}</p>
             </div>
             <button onClick={addRecurring} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 text-white">
               <Plus className="w-4 h-4" />
-              반복거래 추가
+              {ui.setup.addRecurring}
             </button>
           </div>
 
@@ -552,7 +555,7 @@ export default function SetupPage() {
                       next[index] = { ...next[index], name: event.target.value }
                       setRecurringTransactions(next)
                     }}
-                    placeholder="예: 월세"
+                    placeholder={ui.setup.recurringNamePlaceholder}
                     className={fieldClassName}
                   />
                   <select
@@ -564,9 +567,9 @@ export default function SetupPage() {
                     }}
                     className={selectClassName}
                   >
-                    <option value="expense">지출</option>
-                    <option value="income">수입</option>
-                    <option value="transfer">이체</option>
+                    <option value="expense">{tTransactions('expense')}</option>
+                    <option value="income">{tTransactions('income')}</option>
+                    <option value="transfer">{tTransactions('transfer')}</option>
                   </select>
                   <input
                     value={item.description}
@@ -575,7 +578,7 @@ export default function SetupPage() {
                       next[index] = { ...next[index], description: event.target.value }
                       setRecurringTransactions(next)
                     }}
-                    placeholder="설명"
+                    placeholder={ui.setup.recurringDescriptionPlaceholder}
                     className={fieldClassName}
                   />
                   <input
@@ -600,7 +603,7 @@ export default function SetupPage() {
                     className={`${selectClassName} disabled:bg-slate-100`}
                   >
                     {item.type === 'transfer' ? (
-                      <option value="transfer">계좌이체</option>
+                      <option value="transfer">{expenseCategories.find((category) => category.key === 'transfer')?.name || tTransactions('transfer')}</option>
                     ) : (
                       typeCategories.map((category) => (
                         <option key={`${item.type}-${category.key}`} value={category.key}>
@@ -614,7 +617,7 @@ export default function SetupPage() {
                     className={deleteButtonClassName}
                   >
                     <Trash2 className="w-4 h-4" />
-                    삭제
+                    {ui.setup.delete}
                   </button>
 
                   {item.type === 'transfer' ? (
@@ -628,10 +631,10 @@ export default function SetupPage() {
                         }}
                         className={selectClassName}
                       >
-                        <option value="">출금 계좌</option>
+                        <option value="">{ui.setup.withdrawalAccount}</option>
                         {accounts.map((account, accountIndex) => (
                           <option key={`from-${accountIndex}`} value={account.name}>
-                            {account.name || '계좌 선택'}
+                            {account.name || ui.setup.accountSelect}
                           </option>
                         ))}
                       </select>
@@ -644,10 +647,10 @@ export default function SetupPage() {
                         }}
                         className={selectClassName}
                       >
-                        <option value="">입금 계좌</option>
+                        <option value="">{ui.setup.depositAccount}</option>
                         {accounts.map((account, accountIndex) => (
                           <option key={`to-${accountIndex}`} value={account.name}>
-                            {account.name || '계좌 선택'}
+                            {account.name || ui.setup.accountSelect}
                           </option>
                         ))}
                       </select>
@@ -662,10 +665,10 @@ export default function SetupPage() {
                       }}
                       className={selectClassName}
                     >
-                      <option value="">계좌 선택</option>
+                      <option value="">{ui.setup.accountSelect}</option>
                       {accounts.map((account, accountIndex) => (
                         <option key={`account-${accountIndex}`} value={account.name}>
-                          {account.name || '계좌 선택'}
+                          {account.name || ui.setup.accountSelect}
                         </option>
                       ))}
                     </select>
@@ -695,9 +698,9 @@ export default function SetupPage() {
                     }}
                     className={selectClassName}
                   >
-                    <option value="monthly">매월</option>
-                    <option value="weekly">매주</option>
-                    <option value="yearly">매년</option>
+                    <option value="monthly">{ui.setup.monthly}</option>
+                    <option value="weekly">{ui.setup.weekly}</option>
+                    <option value="yearly">{ui.setup.yearly}</option>
                   </select>
                   <input
                     type="number"
@@ -707,7 +710,7 @@ export default function SetupPage() {
                       next[index] = { ...next[index], dayOfMonth: event.target.value }
                       setRecurringTransactions(next)
                     }}
-                    placeholder="실행 일자"
+                    placeholder={ui.setup.executionDay}
                     className={fieldClassName}
                   />
                   <input
@@ -734,7 +737,7 @@ export default function SetupPage() {
           className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl border border-slate-300 text-slate-700 disabled:opacity-40"
         >
           <ArrowLeft className="w-4 h-4" />
-          이전
+          {ui.setup.previous}
         </button>
 
         {step < 3 ? (
@@ -742,7 +745,7 @@ export default function SetupPage() {
             onClick={() => setStep((current) => Math.min(3, current + 1))}
             className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-slate-900 text-white"
           >
-            다음
+            {ui.setup.next}
             <ArrowRight className="w-4 h-4" />
           </button>
         ) : (
@@ -751,7 +754,7 @@ export default function SetupPage() {
             disabled={isLoading}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-blue-600 text-white disabled:opacity-60"
           >
-            {isLoading ? '저장 중...' : '온보딩 완료'}
+            {isLoading ? ui.setup.saving : ui.setup.complete}
             <ArrowRight className="w-4 h-4" />
           </button>
         )}
