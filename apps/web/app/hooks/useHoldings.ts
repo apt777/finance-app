@@ -3,15 +3,15 @@ import { useQuery } from '@tanstack/react-query'; import { useAuth } from '@/con
 export interface Holding {
   id: string
   symbol: string
-  name: string
+  name?: string | null
   shares: number
   costBasis: number
-  currentPrice: number
+  marketPrice?: number | null
   currency: string
-  type: 'nisa' | 'regular'
-  stockType: 'japanese' | 'us'
-  purchaseDate: string
-  lastUpdated: string
+  investmentType?: string
+  region?: string | null
+  createdAt?: string
+  updatedAt?: string
   notes?: string
 }
 

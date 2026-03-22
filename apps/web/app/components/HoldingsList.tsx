@@ -21,9 +21,11 @@ interface Holding {
   id: string;
   accountId: string;
   symbol: string;
+  name?: string | null;
   shares: number;
   costBasis: number;
   currency: string;
+  marketPrice?: number | null;
 }
 
 // ExchangeRate interface is imported from useExchangeRates hook
@@ -71,7 +73,8 @@ const HoldingsList = () => {
   })
 
   const totalValue = filteredHoldings.reduce((sum, holding) => {
-    return sum + convertToBaseCurrency(holding.shares * holding.costBasis, holding.currency)
+    const unitPrice = holding.marketPrice || holding.costBasis
+    return sum + convertToBaseCurrency(holding.shares * unitPrice, holding.currency)
   }, 0)
 
   return (
@@ -115,7 +118,8 @@ const HoldingsList = () => {
           {/* Holdings Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredHoldings.map((holding: Holding) => {
-              const value = convertToBaseCurrency(holding.shares * holding.costBasis, holding.currency)
+              const unitPrice = holding.marketPrice || holding.costBasis
+              const value = convertToBaseCurrency(holding.shares * unitPrice, holding.currency)
               const accountName = accountMap.get(holding.accountId) || 'Unknown'
 
               return (
@@ -128,7 +132,7 @@ const HoldingsList = () => {
                     <div className="flex items-start justify-between">
                       <div>
                         <h3 className="text-2xl font-bold text-slate-800">{holding.symbol}</h3>
-                        <p className="text-sm text-slate-600 mt-1">{accountName}</p>
+                        <p className="text-sm text-slate-600 mt-1">{holding.name || accountName}</p>
                       </div>
                       <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
                         <TrendingUp className="w-5 h-5 text-blue-600" />
@@ -157,9 +161,9 @@ const HoldingsList = () => {
                       </div>
 
                       <div className="bg-slate-50 rounded-lg p-4">
-                        <p className="text-xs text-slate-600 mb-1">Total Cost</p>
+                        <p className="text-xs text-slate-600 mb-1">{holding.marketPrice ? tHoldings('currentPrice') : 'Total Cost'}</p>
                         <p className="text-sm font-bold text-slate-800">
-                          {(holding.shares * holding.costBasis).toFixed(2)}
+                          {holding.marketPrice ? holding.marketPrice.toFixed(2) : (holding.shares * holding.costBasis).toFixed(2)}
                         </p>
                         <p className="text-xs text-slate-500 mt-1">{holding.currency}</p>
                       </div>

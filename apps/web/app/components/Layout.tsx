@@ -42,6 +42,7 @@ interface Holding {
   symbol: string
   shares: number
   costBasis: number
+  marketPrice?: number | null
   currency: string
 }
 
@@ -115,7 +116,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       netWorth += account.type === 'credit_card' ? -convertedBalance : convertedBalance
     })
     holdings.forEach((holding) => {
-      netWorth += convertToBaseCurrency(holding.shares * holding.costBasis, holding.currency)
+      netWorth += convertToBaseCurrency(holding.shares * (holding.marketPrice || holding.costBasis), holding.currency)
     })
   }
 

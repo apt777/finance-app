@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAccounts } from '@/hooks/useAccounts'
 import { TrendingUp, AlertCircle, CheckCircle } from 'lucide-react'
@@ -9,9 +9,20 @@ import { useTranslations } from 'next-intl'
 interface HoldingFormData {
   accountId: string;
   symbol: string;
+  name?: string;
   shares: number | string;
   costBasis: number | string;
   currency: string;
+  region?: string;
+}
+
+interface SymbolSuggestion {
+  symbol: string
+  name: string
+  region: string
+  currency: string
+  type: string
+  matchScore: number
 }
 
 const createHolding = async (holdingData: HoldingFormData) => {
@@ -22,8 +33,10 @@ const createHolding = async (holdingData: HoldingFormData) => {
     },
     body: JSON.stringify({
       ...holdingData,
+      name: holdingData.name || undefined,
       shares: Number(holdingData.shares),
       costBasis: Number(holdingData.costBasis),
+      region: holdingData.region || undefined,
     }),
   })
   if (!res.ok) {
@@ -44,12 +57,19 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
   const queryClient = useQueryClient()
   const { data: accounts, isLoading: isLoadingAccounts, error: accountsError } = useAccounts()
   const [formError, setFormError] = useState<string | null>(null)
+  const [symbolQuery, setSymbolQuery] = useState('')
+  const [suggestions, setSuggestions] = useState<SymbolSuggestion[]>([])
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [searchError, setSearchError] = useState<string | null>(null)
+  const [selectedSuggestion, setSelectedSuggestion] = useState<SymbolSuggestion | null>(null)
   const [formData, setFormData] = useState<HoldingFormData>({
     accountId: '',
     symbol: '',
+    name: '',
     shares: '',
     costBasis: '',
     currency: '',
+    region: '',
   })
 
   const mutation = useMutation<any, Error, HoldingFormData>({
@@ -57,7 +77,10 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['holdings'] })
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
-      setFormData({ accountId: '', symbol: '', shares: '', costBasis: '', currency: '' })
+      setFormData({ accountId: '', symbol: '', name: '', shares: '', costBasis: '', currency: '', region: '' })
+      setSymbolQuery('')
+      setSuggestions([])
+      setSelectedSuggestion(null)
       setFormError(null)
       onHoldingAdded?.();
     },
@@ -74,15 +97,81 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
     setFormError(null)
 
     if (name === 'accountId') {
-      const account = accounts?.find(acc => acc.id === value);
       setFormData({
         ...formData,
         accountId: value,
-        currency: account ? account.currency : ''
       });
+    } else if (name === 'symbol') {
+      setSymbolQuery(value)
+      setSelectedSuggestion(null)
+      setFormData({
+        ...formData,
+        symbol: value.toUpperCase(),
+        name: '',
+        region: '',
+      })
     } else {
       setFormData({ ...formData, [name]: value });
     }
+  }
+
+  useEffect(() => {
+    const trimmed = symbolQuery.trim()
+
+    if (trimmed.length < 2 || selectedSuggestion?.symbol === trimmed.toUpperCase()) {
+      setSuggestions([])
+      setSearchError(null)
+      setSearchLoading(false)
+      return
+    }
+
+    const controller = new AbortController()
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        setSearchLoading(true)
+        setSearchError(null)
+        const response = await fetch(`/api/holdings/search?keywords=${encodeURIComponent(trimmed)}`, {
+          signal: controller.signal,
+        })
+        const result = await response.json()
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to search symbols')
+        }
+
+        setSuggestions(result)
+      } catch (error) {
+        if (controller.signal.aborted) {
+          return
+        }
+
+        setSuggestions([])
+        setSearchError(error instanceof Error ? error.message : 'Failed to search symbols')
+      } finally {
+        if (!controller.signal.aborted) {
+          setSearchLoading(false)
+        }
+      }
+    }, 350)
+
+    return () => {
+      controller.abort()
+      window.clearTimeout(timeoutId)
+    }
+  }, [selectedSuggestion?.symbol, symbolQuery])
+
+  const chooseSuggestion = (suggestion: SymbolSuggestion) => {
+    setSelectedSuggestion(suggestion)
+    setSuggestions([])
+    setSearchError(null)
+    setSymbolQuery(suggestion.symbol)
+    setFormData((prev) => ({
+      ...prev,
+      symbol: suggestion.symbol.toUpperCase(),
+      name: suggestion.name,
+      currency: suggestion.currency || prev.currency,
+      region: suggestion.region || prev.region,
+    }))
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -107,10 +196,13 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
     mutation.mutate(formData)
   }
 
-  const selectedAccount = accounts?.find(acc => acc.id === formData.accountId)
   const totalCost = formData.shares && formData.costBasis
     ? Number(formData.shares) * Number(formData.costBasis)
     : 0
+  const canSubmit = useMemo(
+    () => Boolean(formData.accountId && formData.symbol && formData.shares && formData.costBasis && formData.currency && selectedSuggestion),
+    [formData.accountId, formData.costBasis, formData.currency, formData.shares, formData.symbol, selectedSuggestion]
+  )
 
   return (
     <div className="space-y-6">
@@ -158,16 +250,51 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
               <label htmlFor="symbol" className="block text-sm font-semibold text-slate-800 mb-2">
                 {tHoldings('symbol')} <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                name="symbol"
-                id="symbol"
-                value={formData.symbol}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400 uppercase"
-                placeholder="e.g., AAPL, MSFT, 9984"
-                required
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  name="symbol"
+                  id="symbol"
+                  value={symbolQuery}
+                  onChange={handleChange}
+                  autoComplete="off"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400 uppercase"
+                  placeholder="종목명 또는 심볼로 검색"
+                  required
+                />
+                {(searchLoading || suggestions.length > 0 || searchError) && (
+                  <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+                    {searchLoading ? (
+                      <div className="px-4 py-3 text-sm text-slate-500">종목을 찾는 중...</div>
+                    ) : null}
+                    {!searchLoading && searchError ? (
+                      <div className="px-4 py-3 text-sm text-rose-600">{searchError}</div>
+                    ) : null}
+                    {!searchLoading && !searchError && suggestions.length === 0 ? (
+                      <div className="px-4 py-3 text-sm text-slate-500">일치하는 종목을 찾지 못했습니다.</div>
+                    ) : null}
+                    {!searchLoading && suggestions.map((suggestion) => (
+                      <button
+                        key={`${suggestion.symbol}-${suggestion.region}`}
+                        type="button"
+                        onClick={() => chooseSuggestion(suggestion)}
+                        className="flex w-full items-start justify-between gap-4 border-t border-slate-100 px-4 py-3 text-left transition-colors first:border-t-0 hover:bg-slate-50"
+                      >
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">{suggestion.name}</p>
+                          <p className="mt-1 text-xs text-slate-500">{suggestion.symbol} · {suggestion.region} · {suggestion.currency || 'N/A'}</p>
+                        </div>
+                        <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-600">
+                          {Math.round(suggestion.matchScore * 100)}%
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <p className="mt-2 text-xs text-slate-500">
+                종목명으로 검색 후 목록에서 선택하면 심볼 미스매치를 줄일 수 있습니다.
+              </p>
             </div>
 
             <div>
@@ -254,6 +381,12 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
                   <p className="text-lg font-bold text-blue-600">{totalCost.toLocaleString()}</p>
                 </div>
               </div>
+              {selectedSuggestion ? (
+                <div className="mt-4 rounded-xl bg-white/70 px-4 py-3 text-sm text-slate-600">
+                  <p className="font-semibold text-slate-800">{selectedSuggestion.name}</p>
+                  <p className="mt-1 text-xs text-slate-500">{selectedSuggestion.region} · {selectedSuggestion.currency || formData.currency}</p>
+                </div>
+              ) : null}
             </div>
           )}
 
@@ -264,6 +397,13 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
               <p className="text-red-700 text-sm">{formError}</p>
             </div>
           )}
+
+          {!selectedSuggestion && formData.symbol ? (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start space-x-3">
+              <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <p className="text-amber-700 text-sm">검색 결과에서 종목을 선택해야 정확한 심볼과 주가 갱신이 연결됩니다.</p>
+            </div>
+          ) : null}
 
           {/* Success Message */}
           {mutation.isSuccess && (
@@ -284,7 +424,7 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={mutation.isPending || isLoadingAccounts}
+            disabled={mutation.isPending || isLoadingAccounts || !canSubmit}
             className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 text-white font-semibold rounded-lg transition-all duration-200 flex items-center justify-center space-x-2"
           >
             {mutation.isPending ? (

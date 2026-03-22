@@ -40,6 +40,7 @@ interface Holding {
   symbol: string
   shares: number
   costBasis: number
+  marketPrice?: number | null
   currency: string
 }
 
@@ -137,7 +138,7 @@ export default function OverviewModern() {
     netWorth += account.type === 'credit_card' ? -convertedBalance : convertedBalance
   })
   holdings.forEach((holding) => {
-    netWorth += convertToBaseCurrency(holding.shares * holding.costBasis, holding.currency)
+    netWorth += convertToBaseCurrency(holding.shares * (holding.marketPrice || holding.costBasis), holding.currency)
   })
 
   let totalPositiveAssetsBaseCurrency = 0
@@ -182,7 +183,7 @@ export default function OverviewModern() {
   const expenseMomentum = latestExpenses - previousExpenses
   const totalExpensesLast30 = Math.round(chartData.reduce((sum, item) => sum + item.expenses, 0))
   const holdingsValueBaseCurrency = Math.round(
-    holdings.reduce((sum, holding) => sum + convertToBaseCurrency(holding.shares * holding.costBasis, holding.currency), 0),
+    holdings.reduce((sum, holding) => sum + convertToBaseCurrency(holding.shares * (holding.marketPrice || holding.costBasis), holding.currency), 0),
   )
   const averageGoalProgress = goalsWithProgress.length > 0
     ? Math.round(goalsWithProgress.reduce((sum, goal) => sum + goal.progress, 0) / goalsWithProgress.length)

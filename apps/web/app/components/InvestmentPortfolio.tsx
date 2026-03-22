@@ -28,11 +28,25 @@ const InvestmentPortfolio = () => {
       return null
     }
 
-    const summary = calculatePortfolioSummary(holdings as any)
-    const diversification = analyzePortfolioDiversification(holdings as any)
-    const investmentTypeStats = getInvestmentTypeStats(holdings as any)
-    const stockTypeStats = getStockTypeStats(holdings as any)
-    const nisaHoldings = holdings.filter((h: any) => h.type === 'nisa')
+    const normalizedHoldings = holdings.map((holding: any) => ({
+      id: holding.id,
+      symbol: holding.symbol,
+      name: holding.name || holding.symbol,
+      shares: holding.shares,
+      costBasis: holding.costBasis,
+      currentPrice: holding.marketPrice || holding.costBasis,
+      currency: holding.currency,
+      type: holding.investmentType === 'nisa' ? 'nisa' : 'regular',
+      stockType: holding.region === 'JP' || holding.currency === 'JPY' ? 'japanese' : 'us',
+      purchaseDate: holding.createdAt || new Date().toISOString(),
+      lastUpdated: holding.updatedAt || new Date().toISOString(),
+    }))
+
+    const summary = calculatePortfolioSummary(normalizedHoldings as any)
+    const diversification = analyzePortfolioDiversification(normalizedHoldings as any)
+    const investmentTypeStats = getInvestmentTypeStats(normalizedHoldings as any)
+    const stockTypeStats = getStockTypeStats(normalizedHoldings as any)
+    const nisaHoldings = normalizedHoldings.filter((h: any) => h.type === 'nisa')
     const nisaLimit = checkNISALimit(nisaHoldings as any)
 
     return {
@@ -41,6 +55,7 @@ const InvestmentPortfolio = () => {
       investmentTypeStats,
       stockTypeStats,
       nisaLimit,
+      normalizedHoldings,
     }
   }, [holdings])
 
@@ -67,7 +82,7 @@ const InvestmentPortfolio = () => {
     )
   }
 
-  const { summary, diversification, investmentTypeStats, stockTypeStats, nisaLimit } = analysis
+  const { summary, diversification, investmentTypeStats, stockTypeStats, nisaLimit, normalizedHoldings } = analysis
 
   return (
     <div className="space-y-4 md:space-y-6 pb-20 md:pb-0">
@@ -78,7 +93,7 @@ const InvestmentPortfolio = () => {
         </div>
         <div>
           <h2 className="text-xl md:text-2xl font-bold text-slate-800">투자</h2>
-          <p className="text-slate-500 text-xs md:text-sm mt-0.5">총 {holdings.length}개의 투자 종목</p>
+          <p className="text-slate-500 text-xs md:text-sm mt-0.5">총 {normalizedHoldings.length}개의 투자 종목</p>
         </div>
       </div>
 
@@ -93,7 +108,7 @@ const InvestmentPortfolio = () => {
           <p className="text-2xl font-black">
             {Math.round(summary.totalValue).toLocaleString()}
           </p>
-          <p className="text-blue-100 text-[10px] mt-2 font-medium">현재 평가 금액 (JPY)</p>
+          <p className="text-blue-100 text-[10px] mt-2 font-medium">자동 갱신 현재가 기준 평가 금액 (JPY)</p>
         </div>
 
         {/* Gain/Loss */}

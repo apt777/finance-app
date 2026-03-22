@@ -23,9 +23,13 @@ interface Holding {
   id: string;
   accountId: string;
   symbol: string;
+  name?: string | null;
   shares: number;
   costBasis: number;
+  marketPrice?: number | null;
   currency: string;
+  investmentType?: string;
+  region?: string | null;
 }
 
 interface Goal {
