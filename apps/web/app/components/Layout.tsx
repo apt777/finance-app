@@ -417,7 +417,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className={`min-h-screen pb-8 ${isDark ? 'text-slate-100' : ''}`}>
       {modernTopNav}
-      <main className="px-4 pb-16 pt-[98px] md:px-8 md:pb-20 md:pt-[148px]">
+      <main className="px-4 pb-16 pt-[126px] md:px-8 md:pb-20 md:pt-[148px]">
         <div className="mx-auto max-w-[1680px] fade-in">
           {children}
         </div>
