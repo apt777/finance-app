@@ -1,9 +1,10 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Bell, Languages, Lock, Settings, Tags } from 'lucide-react'
+import { Bell, Languages, Lock, Settings, Sparkles, Tags } from 'lucide-react'
 import CategoryManager from '@/components/CategoryManager'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
+import AIBulkImportBeta from '@/components/AIBulkImportBeta'
 import { useColorMode } from '@/context/ColorModeContext'
 import { useUiTheme } from '@/context/UiThemeContext'
 import { useTranslations } from 'next-intl'
@@ -18,6 +19,7 @@ export default function SettingsPage() {
     { id: 'theme', label: tSettings('theme'), icon: Settings },
     { id: 'language', label: tSettings('language'), icon: Languages },
     { id: 'categories', label: tSettings('categories'), icon: Tags },
+    { id: 'beta', label: tSettings('beta'), icon: Sparkles },
     { id: 'security', label: tSettings('security'), icon: Lock },
     { id: 'notifications', label: tSettings('notifications'), icon: Bell },
   ]
@@ -184,6 +186,8 @@ export default function SettingsPage() {
           )}
 
           {activeTab === 'categories' && <CategoryManager />}
+
+          {activeTab === 'beta' && <AIBulkImportBeta />}
 
           {activeTab === 'security' && (
             <div className="space-y-6">
