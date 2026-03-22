@@ -1,19 +1,31 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Bell, Languages, Lock, Settings, Sparkles, Tags } from 'lucide-react'
+import React, { useEffect, useState } from 'react'
+import { Bell, Globe, Languages, Lock, Settings, Sparkles, Tags } from 'lucide-react'
 import CategoryManager from '@/components/CategoryManager'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import AIBulkImportBeta from '@/components/AIBulkImportBeta'
 import { useColorMode } from '@/context/ColorModeContext'
 import { useUiTheme } from '@/context/UiThemeContext'
 import { useTranslations } from 'next-intl'
+import { useSearchParams } from 'next/navigation'
 
 export default function SettingsPage() {
   const tSettings = useTranslations('settings')
   const { theme, setTheme } = useUiTheme()
   const { colorMode, setColorMode } = useColorMode()
+  const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState('theme')
+
+  useEffect(() => {
+    const requestedTab = searchParams.get('tab')
+    if (!requestedTab) return
+
+    const allowedTabs = new Set(['theme', 'language', 'categories', 'beta', 'security', 'notifications'])
+    if (allowedTabs.has(requestedTab)) {
+      setActiveTab(requestedTab)
+    }
+  }, [searchParams])
 
   const tabs = [
     { id: 'theme', label: tSettings('theme'), icon: Settings },
@@ -146,7 +158,7 @@ export default function SettingsPage() {
                 <h3 className="text-lg font-black tracking-[-0.03em] text-slate-950">{tSettings('languageSettings')}</h3>
                 <p className="mb-6 mt-2 text-sm text-slate-500">{tSettings('languageDesc')}</p>
                 <div className="flex justify-start">
-                  <LanguageSwitcher />
+                  <LanguageSwitcher align="start" />
                 </div>
               </div>
               <div className="rounded-[28px] border border-slate-200 bg-white p-6">
@@ -167,7 +179,9 @@ export default function SettingsPage() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <span className="text-3xl">🇺🇸</span>
+                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-500 shadow-sm">
+                      <Globe className="h-5 w-5" />
+                    </span>
                     <div>
                       <p className="font-semibold text-slate-800">English</p>
                       <p className="text-xs text-slate-500">English</p>

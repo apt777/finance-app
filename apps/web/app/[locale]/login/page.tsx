@@ -42,8 +42,8 @@ export default function Login() {
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[linear-gradient(180deg,#f8fafc_0%,#f3f6fb_45%,#f8fafc_100%)] px-4 py-12">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.92),transparent_28%)]" />
-      <div className="absolute top-6 right-6 z-40">
-        <LanguageSwitcher />
+      <div className="absolute left-6 top-6 z-40 sm:left-auto sm:right-6">
+        <LanguageSwitcher align="start" />
       </div>
       <div className="relative z-10 grid w-full max-w-5xl grid-cols-1 gap-8 lg:grid-cols-[0.98fr_1.02fr] lg:items-stretch">
         <div className="hidden h-full rounded-[36px] border border-white/70 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.95),_rgba(241,245,249,0.88)_38%,_rgba(226,232,240,0.78)_100%)] p-8 shadow-[0_28px_80px_rgba(148,163,184,0.18)] backdrop-blur-xl lg:block">

@@ -7,6 +7,7 @@ import { useExchangeRates, ExchangeRate } from '../hooks/useExchangeRates'
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import {
   PlusCircle,
+  Sparkles,
   Target,
   TrendingDown,
   TrendingUp,
@@ -192,6 +193,35 @@ export default function OverviewModern() {
     : isDark
       ? 'text-emerald-300'
       : 'text-emerald-600'
+  const quickActions = [
+    {
+      href: '/transactions/add',
+      eyebrow: '빠른 추가',
+      title: '거래내역 추가',
+      description: '지출, 수입, 이체를 바로 기록',
+      icon: PlusCircle,
+      lightAccent: 'bg-blue-100 text-blue-700',
+      darkAccent: 'bg-blue-500/15 text-blue-300',
+    },
+    {
+      href: '/accounts/add',
+      eyebrow: '자산 설정',
+      title: '계좌 추가',
+      description: '새 계좌나 카드 연결',
+      icon: Wallet,
+      lightAccent: 'bg-emerald-100 text-emerald-700',
+      darkAccent: 'bg-emerald-500/15 text-emerald-300',
+    },
+    {
+      href: '/holdings/add',
+      eyebrow: '포트폴리오',
+      title: '투자 추가',
+      description: '보유 종목을 빠르게 등록',
+      icon: TrendingUp,
+      lightAccent: 'bg-amber-100 text-amber-700',
+      darkAccent: 'bg-amber-500/15 text-amber-300',
+    },
+  ] as const
 
   return (
     <div className="space-y-8">
@@ -248,57 +278,41 @@ export default function OverviewModern() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  <Link
-                    href="/transactions/add"
-                    className={`group flex min-h-[112px] flex-col justify-between rounded-[24px] px-4 py-4 transition-all ${
-                      isDark
-                        ? 'border border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/[0.08]'
-                        : 'border border-white/80 bg-white/80 hover:-translate-y-0.5 hover:bg-white hover:shadow-md'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>빠른 추가</p>
-                      <PlusCircle className={`h-4 w-4 ${isDark ? 'text-slate-400' : 'text-slate-400'}`} />
-                    </div>
-                    <div>
-                      <p className={`text-base font-bold ${isDark ? 'text-white' : 'text-slate-950'}`}>거래내역 추가</p>
-                      <p className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>지출, 수입, 이체를 바로 기록</p>
-                    </div>
-                  </Link>
-                  <Link
-                    href="/accounts/add"
-                    className={`group flex min-h-[112px] flex-col justify-between rounded-[24px] px-4 py-4 transition-all ${
-                      isDark
-                        ? 'border border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/[0.08]'
-                        : 'border border-white/80 bg-white/80 hover:-translate-y-0.5 hover:bg-white hover:shadow-md'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>자산 설정</p>
-                      <Wallet className={`h-4 w-4 ${isDark ? 'text-slate-400' : 'text-slate-400'}`} />
-                    </div>
-                    <div>
-                      <p className={`text-base font-bold ${isDark ? 'text-white' : 'text-slate-950'}`}>계좌 추가</p>
-                      <p className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>새 계좌나 카드 연결</p>
-                    </div>
-                  </Link>
-                  <Link
-                    href="/holdings/add"
-                    className={`group flex min-h-[112px] flex-col justify-between rounded-[24px] px-4 py-4 transition-all ${
-                      isDark
-                        ? 'border border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/[0.08]'
-                        : 'border border-white/80 bg-white/80 hover:-translate-y-0.5 hover:bg-white hover:shadow-md'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>포트폴리오</p>
-                      <TrendingUp className={`h-4 w-4 ${isDark ? 'text-slate-400' : 'text-slate-400'}`} />
-                    </div>
-                    <div>
-                      <p className={`text-base font-bold ${isDark ? 'text-white' : 'text-slate-950'}`}>투자 추가</p>
-                      <p className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>보유 종목을 빠르게 등록</p>
-                    </div>
-                  </Link>
+                  {quickActions.map((action) => {
+                    const ActionIcon = action.icon
+
+                    return (
+                      <Link
+                        key={action.href}
+                        href={action.href}
+                        className={`group flex min-h-[124px] flex-col justify-between rounded-[24px] px-4 py-4 transition-all ${
+                          isDark
+                            ? 'border border-white/10 bg-white/5 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.08]'
+                            : 'border border-white/80 bg-white/82 hover:-translate-y-0.5 hover:bg-white hover:shadow-lg'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{action.eyebrow}</p>
+                            <p className={`mt-3 text-base font-bold ${isDark ? 'text-white' : 'text-slate-950'}`}>{action.title}</p>
+                          </div>
+                          <span className={`flex h-10 w-10 items-center justify-center rounded-2xl ${isDark ? action.darkAccent : action.lightAccent}`}>
+                            <ActionIcon className="h-5 w-5" />
+                          </span>
+                        </div>
+                        <div className="space-y-2">
+                          <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{action.description}</p>
+                          <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                            isDark
+                              ? 'bg-white/10 text-slate-200 group-hover:bg-white/15'
+                              : 'bg-slate-100 text-slate-700 group-hover:bg-slate-200'
+                          }`}>
+                            바로 이동
+                          </span>
+                        </div>
+                      </Link>
+                    )
+                  })}
                 </div>
 
                 <div className={`rounded-[28px] px-5 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
@@ -460,6 +474,34 @@ export default function OverviewModern() {
                   </div>
                 )}
               </div>
+              <Link
+                href="/settings?tab=beta"
+                className={`mt-4 flex min-h-[112px] flex-col justify-between rounded-[24px] p-4 transition-all ${
+                  isDark
+                    ? 'border border-white/10 bg-white/5 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.08]'
+                    : 'border border-blue-100 bg-white/85 hover:-translate-y-0.5 hover:bg-white hover:shadow-md'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-blue-600/75'}`}>Beta shortcut</p>
+                    <p className={`mt-2 text-base font-bold ${isDark ? 'text-white' : 'text-slate-950'}`}>AI로 등록하기</p>
+                  </div>
+                  <span className={`flex h-10 w-10 items-center justify-center rounded-2xl ${isDark ? 'bg-cyan-500/15 text-cyan-300' : 'bg-cyan-100 text-cyan-700'}`}>
+                    <Sparkles className="h-5 w-5" />
+                  </span>
+                </div>
+                <div>
+                  <p className={`text-xs leading-6 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                    여러 건의 거래를 붙여넣고 카테고리까지 한 번에 초안으로 정리할 수 있습니다.
+                  </p>
+                  <span className={`mt-3 inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                    isDark ? 'bg-white/10 text-slate-200' : 'bg-blue-100 text-blue-700'
+                  }`}>
+                    Beta 열기
+                  </span>
+                </div>
+              </Link>
             </div>
           </div>
         </section>

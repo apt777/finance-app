@@ -8,17 +8,17 @@ import { usePathname, useRouter } from '@/navigation'
 interface Language {
   code: string
   name: string
-  flag: string
+  flag?: string
 }
 
 const languages: Language[] = [
   { code: 'ko', name: '한국어', flag: '🇰🇷' },
   { code: 'ja', name: '日本語', flag: '🇯🇵' },
-  { code: 'en', name: 'English', flag: '🇺🇸' },
+  { code: 'en', name: 'English' },
   { code: 'zh', name: '中文', flag: '🇨🇳' },
 ]
 
-export default function LanguageSwitcher() {
+export default function LanguageSwitcher({ align = 'start' }: { align?: 'start' | 'end' }) {
   const router = useRouter()
   const pathname = usePathname()
   const locale = useLocale()
@@ -43,7 +43,7 @@ export default function LanguageSwitcher() {
         title="언어 변경"
       >
         <Globe className="w-5 h-5 text-slate-500" />
-        <span className="text-lg">{currentLanguage.flag}</span>
+        {currentLanguage.flag ? <span className="text-lg">{currentLanguage.flag}</span> : null}
         <span className="hidden md:inline text-sm font-medium">{currentLanguage.name}</span>
       </button>
 
@@ -53,7 +53,11 @@ export default function LanguageSwitcher() {
             className="fixed inset-0 z-40" 
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute right-0 z-50 mt-2 w-52 overflow-hidden rounded-2xl border border-white/80 bg-white/92 shadow-[0_24px_60px_rgba(148,163,184,0.18)] backdrop-blur-xl">
+          <div
+            className={`absolute z-50 mt-2 w-52 overflow-hidden rounded-2xl border border-white/80 bg-white/92 shadow-[0_24px_60px_rgba(148,163,184,0.18)] backdrop-blur-xl ${
+              align === 'end' ? 'right-0' : 'left-0'
+            }`}
+          >
             <div className="p-1">
               {languages.map((language) => (
                 <button
@@ -67,7 +71,7 @@ export default function LanguageSwitcher() {
                   }`}
                 >
                   <div className="flex items-center space-x-3">
-                    <span className="text-xl">{language.flag}</span>
+                    {language.flag ? <span className="text-xl">{language.flag}</span> : <span className="w-5" />}
                     <span className="text-sm font-medium">{language.name}</span>
                   </div>
                   {locale === language.code && (
