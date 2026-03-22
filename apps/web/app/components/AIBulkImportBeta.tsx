@@ -312,7 +312,7 @@ export default function AIBulkImportBeta() {
                           ? 'bg-emerald-100 text-emerald-700'
                           : 'bg-amber-100 text-amber-700'
                       }`}>
-                        {Math.round((row.confidence || 0) * 100)}%
+                        {tSettings('betaConfidence')} {Math.round((row.confidence || 0) * 100)}%
                       </span>
                       <button type="button" onClick={() => removeRow(row.id)} className="text-slate-400 transition-colors hover:text-rose-600">
                         <Trash2 className="h-4 w-4" />

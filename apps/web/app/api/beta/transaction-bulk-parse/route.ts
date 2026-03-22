@@ -14,8 +14,23 @@ interface CategoryShape {
   type?: string | null
 }
 
-const INCOME_HINTS = ['월급', '급여', 'salary', 'payroll', '보너스', 'bonus', '환급', 'refund', '입금', '배당', 'dividend', '이자']
-const TRANSFER_HINTS = ['이체', 'transfer', '송금', 'remit']
+const INCOME_HINTS = [
+  '월급',
+  '급여',
+  'salary',
+  'payroll',
+  '보너스',
+  '상여',
+  'bonus',
+  '용돈',
+  'allowance',
+  '환급',
+  'refund',
+  '배당',
+  'dividend',
+  '이자',
+  'interest',
+]
 
 const CATEGORY_KEYWORD_MAP: Record<string, string[]> = {
   food: ['스타벅스', '커피', '카페', '점심', '저녁', '식비', '배달', '쿠팡이츠', '배민', '맥도날드', '버거', 'food', 'meal'],
@@ -58,19 +73,25 @@ function parseDateToken(token: string) {
 function inferType(rawAmount: number, description: string): ParsedType {
   const lower = description.toLowerCase()
 
-  if (TRANSFER_HINTS.some((keyword) => lower.includes(keyword))) {
-    return 'transfer'
-  }
-
-  if (rawAmount > 0) {
-    return 'income'
-  }
-
   if (INCOME_HINTS.some((keyword) => lower.includes(keyword))) {
     return 'income'
   }
 
+  if (rawAmount < 0) {
+    return 'expense'
+  }
+
   return 'expense'
+}
+
+function tokenizeCategoryValue(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[_-]/g, ' ')
+    .split(/\s+/)
+    .map((token) => token.trim())
+    .filter(Boolean)
+    .filter((token) => !['카테고리', 'category', 'income', 'expense'].includes(token))
 }
 
 function scoreCategory(description: string, category: CategoryShape) {
@@ -80,6 +101,16 @@ function scoreCategory(description: string, category: CategoryShape) {
 
   if (lower.includes(nameLower) || lower.includes(keyLower.replace(/_/g, ' '))) {
     return 0.98
+  }
+
+  const nameTokens = tokenizeCategoryValue(category.name)
+  if (nameTokens.some((token) => token.length >= 2 && lower.includes(token))) {
+    return 0.93
+  }
+
+  const keyTokens = tokenizeCategoryValue(category.key)
+  if (keyTokens.some((token) => token.length >= 2 && lower.includes(token))) {
+    return 0.9
   }
 
   const mappedKeywords = CATEGORY_KEYWORD_MAP[category.key] || []
@@ -108,10 +139,21 @@ function recommendCategory(description: string, type: ParsedType, categories: Ca
     return { categoryKey: best.key, categoryName: best.name, confidence: bestScore }
   }
 
+  const preferredFallbackOrder =
+    type === 'income'
+      ? ['salary', 'bonus', 'allowance', 'other_income']
+      : ['food', 'transportation', 'shopping', 'housing', 'entertainment', 'other_expense']
+
+  const fallbackByKey = preferredFallbackOrder
+    .map((key) => candidates.find((category) => category.key === key))
+    .find(Boolean)
+
+  const fallback = fallbackByKey || candidates[0] || null
+
   return {
-    categoryKey: type === 'income' ? candidates[0]?.key || null : candidates[0]?.key || null,
-    categoryName: type === 'income' ? candidates[0]?.name || null : candidates[0]?.name || null,
-    confidence: 0.45,
+    categoryKey: fallback?.key || null,
+    categoryName: fallback?.name || null,
+    confidence: fallback ? 0.72 : 0.35,
   }
 }
 

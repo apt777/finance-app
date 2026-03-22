@@ -190,6 +190,7 @@
     "betaImport": "プレビューを一括登録",
     "betaPreviewTitle": "プレビュー",
     "betaPreviewDesc": "自動分類結果を確認し、必要な項目を修正してから保存してください。",
+    "betaConfidence": "信頼度",
     "betaSourceLabel": "原文",
     "betaParseDone": "{count}件を整理しました。",
     "betaImportDone": "{count}件の取引を登録しました。"

@@ -228,6 +228,7 @@
     "betaImport": "Import preview rows",
     "betaPreviewTitle": "Preview",
     "betaPreviewDesc": "Review the drafted rows, adjust anything you want, then save them all at once.",
+    "betaConfidence": "Confidence",
     "betaSourceLabel": "Source",
     "betaParseDone": "{count} rows were prepared.",
     "betaImportDone": "{count} transactions were added.",

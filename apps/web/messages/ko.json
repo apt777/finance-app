@@ -228,6 +228,7 @@
     "betaImport": "미리보기 일괄 등록",
     "betaPreviewTitle": "미리보기",
     "betaPreviewDesc": "자동 분류 결과를 확인하고 필요한 항목만 수정한 뒤 저장하세요.",
+    "betaConfidence": "신뢰도",
     "betaSourceLabel": "원문",
     "betaParseDone": "{count}개의 항목을 정리했습니다.",
     "betaImportDone": "{count}개의 거래를 등록했습니다.",
