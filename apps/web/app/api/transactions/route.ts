@@ -78,9 +78,18 @@ async function findCategoryForUser(userId: string, categoryKey: string) {
       },
     })
   } catch {
-    const category = await prisma.transactionCategory.findFirst({
-      where: { key: categoryKey },
-    })
+    const legacyRows = await prisma.$queryRawUnsafe<Array<{
+      id: string
+      name: string
+      key: string
+      icon: string | null
+      createdAt: Date
+    }>>(
+      'SELECT "id", "name", "key", "icon", "createdAt" FROM "TransactionCategory" WHERE "key" = $1 LIMIT 1',
+      categoryKey
+    )
+
+    const category = legacyRows[0]
     if (category) {
       return category
     }
