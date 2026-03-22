@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@/navigation'
 import { useHoldings } from '../hooks/useHoldings'
@@ -47,6 +47,8 @@ const HoldingsList = () => {
   const { data: exchangeRatesData, isLoading: ratesLoading, isError: ratesError } = useExchangeRates()
 
   const [filterAccount, setFilterAccount] = useState('')
+  const [deletingHoldingId, setDeletingHoldingId] = useState<string | null>(null)
+  const [deleteElapsedSeconds, setDeleteElapsedSeconds] = useState(0)
 
   const deleteHoldingMutation = useMutation({
     mutationFn: async (holdingId: string) => {
@@ -108,11 +110,28 @@ const HoldingsList = () => {
     }
 
     try {
+      setDeletingHoldingId(holdingId)
+      setDeleteElapsedSeconds(0)
       await deleteHoldingMutation.mutateAsync(holdingId)
     } catch (error) {
       alert(error instanceof Error ? error.message : ui.investmentPortfolio.deleteFailed)
+    } finally {
+      setDeletingHoldingId(null)
+      setDeleteElapsedSeconds(0)
     }
   }
+
+  useEffect(() => {
+    if (!deletingHoldingId) {
+      return
+    }
+
+    const timer = window.setInterval(() => {
+      setDeleteElapsedSeconds((prev) => prev + 1)
+    }, 1000)
+
+    return () => window.clearInterval(timer)
+  }, [deletingHoldingId])
 
   const totalValue = filteredHoldings.reduce((sum, holding) => {
     const unitPrice = holding.marketPrice || holding.costBasis
@@ -164,6 +183,8 @@ const HoldingsList = () => {
               const value = convertToBaseCurrency(holding.shares * unitPrice, holding.currency)
               const accountName = accountMap.get(holding.accountId) || 'Unknown'
 
+              const isDeleting = deletingHoldingId === holding.id
+
               return (
                 <div
                   key={holding.id}
@@ -181,11 +202,16 @@ const HoldingsList = () => {
                           type="button"
                           onClick={() => handleDeleteHolding(holding.id)}
                           disabled={deleteHoldingMutation.isPending}
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-rose-200 bg-white text-rose-500 transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="inline-flex h-9 items-center justify-center gap-1 rounded-xl border border-rose-200 bg-white px-2 text-rose-500 transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
                           aria-label={ui.investmentPortfolio.deleteAction}
                           title={ui.investmentPortfolio.deleteAction}
                         >
                           <Trash2 className="h-4 w-4" />
+                          {isDeleting ? (
+                            <span className="text-[11px] font-semibold">
+                              {ui.investmentPortfolio.deleteAction} ({deleteElapsedSeconds}s)
+                            </span>
+                          ) : null}
                         </button>
                         <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
                           <TrendingUp className="w-5 h-5 text-blue-600" />
