@@ -123,7 +123,7 @@ const AccountList = () => {
   }
 
   return (
-    <div className={`space-y-4 pb-20 md:space-y-6 md:pb-0 ${theme === 'modern' ? 'rounded-[34px] border border-white/80 bg-white/55 p-4 shadow-[0_18px_50px_rgba(148,163,184,0.12)] backdrop-blur-xl md:p-6' : ''}`}>
+    <div className={`space-y-4 pb-24 md:space-y-6 md:pb-8 ${theme === 'modern' ? 'rounded-[34px] border border-white/80 bg-white/55 p-4 shadow-[0_18px_50px_rgba(148,163,184,0.12)] backdrop-blur-xl md:p-6' : ''}`}>
       {/* Header */}
       <div className="flex items-center justify-between px-1">
         <div>
