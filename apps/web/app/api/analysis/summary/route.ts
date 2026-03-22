@@ -7,6 +7,28 @@ function monthKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
 }
 
+function formatCategoryName(key: string, fallbackName?: string | null) {
+  if (fallbackName && !fallbackName.match(/^(income|expense)-\d+$/)) {
+    return fallbackName
+  }
+
+  if (/^expense-\d+$/.test(key)) {
+    return '기타 지출'
+  }
+
+  if (/^income-\d+$/.test(key)) {
+    return '기타 수입'
+  }
+
+  if (/^transfer-\d+$/.test(key)) {
+    return '이체'
+  }
+
+  return key
+    .replace(/[_-]/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+}
+
 function normalizeTransactionType(
   rawType: string | null | undefined,
   amount: number,
@@ -54,6 +76,7 @@ export async function GET() {
     const categoryTypeMap = new Map(categories.map((category) => [category.key, category.type]))
     const monthlyMap = new Map<string, { month: string; income: number; expense: number; net: number }>()
     const categoryTotals = new Map<string, number>()
+    const monthlyCategoryTotals = new Map<string, Map<string, number>>()
     const yearlyMap = new Map<number, { year: number; income: number; expense: number; net: number }>()
 
     for (const transaction of transactions) {
@@ -88,6 +111,13 @@ export async function GET() {
             transaction.categoryKey,
             (categoryTotals.get(transaction.categoryKey) ?? 0) + normalizedAmount
           )
+
+          const monthlyCategoryMap = monthlyCategoryTotals.get(key) ?? new Map<string, number>()
+          monthlyCategoryMap.set(
+            transaction.categoryKey,
+            (monthlyCategoryMap.get(transaction.categoryKey) ?? 0) + normalizedAmount
+          )
+          monthlyCategoryTotals.set(key, monthlyCategoryMap)
         }
       }
 
@@ -102,8 +132,21 @@ export async function GET() {
       .slice(0, 6)
       .map(([key, amount]) => ({
         key,
-        name: categoryMap.get(key) ?? key,
+        name: formatCategoryName(key, categoryMap.get(key)),
         amount,
+      }))
+
+    const monthlyCategoryBreakdown = Array.from(monthlyCategoryTotals.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([month, totals]) => ({
+        month,
+        categories: Array.from(totals.entries())
+          .sort((a, b) => b[1] - a[1])
+          .map(([key, amount]) => ({
+            key,
+            name: formatCategoryName(key, categoryMap.get(key)),
+            amount,
+          })),
       }))
 
     const latestMonth = Array.from(monthlyMap.values()).slice(-1)[0]
@@ -144,6 +187,7 @@ export async function GET() {
       monthly: Array.from(monthlyMap.values()).slice(-12),
       yearly: Array.from(yearlyMap.values()).sort((a, b) => a.year - b.year),
       topCategories,
+      monthlyCategoryBreakdown,
       budgetStatus,
     })
   } catch (error: any) {
@@ -153,6 +197,7 @@ export async function GET() {
         monthly: [],
         yearly: [],
         topCategories: [],
+        monthlyCategoryBreakdown: [],
         budgetStatus: [],
       },
       { status: 200 }

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 import { useRouter } from '@/navigation'
+import { useSearchParams } from 'next/navigation'
 import { Settings, Plus, Trash2, Wallet, Repeat, PiggyBank, ArrowRight, ArrowLeft, ShieldCheck } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { DEFAULT_TRANSACTION_CATEGORIES } from '@/lib/defaultCategories'
@@ -49,6 +50,7 @@ const today = new Date()
 
 export default function SetupPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const queryClient = useQueryClient()
   const [step, setStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
@@ -119,6 +121,13 @@ export default function SetupPage() {
       setCategories(DEFAULT_TRANSACTION_CATEGORIES)
     })
   }, [])
+
+  useEffect(() => {
+    const requestedStep = Number(searchParams.get('step'))
+    if ([1, 2, 3].includes(requestedStep)) {
+      setStep(requestedStep)
+    }
+  }, [searchParams])
 
   const expenseCategories = useMemo(
     () => categories.filter((category) => category.type === 'expense'),

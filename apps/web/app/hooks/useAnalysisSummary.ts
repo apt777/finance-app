@@ -5,6 +5,10 @@ export interface AnalysisSummary {
   monthly: Array<{ month: string; income: number; expense: number; net: number }>
   yearly: Array<{ year: number; income: number; expense: number; net: number }>
   topCategories: Array<{ key: string; name: string; amount: number }>
+  monthlyCategoryBreakdown: Array<{
+    month: string
+    categories: Array<{ key: string; name: string; amount: number }>
+  }>
   budgetStatus: Array<{
     id: string
     name: string
