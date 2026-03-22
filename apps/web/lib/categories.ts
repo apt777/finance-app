@@ -48,11 +48,16 @@ function normalizeLegacyCategories(
 ) {
   return categories.map((category) => {
     const defaultCategory = DEFAULT_TRANSACTION_CATEGORIES.find((item) => item.key === category.key)
+    const inferredType = category.key.startsWith('income-')
+      ? 'income'
+      : category.key.startsWith('transfer')
+        ? 'transfer'
+        : 'expense'
     return {
       ...category,
       userId: null,
       color: defaultCategory?.color ?? '#64748b',
-      type: defaultCategory?.type ?? 'expense',
+      type: defaultCategory?.type ?? inferredType,
       isDefault: Boolean(defaultCategory),
     }
   })
@@ -97,9 +102,13 @@ export async function ensureDefaultCategories(userId: string) {
     return mergeCategoryVariants(categories)
   } catch {
     // Fallback for databases that haven't applied the new category migration yet.
-    const legacyCategories = await prisma.transactionCategory.findMany({
-      orderBy: { name: 'asc' },
-    })
+    const legacyCategories = await prisma.$queryRawUnsafe<Array<{
+      id: string
+      name: string
+      key: string
+      icon: string | null
+      createdAt: Date
+    }>>('SELECT "id", "name", "key", "icon", "createdAt" FROM "TransactionCategory" ORDER BY "name" ASC')
 
     if (legacyCategories.length === 0) {
       return mapDefaultCategories()
