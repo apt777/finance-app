@@ -229,6 +229,9 @@ const copy = {
     investmentPortfolio: {
       loadError: '투자 정보를 불러오는 중 오류가 발생했습니다.',
       empty: '등록된 투자가 없습니다.',
+      deleteAction: '삭제',
+      deleteConfirm: '정말 이 투자를 삭제하시겠습니까? 계좌 잔액에는 영향을 주지 않고 투자 기록만 제거됩니다.',
+      deleteFailed: '투자를 삭제하지 못했습니다.',
       totalCount: (count: number) => `총 ${count}개의 투자 종목`,
       portfolioValue: '포트폴리오 가치',
       marketValueHint: '자동 갱신 현재가 기준 평가 금액 (JPY)',
@@ -514,6 +517,9 @@ const copy = {
     investmentPortfolio: {
       loadError: 'Unable to load investment data.',
       empty: 'No investments have been added yet.',
+      deleteAction: 'Delete',
+      deleteConfirm: 'Delete this investment? This only removes the investment record and does not affect the linked account balance.',
+      deleteFailed: 'Unable to delete the investment.',
       totalCount: (count: number) => `${count} investment positions`,
       portfolioValue: 'Portfolio value',
       marketValueHint: 'Valuation based on auto-refreshed market prices (JPY)',
@@ -799,6 +805,9 @@ const copy = {
     investmentPortfolio: {
       loadError: '投資データを読み込めませんでした。',
       empty: '登録された投資がありません。',
+      deleteAction: '削除',
+      deleteConfirm: 'この投資を削除しますか？口座残高には影響せず、投資記録のみ削除されます。',
+      deleteFailed: '投資を削除できませんでした。',
       totalCount: (count: number) => `全${count}件の投資銘柄`,
       portfolioValue: 'ポートフォリオ価値',
       marketValueHint: '自動更新された現在値ベースの評価額 (JPY)',
@@ -1084,6 +1093,9 @@ const copy = {
     investmentPortfolio: {
       loadError: '无法加载投资数据。',
       empty: '还没有登记任何投资。',
+      deleteAction: '删除',
+      deleteConfirm: '确定要删除这项投资吗？这只会删除投资记录，不会影响关联账户余额。',
+      deleteFailed: '无法删除这项投资。',
       totalCount: (count: number) => `共 ${count} 个投资标的`,
       portfolioValue: '投资组合价值',
       marketValueHint: '基于自动更新现价的估值 (JPY)',

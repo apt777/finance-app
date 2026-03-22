@@ -214,3 +214,43 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message || 'Failed to create holding' }, { status: 500 })
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const { userId } = await requireRouteSession()
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { id } = await request.json()
+
+    if (!id) {
+      return NextResponse.json({ error: 'Holding id is required' }, { status: 400 })
+    }
+
+    const existingHolding = await prisma.holding.findFirst({
+      where: {
+        id,
+        userId,
+      },
+      select: {
+        id: true,
+      },
+    })
+
+    if (!existingHolding) {
+      return NextResponse.json({ error: 'Holding not found' }, { status: 404 })
+    }
+
+    await prisma.holding.delete({
+      where: {
+        id: existingHolding.id,
+      },
+    })
+
+    return NextResponse.json({ success: true, id: existingHolding.id }, { status: 200 })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || 'Failed to delete holding' }, { status: 500 })
+  }
+}

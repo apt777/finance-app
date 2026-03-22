@@ -1,11 +1,12 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@/navigation'
 import { useHoldings } from '../hooks/useHoldings'
 import { useAccounts } from '../hooks/useAccounts'
 import { useExchangeRates, ExchangeRate } from '../hooks/useExchangeRates'
-import { TrendingUp, Filter } from 'lucide-react'
+import { TrendingUp, Filter, Trash2 } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useUiTheme } from '@/context/UiThemeContext'
 import AppLoadingState from '@/components/AppLoadingState'
@@ -39,12 +40,37 @@ const HoldingsList = () => {
   const tTransactions = useTranslations('transactions')
   const locale = useLocale()
   const ui = getUiCopy(locale)
+  const queryClient = useQueryClient()
   
   const { data: holdingsData, error: holdingsError, isLoading: holdingsLoading } = useHoldings()
   const { data: accountsData, error: accountsError, isLoading: accountsLoading } = useAccounts()
   const { data: exchangeRatesData, isLoading: ratesLoading, isError: ratesError } = useExchangeRates()
 
   const [filterAccount, setFilterAccount] = useState('')
+
+  const deleteHoldingMutation = useMutation({
+    mutationFn: async (holdingId: string) => {
+      const response = await fetch('/api/holdings', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: holdingId }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || ui.investmentPortfolio.deleteFailed)
+      }
+
+      return result
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['holdings'] })
+      queryClient.invalidateQueries({ queryKey: ['overview'] })
+    },
+  })
 
   if (holdingsLoading || accountsLoading || ratesLoading) {
     return <AppLoadingState label={tHoldings('title')} />
@@ -75,6 +101,18 @@ const HoldingsList = () => {
   const filteredHoldings = holdings.filter((holding: Holding) => {
     return filterAccount === '' || holding.accountId === filterAccount
   })
+
+  const handleDeleteHolding = async (holdingId: string) => {
+    if (!window.confirm(ui.investmentPortfolio.deleteConfirm)) {
+      return
+    }
+
+    try {
+      await deleteHoldingMutation.mutateAsync(holdingId)
+    } catch (error) {
+      alert(error instanceof Error ? error.message : ui.investmentPortfolio.deleteFailed)
+    }
+  }
 
   const totalValue = filteredHoldings.reduce((sum, holding) => {
     const unitPrice = holding.marketPrice || holding.costBasis
@@ -138,8 +176,20 @@ const HoldingsList = () => {
                         <h3 className="text-2xl font-bold text-slate-800">{holding.symbol}</h3>
                         <p className="text-sm text-slate-600 mt-1">{holding.name || accountName}</p>
                       </div>
-                      <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                        <TrendingUp className="w-5 h-5 text-blue-600" />
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteHolding(holding.id)}
+                          disabled={deleteHoldingMutation.isPending}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-rose-200 bg-white text-rose-500 transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          aria-label={ui.investmentPortfolio.deleteAction}
+                          title={ui.investmentPortfolio.deleteAction}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                        <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                          <TrendingUp className="w-5 h-5 text-blue-600" />
+                        </div>
                       </div>
                     </div>
                   </div>
