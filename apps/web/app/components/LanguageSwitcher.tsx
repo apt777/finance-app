@@ -6,8 +6,10 @@ import { useLocale } from 'next-intl'
 import { usePathname, useRouter } from '@/navigation'
 import { getUiCopy } from '@/lib/uiCopy'
 
+type SupportedLocale = 'ko' | 'ja' | 'en' | 'zh'
+
 interface Language {
-  code: string
+  code: SupportedLocale
   name: string
   flag?: string
 }
@@ -19,11 +21,21 @@ const languages: Language[] = [
   { code: 'zh', name: '中文', flag: '🇨🇳' },
 ]
 
-const localizedNames: Record<string, Record<string, string>> = {
+const localizedNames: Record<SupportedLocale, Record<SupportedLocale, string>> = {
   ko: { ko: '한국어', ja: '일본어', en: '영어', zh: '중국어' },
   en: { ko: 'Korean', ja: 'Japanese', en: 'English', zh: 'Chinese' },
   ja: { ko: '韓国語', ja: '日本語', en: '英語', zh: '中国語' },
   zh: { ko: '韩语', ja: '日语', en: '英语', zh: '中文' },
+}
+
+const fallbackDisplayNames = localizedNames.en
+
+const getDisplayNames = (locale: string): Record<SupportedLocale, string> => {
+  if (locale === 'ko' || locale === 'ja' || locale === 'en' || locale === 'zh') {
+    return localizedNames[locale]
+  }
+
+  return fallbackDisplayNames
 }
 
 export default function LanguageSwitcher({ align = 'start' }: { align?: 'start' | 'end' }) {
@@ -42,7 +54,7 @@ export default function LanguageSwitcher({ align = 'start' }: { align?: 'start' 
   }
 
   const currentLanguage = languages.find((lang) => lang.code === locale) ?? languages[0]!
-  const displayNames = localizedNames[locale] ?? localizedNames.en ?? localizedNames.ko
+  const displayNames = getDisplayNames(locale)
 
   return (
     <div className="relative">
