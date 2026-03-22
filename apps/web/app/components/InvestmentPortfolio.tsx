@@ -45,7 +45,7 @@ const InvestmentPortfolio = () => {
   }, [holdings])
 
   if (isLoading) {
-    return <AppLoadingState label="투자 포트폴리오" />
+    return <AppLoadingState label="투자" />
   }
 
   if (isError) {
@@ -62,7 +62,7 @@ const InvestmentPortfolio = () => {
         <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
           <TrendingUp className="w-8 h-8 text-slate-200" />
         </div>
-        <p className="text-slate-500 font-medium">투자 내역이 없습니다.</p>
+        <p className="text-slate-500 font-medium">등록된 투자가 없습니다.</p>
       </div>
     )
   }
@@ -77,7 +77,7 @@ const InvestmentPortfolio = () => {
           <TrendingUp className="w-6 h-6" />
         </div>
         <div>
-          <h2 className="text-xl md:text-2xl font-bold text-slate-800">투자 포트폴리오</h2>
+          <h2 className="text-xl md:text-2xl font-bold text-slate-800">투자</h2>
           <p className="text-slate-500 text-xs md:text-sm mt-0.5">총 {holdings.length}개의 투자 종목</p>
         </div>
       </div>
@@ -218,7 +218,7 @@ const InvestmentPortfolio = () => {
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
             <PieChart className="w-4 h-4 text-blue-600" />
-            보유 종목 비중
+            투자 비중
           </h3>
         </div>
 

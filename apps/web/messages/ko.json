@@ -243,8 +243,8 @@
     ,"confirmPasswordPlaceholder": "새 비밀번호를 다시 입력하세요"
   },
   "holdings": {
-    "title": "보유 자산",
-    "totalHoldings": "총 보유 자산",
+    "title": "투자",
+    "totalHoldings": "총 투자",
     "symbol": "종목 코드",
     "shares": "보유 주수",
     "costBasis": "매입가",
@@ -255,7 +255,7 @@
     "addHolding": "새 투자 추가",
     "addHoldingDesc": "주식 또는 투자 상품을 포트폴리오에 추가하세요",
     "deleteHolding": "투자 삭제",
-    "noHoldings": "보유 자산이 없습니다.",
+    "noHoldings": "등록된 투자가 없습니다.",
     "startInvesting": "새로운 투자를 추가하여 포트폴리오를 시작하세요!",
     "investmentSummary": "투자 요약",
     "holdingAdded": "투자가 성공적으로 추가되었습니다!",
