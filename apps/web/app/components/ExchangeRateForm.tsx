@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, AlertCircle, CheckCircle, TrendingUp, ArrowRight } from 'lucide-react';
 import { useTranslations } from 'next-intl'
+import { CURRENCY_SYMBOLS, SUPPORTED_CURRENCIES } from '@/lib/currency'
 
 interface ExchangeRateFormData {
   from: string;
@@ -79,11 +80,10 @@ const ExchangeRateForm = () => {
     mutation.mutate(formData);
   };
 
-  const currencies = [
-    { value: 'KRW', label: 'KRW (₩)' },
-    { value: 'JPY', label: 'JPY (¥)' },
-    { value: 'USD', label: 'USD ($)' },
-  ];
+  const currencies = SUPPORTED_CURRENCIES.map((currency) => ({
+    value: currency,
+    label: `${currency} (${CURRENCY_SYMBOLS[currency] || currency})`,
+  }));
 
   return (
     <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl shadow-sm border border-slate-100 p-8">

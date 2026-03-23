@@ -8,6 +8,7 @@ import { useHoldings } from '@/hooks/useHoldings'
 import { TrendingUp, AlertCircle, CheckCircle } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { getUiCopy } from '@/lib/uiCopy'
+import { CURRENCY_SYMBOLS, SUPPORTED_CURRENCIES } from '@/lib/currency'
 
 interface HoldingFormData {
   action?: 'create' | 'buy' | 'sell';
@@ -135,11 +136,10 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
     },
   })
 
-  const currencies = [
-    { value: 'JPY', label: 'JPY (¥)' },
-    { value: 'KRW', label: 'KRW (₩)' },
-    { value: 'USD', label: 'USD ($)' },
-  ]
+  const currencies = SUPPORTED_CURRENCIES.map((currency) => ({
+    value: currency,
+    label: `${currency} (${CURRENCY_SYMBOLS[currency] || currency})`,
+  }))
 
   const existingHoldings = (holdings as ExistingHoldingOption[]).filter((holding) => {
     if (!formData.accountId) {
@@ -449,7 +449,7 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
                       >
                         <div>
                           <p className="text-sm font-semibold text-slate-900">{suggestion.name}</p>
-                          <p className="mt-1 text-xs text-slate-500">{suggestion.symbol} · {suggestion.region} · {suggestion.currency || 'N/A'}</p>
+                          <p className="mt-1 text-xs text-slate-500">{suggestion.symbol} · {suggestion.region} · {suggestion.currency || '-'}</p>
                         </div>
                         <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-600">
                           {Math.round(suggestion.matchScore * 100)}%
@@ -494,7 +494,7 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
               </label>
               <div className="relative">
                 <span className="absolute left-4 top-3 text-slate-500 font-medium">
-                  {formData.currency === 'JPY' ? '¥' : formData.currency === 'KRW' ? '₩' : '$'}
+                  {CURRENCY_SYMBOLS[formData.currency] || formData.currency}
                 </span>
                 <input
                   type="number"
@@ -547,7 +547,7 @@ const HoldingsForm = ({ onHoldingAdded }: HoldingsFormProps) => {
                 </div>
                 <div>
                   <p className="text-xs text-slate-600 mb-1">
-                    {formData.action === 'sell' ? ui.holdingsForm.estimatedSellAmount : formData.action === 'buy' ? ui.holdingsForm.estimatedBuyAmount : 'Total Cost'}
+                    {formData.action === 'sell' ? ui.holdingsForm.estimatedSellAmount : formData.action === 'buy' ? ui.holdingsForm.estimatedBuyAmount : ui.holdingsForm.totalCost}
                   </p>
                   <p className="text-lg font-bold text-blue-600">{totalCost.toLocaleString()}</p>
                 </div>
