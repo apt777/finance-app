@@ -75,9 +75,13 @@
     "accountName": "口座名",
     "accountType": "口座種別",
     "balance": "残高",
+    "initialBalance": "初期残高",
     "currency": "通貨",
     "actions": "操作",
     "addNewAccount": "新しい口座を追加",
+    "addAccountDesc": "新しい口座を追加して資産を管理します",
+    "accountNamePlaceholder": "例: メイン口座",
+    "accountAdded": "口座が正常に追加されました！",
     "deleteAccount": "口座を削除",
     "deleteConfirm": "この口座を削除してもよろしいですか?",
     "deleteWarning": "この口座に関連するすべての取引と投資情報も削除されます。",
@@ -147,6 +151,11 @@
     "targetDate": "目標日",
     "progress": "進捗",
     "addGoal": "新しい目標を追加",
+    "addGoalDesc": "家計目標を設定し、進み具合を追跡します",
+    "goalNamePlaceholder": "例: 旅行資金、新しい車",
+    "optional": "（任意）",
+    "remaining": "残り",
+    "goalAdded": "目標が正常に追加されました！",
     "deleteGoal": "目標を削除",
     "noGoals": "目標がありません。"
   },
@@ -269,7 +278,9 @@
     "invalidAmount": "有効な金額を入力してください。",
     "invalidDate": "有効な日付を入力してください。",
     "allFieldsRequired": "すべてのフィールドを入力してください。",
+    "amountMustBeNumber": "金額は数字で入力してください。",
     "amountGreaterThanZero": "金額は 0 より大きくしてください。",
-    "currenciesMustBeDifferent": "出発通貨と到着通貨は同じにできません。"
+    "currenciesMustBeDifferent": "出発通貨と到着通貨は同じにできません。",
+    "currentExceedsTarget": "現在の金額は目標金額を超えることはできません。"
   }
 }

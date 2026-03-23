@@ -75,9 +75,13 @@
     "accountName": "账户名称",
     "accountType": "账户类型",
     "balance": "余额",
+    "initialBalance": "初始余额",
     "currency": "货币",
     "actions": "操作",
     "addNewAccount": "添加新账户",
+    "addAccountDesc": "添加新账户以管理你的资产",
+    "accountNamePlaceholder": "例如：主账户",
+    "accountAdded": "账户已成功添加！",
     "deleteAccount": "删除账户",
     "deleteConfirm": "您确定要删除此账户吗?",
     "deleteWarning": "与此账户相关的所有交易和投资信息也将被删除。",
@@ -147,6 +151,11 @@
     "targetDate": "目标日期",
     "progress": "进度",
     "addGoal": "添加新目标",
+    "addGoalDesc": "设定理财目标并跟踪进度",
+    "goalNamePlaceholder": "例如：旅行基金、新车",
+    "optional": "（可选）",
+    "remaining": "剩余",
+    "goalAdded": "目标已成功添加！",
     "deleteGoal": "删除目标",
     "noGoals": "未找到目标。"
   },
@@ -269,7 +278,9 @@
     "invalidAmount": "请输入有效的金额。",
     "invalidDate": "请输入有效的日期。",
     "allFieldsRequired": "所有字段都是必填的。",
+    "amountMustBeNumber": "金额必须是数字。",
     "amountGreaterThanZero": "金额必须大于 0。",
-    "currenciesMustBeDifferent": "源货币和目标货币不能相同。"
+    "currenciesMustBeDifferent": "源货币和目标货币不能相同。",
+    "currentExceedsTarget": "当前金额不能超过目标金额。"
   }
 }

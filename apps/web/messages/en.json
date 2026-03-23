@@ -90,6 +90,7 @@
     "actions": "Actions",
     "addNewAccount": "Add New Account",
     "addAccountDesc": "Add a new account to manage your assets",
+    "accountNamePlaceholder": "e.g., Main Account",
     "accountAdded": "Account added successfully!",
     "deleteAccount": "Delete Account",
     "deleteConfirm": "Are you sure you want to delete this account?",
@@ -164,6 +165,7 @@
     "progress": "Progress",
     "addGoal": "Add New Goal",
     "addGoalDesc": "Set financial goals and track progress",
+    "goalNamePlaceholder": "e.g., Vacation Fund, New Car",
     "deleteGoal": "Are you sure you want to delete this goal",
     "noGoals": "No goals found.",
     "startAdding": "Start by adding a new goal!",
@@ -310,6 +312,7 @@
     "amountGreaterThanZero": "Amount must be greater than 0.",
     "accountsMustBeDifferent": "Source and destination accounts cannot be the same.",
     "currenciesMustBeDifferent": "Source and destination currencies cannot be the same.",
+    "currentExceedsTarget": "Current amount cannot exceed target.",
     "invalidEmail": "Please enter a valid email address.",
     "invalidDate": "Please enter a valid date."
   }

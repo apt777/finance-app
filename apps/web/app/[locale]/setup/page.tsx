@@ -469,7 +469,7 @@ export default function SetupPage() {
               }`}
             >
               <Icon className="w-5 h-5 mb-3" />
-              <p className="text-xs font-semibold uppercase tracking-wide">Step {id}</p>
+              <p className="text-xs font-semibold uppercase tracking-wide">0{id}</p>
               <p className="text-lg font-bold">{title}</p>
             </button>
           ))}

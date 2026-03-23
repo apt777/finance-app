@@ -90,6 +90,7 @@
     "actions": "작업",
     "addNewAccount": "새 계좌 추가",
     "addAccountDesc": "새로운 계좌를 추가하여 자산을 관리하세요",
+    "accountNamePlaceholder": "예: 메인 통장",
     "accountAdded": "계좌가 성공적으로 추가되었습니다!",
     "deleteAccount": "계좌 삭제",
     "deleteConfirm": "계좌를 정말 삭제하시겠습니까?",
@@ -164,6 +165,7 @@
     "progress": "진행률",
     "addGoal": "새 목표 추가",
     "addGoalDesc": "재정 목표를 설정하고 진행 상황을 추적하세요",
+    "goalNamePlaceholder": "예: 여행 자금, 새 차",
     "deleteGoal": "목표를 삭제하시겠습니까",
     "noGoals": "목표가 없습니다.",
     "startAdding": "새로운 목표를 추가하여 시작하세요!",
@@ -310,6 +312,7 @@
     "amountGreaterThanZero": "금액은 0보다 커야 합니다.",
     "accountsMustBeDifferent": "출금 계좌와 입금 계좌는 같을 수 없습니다.",
     "currenciesMustBeDifferent": "출발 통화와 도착 통화는 같을 수 없습니다.",
+    "currentExceedsTarget": "현재 금액은 목표 금액을 초과할 수 없습니다.",
     "invalidEmail": "유효한 이메일 주소를 입력해 주세요.",
     "invalidDate": "유효한 날짜를 입력해 주세요."
   }

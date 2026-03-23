@@ -37,6 +37,7 @@ const GoalForm = () => {
   const tGoals = useTranslations('goals')
   const tCommon = useTranslations('common')
   const tAccounts = useTranslations('accounts')
+  const tValidation = useTranslations('validation')
   const queryClient = useQueryClient()
   const [formData, setFormData] = useState<GoalFormData>({
     name: '',
@@ -67,17 +68,17 @@ const GoalForm = () => {
     setFormError(null)
 
     if (!formData.name || !formData.targetAmount || !formData.currentAmount || !formData.targetCurrency) {
-      setFormError('Please fill in all required fields.')
+      setFormError(tValidation('allFieldsRequired'))
       return
     }
 
     if (isNaN(Number(formData.targetAmount)) || isNaN(Number(formData.currentAmount))) {
-      setFormError('Amounts must be numbers.')
+      setFormError(tValidation('amountMustBeNumber'))
       return;
     }
 
     if (Number(formData.currentAmount) > Number(formData.targetAmount)) {
-      setFormError('Current amount cannot exceed target.')
+      setFormError(tValidation('currentExceedsTarget'))
       return;
     }
 
@@ -106,7 +107,7 @@ const GoalForm = () => {
         </div>
         <div>
           <h1 className="text-3xl font-bold text-slate-800">{tGoals('addGoal')}</h1>
-          <p className="text-slate-600 text-sm mt-1">Set financial goals and track progress</p>
+          <p className="text-slate-600 text-sm mt-1">{tGoals('addGoalDesc')}</p>
         </div>
       </div>
 
@@ -125,7 +126,7 @@ const GoalForm = () => {
               value={formData.name}
               onChange={handleChange}
               className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
-              placeholder="e.g., Vacation Fund, New Car"
+              placeholder={tGoals('goalNamePlaceholder')}
               required
             />
           </div>
@@ -208,7 +209,7 @@ const GoalForm = () => {
               </div>
               <div className="flex items-center justify-between mt-3 text-xs text-slate-600">
                 <span>{Number(formData.currentAmount).toLocaleString()} / {Number(formData.targetAmount).toLocaleString()}</span>
-                <span>{(Number(formData.targetAmount) - Number(formData.currentAmount)).toLocaleString()} Remaining</span>
+                <span>{(Number(formData.targetAmount) - Number(formData.currentAmount)).toLocaleString()} {tGoals('remaining')}</span>
               </div>
             </div>
           )}
@@ -216,7 +217,7 @@ const GoalForm = () => {
           {/* Target Date */}
           <div>
             <label htmlFor="targetDate" className="block text-sm font-semibold text-slate-800 mb-2">
-              {tGoals('targetDate')} <span className="text-slate-500 text-xs">(Optional)</span>
+              {tGoals('targetDate')} <span className="text-slate-500 text-xs">{tGoals('optional')}</span>
             </label>
             <input
               type="date"
@@ -240,7 +241,7 @@ const GoalForm = () => {
           {mutation.isSuccess && (
             <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-start space-x-3">
               <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-              <p className="text-green-700 text-sm">Goal added successfully!</p>
+              <p className="text-green-700 text-sm">{tGoals('goalAdded')}</p>
             </div>
           )}
 
