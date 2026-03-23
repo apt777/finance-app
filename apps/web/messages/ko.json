@@ -303,6 +303,7 @@
     "amountMustBeNumber": "금액은 숫자여야 합니다.",
     "amountGreaterThanZero": "금액은 0보다 커야 합니다.",
     "accountsMustBeDifferent": "출금 계좌와 입금 계좌는 같을 수 없습니다.",
+    "currenciesMustBeDifferent": "출발 통화와 도착 통화는 같을 수 없습니다.",
     "invalidEmail": "유효한 이메일 주소를 입력해 주세요.",
     "invalidDate": "유효한 날짜를 입력해 주세요."
   }

@@ -151,13 +151,22 @@
     "manageSettings": "アプリケーション設定を管理します",
     "exchangeRates": "為替レート管理",
     "exchangeRatesShort": "為替",
+    "exchangeRateDesc": "必要な為替レートだけを追加して管理します",
+    "rateSettings": "レート設定",
     "currencies": "通貨",
     "from": "出発地",
     "to": "目的地",
     "rate": "レート",
+    "addRate": "レート追加",
     "updateRate": "レートを更新",
     "lastUpdated": "最後の更新",
     "manualUpdate": "手動更新",
+    "rateExample": "例: 1 {from} が {to} でいくらか入力してください",
+    "rateAdded": "為替レートを追加しました。",
+    "noRates": "設定された為替レートがありません。",
+    "addFirstRate": "最初のレートを追加",
+    "currentRate": "現在のレート",
+    "swap": "通貨を入れ替え",
     "profile": "プロフィール",
     "preferences": "環境設定",
     "language": "言語",
@@ -253,6 +262,8 @@
     "invalidEmail": "有効なメールアドレスを入力してください。",
     "invalidAmount": "有効な金額を入力してください。",
     "invalidDate": "有効な日付を入力してください。",
-    "allFieldsRequired": "すべてのフィールドを入力してください。"
+    "allFieldsRequired": "すべてのフィールドを入力してください。",
+    "amountGreaterThanZero": "金額は 0 より大きくしてください。",
+    "currenciesMustBeDifferent": "出発通貨と到着通貨は同じにできません。"
   }
 }

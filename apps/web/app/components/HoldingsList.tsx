@@ -151,7 +151,7 @@ const HoldingsList = () => {
           onChange={(e) => setFilterAccount(e.target.value)}
           className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900"
         >
-          <option value="">All Accounts</option>
+          <option value="">{tAccounts('allAccounts')}</option>
           {accounts.map((account: Account) => (
             <option key={account.id} value={account.id}>
               {account.name} ({account.currency})
@@ -181,7 +181,7 @@ const HoldingsList = () => {
             {filteredHoldings.map((holding: Holding) => {
               const unitPrice = holding.marketPrice || holding.costBasis
               const value = convertToBaseCurrency(holding.shares * unitPrice, holding.currency)
-              const accountName = accountMap.get(holding.accountId) || 'Unknown'
+              const accountName = accountMap.get(holding.accountId) || holding.currency
 
               const isDeleting = deletingHoldingId === holding.id
 

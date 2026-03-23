@@ -151,13 +151,22 @@
     "manageSettings": "管理应用程序设置",
     "exchangeRates": "汇率管理",
     "exchangeRatesShort": "汇率",
+    "exchangeRateDesc": "只保留你需要的汇率，并在这里管理",
+    "rateSettings": "汇率设置",
     "currencies": "货币",
     "from": "从",
     "to": "到",
     "rate": "汇率",
+    "addRate": "添加汇率",
     "updateRate": "更新汇率",
     "lastUpdated": "最后更新",
     "manualUpdate": "手动更新",
+    "rateExample": "例如：请输入 1 {from} 等于多少 {to}",
+    "rateAdded": "汇率已成功添加。",
+    "noRates": "尚未设置任何汇率。",
+    "addFirstRate": "添加第一条汇率",
+    "currentRate": "当前汇率",
+    "swap": "交换货币",
     "profile": "个人资料",
     "preferences": "偏好设置",
     "language": "语言",
@@ -253,6 +262,8 @@
     "invalidEmail": "请输入有效的电子邮件地址。",
     "invalidAmount": "请输入有效的金额。",
     "invalidDate": "请输入有效的日期。",
-    "allFieldsRequired": "所有字段都是必填的。"
+    "allFieldsRequired": "所有字段都是必填的。",
+    "amountGreaterThanZero": "金额必须大于 0。",
+    "currenciesMustBeDifferent": "源货币和目标货币不能相同。"
   }
 }

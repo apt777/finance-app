@@ -303,6 +303,7 @@
     "amountMustBeNumber": "Amount must be a number.",
     "amountGreaterThanZero": "Amount must be greater than 0.",
     "accountsMustBeDifferent": "Source and destination accounts cannot be the same.",
+    "currenciesMustBeDifferent": "Source and destination currencies cannot be the same.",
     "invalidEmail": "Please enter a valid email address.",
     "invalidDate": "Please enter a valid date."
   }

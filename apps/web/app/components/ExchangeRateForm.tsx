@@ -32,6 +32,7 @@ const createExchangeRate = async (rateData: ExchangeRateFormData) => {
 const ExchangeRateForm = () => {
   const tSettings = useTranslations('settings')
   const tCommon = useTranslations('common')
+  const tValidation = useTranslations('validation')
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState<ExchangeRateFormData>({
     from: 'KRW',
@@ -63,15 +64,15 @@ const ExchangeRateForm = () => {
     setFormError(null);
 
     if (!formData.from || !formData.to || !formData.rate) {
-      setFormError('Please fill in all fields.');
+      setFormError(tValidation('allFieldsRequired'));
       return;
     }
     if (isNaN(Number(formData.rate)) || Number(formData.rate) <= 0) {
-      setFormError('Rate must be greater than 0.');
+      setFormError(tValidation('amountGreaterThanZero'));
       return;
     }
     if (formData.from === formData.to) {
-      setFormError('Source and destination currency cannot be the same.');
+      setFormError(tValidation('currenciesMustBeDifferent'));
       return;
     }
 
@@ -92,15 +93,15 @@ const ExchangeRateForm = () => {
           <TrendingUp className="w-6 h-6" />
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Add New Rate</h2>
-          <p className="text-sm text-slate-600">Configure exchange rates between currencies</p>
+          <h2 className="text-2xl font-bold text-slate-800">{tSettings('addRate')}</h2>
+          <p className="text-sm text-slate-600">{tSettings('exchangeRateDesc')}</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Currency Selection */}
         <div className="bg-white rounded-xl p-6 border border-slate-200">
-          <label className="block text-sm font-semibold text-slate-800 mb-4">Rate Settings</label>
+          <label className="block text-sm font-semibold text-slate-800 mb-4">{tSettings('rateSettings')}</label>
           
           <div className="flex flex-col md:flex-row items-center gap-4">
             {/* From Currency */}
@@ -130,7 +131,7 @@ const ExchangeRateForm = () => {
                 type="button"
                 onClick={handleSwapCurrencies}
                 className="p-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-lg transition-all shadow-md hover:shadow-lg"
-                title="Swap"
+                title={tSettings('swap')}
               >
                 <ArrowRight className="w-5 h-5 rotate-90 md:rotate-0" />
               </button>
@@ -181,7 +182,7 @@ const ExchangeRateForm = () => {
             </span>
           </div>
           <p className="text-xs text-slate-600 mt-2">
-            e.g., How much is 1 {formData.from} in {formData.to}?
+            {tSettings('rateExample', { from: formData.from, to: formData.to })}
           </p>
         </div>
 
@@ -197,7 +198,7 @@ const ExchangeRateForm = () => {
         {mutation.isSuccess && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start space-x-3">
             <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-            <p className="text-green-700 text-sm">Exchange rate added successfully!</p>
+            <p className="text-green-700 text-sm">{tSettings('rateAdded')}</p>
           </div>
         )}
 
@@ -223,7 +224,7 @@ const ExchangeRateForm = () => {
           ) : (
             <>
               <Plus className="w-5 h-5" />
-              <span>Add Rate</span>
+              <span>{tSettings('addRate')}</span>
             </>
           )}
         </button>

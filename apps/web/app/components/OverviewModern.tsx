@@ -384,17 +384,18 @@ export default function OverviewModern() {
                   <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{BASE_CURRENCY}</p>
                 </div>
                 <div className={`flex min-h-[122px] flex-col justify-between rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/80'}`}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.mirrorCardLabel(mirrorCurrency)}</p>
-                      <p className={`mt-3 text-[clamp(1.18rem,2vw,1.8rem)] font-bold leading-tight tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
-                        {totalPositiveAssetsMirrorCurrency.toLocaleString()}
-                      </p>
-                    </div>
+                  <div>
+                    <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.mirrorCardLabel(mirrorCurrency)}</p>
+                    <p className={`mt-3 text-[clamp(1.18rem,2vw,1.8rem)] font-bold leading-tight tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
+                      {totalPositiveAssetsMirrorCurrency.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="mt-3 flex items-end justify-between gap-3">
+                    <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.mirrorCurrencyLabel}</p>
                     <select
                       value={mirrorCurrency}
                       onChange={(event) => setMirrorCurrency(event.target.value as typeof mirrorCurrency)}
-                      className={`rounded-xl border px-3 py-2 text-xs font-semibold outline-none ${isDark ? 'border-white/10 bg-white/5 text-slate-200' : 'border-slate-200 bg-white text-slate-700'}`}
+                      className={`max-w-[110px] rounded-xl border px-3 py-2 text-xs font-semibold outline-none ${isDark ? 'border-white/10 bg-white/5 text-slate-200' : 'border-slate-200 bg-white text-slate-700'}`}
                     >
                       <option value="JPY">JPY</option>
                       <option value="KRW">KRW</option>
@@ -404,7 +405,6 @@ export default function OverviewModern() {
                       <option value="GBP">GBP</option>
                     </select>
                   </div>
-                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.mirrorCurrencyLabel}</p>
                 </div>
                 <div className={`flex min-h-[122px] flex-col justify-between rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5 text-white' : 'border border-slate-200 bg-blue-50 text-slate-950'}`}>
                   <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-blue-600/70'}`}>{tGoals('totalGoals')}</p>

@@ -15,7 +15,6 @@ import {
 import { 
   SUPPORTED_CURRENCIES, 
   getCurrencySymbol, 
-  getCurrencyName,
   getReverseRate 
 } from '@/lib/currency'
 import { useLocale, useTranslations } from 'next-intl'
@@ -176,7 +175,7 @@ const ExchangeRateManager = () => {
                 >
                   {SUPPORTED_CURRENCIES.map((currency) => (
                     <option key={currency} value={currency}>
-                      {currency} - {getCurrencyName(currency)}
+                      {currency}
                     </option>
                   ))}
                 </select>
@@ -207,7 +206,7 @@ const ExchangeRateManager = () => {
                 >
                   {SUPPORTED_CURRENCIES.map((currency) => (
                     <option key={currency} value={currency}>
-                      {currency} - {getCurrencyName(currency)}
+                      {currency}
                     </option>
                   ))}
                 </select>
