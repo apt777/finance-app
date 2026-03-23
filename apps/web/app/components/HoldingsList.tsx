@@ -35,6 +35,7 @@ interface Holding {
 
 const HoldingsList = () => {
   const { theme } = useUiTheme()
+  const tAccounts = useTranslations('accounts')
   const tHoldings = useTranslations('holdings')
   const tCommon = useTranslations('common')
   const tTransactions = useTranslations('transactions')
