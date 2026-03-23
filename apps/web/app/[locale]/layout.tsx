@@ -7,6 +7,7 @@ import Layout from '@/components/Layout';
 import { Providers } from '@/providers';
 import { AuthProvider } from '@/context/AuthProviderClient';
 import { ColorModeProvider } from '@/context/ColorModeContext';
+import { CurrencyPreferenceProvider } from '@/context/CurrencyPreferenceContext';
 import { UiThemeProvider } from '@/context/UiThemeContext';
 
 const appSans = localFont({
@@ -51,13 +52,15 @@ export default async function LocaleLayout({
         <NextIntlClientProvider messages={messages}>
           <AuthProvider>
             <ColorModeProvider>
-              <UiThemeProvider>
-                <Providers>
-                  <Layout>
-                    {children}
-                  </Layout>
-                </Providers>
-              </UiThemeProvider>
+              <CurrencyPreferenceProvider>
+                <UiThemeProvider>
+                  <Providers>
+                    <Layout>
+                      {children}
+                    </Layout>
+                  </Providers>
+                </UiThemeProvider>
+              </CurrencyPreferenceProvider>
             </ColorModeProvider>
           </AuthProvider>
         </NextIntlClientProvider>

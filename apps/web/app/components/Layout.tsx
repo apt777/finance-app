@@ -9,6 +9,7 @@ import { useExchangeRates, ExchangeRate } from '@/hooks/useExchangeRates'
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus'
 import { useAuth } from '@/context/AuthProviderClient'
 import { useColorMode } from '@/context/ColorModeContext'
+import { useCurrencyPreferences } from '@/context/CurrencyPreferenceContext'
 import { useUiTheme } from '@/context/UiThemeContext'
 import {
   ChartColumnIncreasing,
@@ -68,6 +69,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const setupManageMode = searchParams.get('manage') === '1'
   const { user, loading, signOut } = useAuth()
   const { colorMode } = useColorMode()
+  const { baseCurrency } = useCurrencyPreferences()
   const { theme, mounted } = useUiTheme()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const { data: setupStatus, isLoading: setupLoading } = useOnboardingStatus()
@@ -101,7 +103,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     [tAccounts, tDashboard, tGoals, tHoldings, tSettings, tTransactions]
   )
 
-  const BASE_CURRENCY = 'JPY'
+  const BASE_CURRENCY = baseCurrency
 
   const convertToBaseCurrency = (amount: number, currency: string): number => {
     if (currency === BASE_CURRENCY) return amount

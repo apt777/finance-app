@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useColorMode } from '@/context/ColorModeContext'
+import { useCurrencyPreferences } from '@/context/CurrencyPreferenceContext'
 import AppLoadingState from '@/components/AppLoadingState'
 import { getUiCopy } from '@/lib/uiCopy'
 
@@ -84,6 +85,7 @@ export default function OverviewModern() {
   const tCommon = useTranslations('common')
   const locale = useLocale()
   const ui = getUiCopy(locale)
+  const { baseCurrency, mirrorCurrency, setMirrorCurrency } = useCurrencyPreferences()
 
   const { data, isLoading, isError } = useOverviewData()
   const { data: exchangeRates, isLoading: ratesLoading, isError: ratesError } = useExchangeRates()
@@ -110,18 +112,24 @@ export default function OverviewModern() {
   const goals = overviewData.goals || []
   const transactions = overviewData.transactions || []
   const rates: ExchangeRate[] = exchangeRates || []
-  const BASE_CURRENCY = 'JPY'
+  const BASE_CURRENCY = baseCurrency
   const hasExchangeRates = rates.length > 0
 
-  const convertToBaseCurrency = (amount: number, currency: string): number => {
-    if (currency === BASE_CURRENCY) return amount
-    const rate = rates.find((item) => item.fromCurrency === currency && item.toCurrency === BASE_CURRENCY)?.rate
+  const convertAmount = (amount: number, fromCurrency: string, toCurrency: string): number => {
+    if (fromCurrency === toCurrency) return amount
+
+    const rate = rates.find((item) => item.fromCurrency === fromCurrency && item.toCurrency === toCurrency)?.rate
     if (rate) return amount * rate
+
+    const reverseRate = rates.find((item) => item.fromCurrency === toCurrency && item.toCurrency === fromCurrency)?.rate
+    if (reverseRate && reverseRate !== 0) return amount / reverseRate
 
     // Avoid collapsing the whole dashboard to zero while initial exchange-rate
     // data is still empty in production.
     return hasExchangeRates ? 0 : amount
   }
+
+  const convertToBaseCurrency = (amount: number, currency: string): number => convertAmount(amount, currency, BASE_CURRENCY)
 
   const totalNonCreditBalancesByCurrency: Record<string, number> = {}
   accounts.forEach((account) => {
@@ -130,10 +138,16 @@ export default function OverviewModern() {
     }
   })
 
-  const totalBalanceByCurrency = accounts.reduce<Record<string, number>>((acc, account) => {
-    acc[account.currency] = (acc[account.currency] || 0) + account.balance
+  const totalAssetByCurrency = accounts.reduce<Record<string, number>>((acc, account) => {
+    if (account.type !== 'credit_card') {
+      acc[account.currency] = (acc[account.currency] || 0) + account.balance
+    }
     return acc
   }, {})
+
+  holdings.forEach((holding) => {
+    totalAssetByCurrency[holding.currency] = (totalAssetByCurrency[holding.currency] || 0) + holding.shares * (holding.marketPrice || holding.costBasis)
+  })
 
   let netWorth = 0
   accounts.forEach((account) => {
@@ -149,8 +163,13 @@ export default function OverviewModern() {
     totalPositiveAssetsBaseCurrency += convertToBaseCurrency(amount, currency)
   })
 
-  const rateJPYToKRW = rates.find((item) => item.fromCurrency === 'JPY' && item.toCurrency === 'KRW')?.rate || 0
-  const totalPositiveAssetsKRW = totalPositiveAssetsBaseCurrency * rateJPYToKRW
+  const totalPositiveAssetsMirrorCurrency = Math.round(
+    Object.entries(totalNonCreditBalancesByCurrency).reduce((sum, [currency, amount]) => {
+      return sum + convertAmount(amount, currency, mirrorCurrency)
+    }, 0) + holdings.reduce((sum, holding) => {
+      return sum + convertAmount(holding.shares * (holding.marketPrice || holding.costBasis), holding.currency, mirrorCurrency)
+    }, 0),
+  )
   const japaneseAccountsTotal = totalNonCreditBalancesByCurrency.JPY || 0
   const koreanAccountsTotal = totalNonCreditBalancesByCurrency.KRW || 0
   const usesEstimatedValues = !hasExchangeRates && (
@@ -188,6 +207,7 @@ export default function OverviewModern() {
   const holdingsValueBaseCurrency = Math.round(
     holdings.reduce((sum, holding) => sum + convertToBaseCurrency(holding.shares * (holding.marketPrice || holding.costBasis), holding.currency), 0),
   )
+  const totalAssetsBaseCurrency = Math.round(totalPositiveAssetsBaseCurrency + holdingsValueBaseCurrency)
   const averageGoalProgress = goalsWithProgress.length > 0
     ? Math.round(goalsWithProgress.reduce((sum, goal) => sum + goal.progress, 0) / goalsWithProgress.length)
     : 0
@@ -262,16 +282,18 @@ export default function OverviewModern() {
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <div className={`flex min-h-[112px] flex-col justify-between rounded-[24px] px-4 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
-                    <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.recent30DayExpense}</p>
+                    <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.recentExpenseInCurrency(BASE_CURRENCY)}</p>
                     <p className={`mt-2 text-xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
                       {totalExpensesLast30.toLocaleString()}
                     </p>
+                    <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{BASE_CURRENCY}</p>
                   </div>
                   <div className={`flex min-h-[112px] flex-col justify-between rounded-[24px] px-4 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
-                    <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.investment}</p>
+                    <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.investmentInCurrency(BASE_CURRENCY)}</p>
                     <p className={`mt-2 text-xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
                       {holdingsValueBaseCurrency.toLocaleString()}
                     </p>
+                    <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{BASE_CURRENCY}</p>
                   </div>
                   <div className={`flex min-h-[112px] flex-col justify-between rounded-[24px] px-4 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
                     <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.averageGoalProgress}</p>
@@ -332,6 +354,7 @@ export default function OverviewModern() {
                     <div className={`rounded-2xl px-4 py-3 text-right ${isDark ? 'bg-white/5 text-white' : 'bg-slate-100 text-slate-900'}`}>
                       <p className="text-xs font-semibold text-slate-400">{ui.overview.basedOnNetWorth}</p>
                       <p className="mt-1 text-lg font-bold tabular-nums">{Math.round(netWorth).toLocaleString()}</p>
+                      <p className="mt-1 text-xs font-semibold text-slate-400">{BASE_CURRENCY}</p>
                     </div>
                   </div>
                 </div>
@@ -346,26 +369,42 @@ export default function OverviewModern() {
                   <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.linkedAccounts}</p>
                 </div>
                 <div className={`flex min-h-[122px] flex-col justify-between rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/80'}`}>
-                  <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{tDashboard('totalAssets')}</p>
+                  <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.totalAssetsInCurrency(BASE_CURRENCY)}</p>
                   <p className={`mt-3 text-[clamp(1.08rem,1.8vw,1.55rem)] font-bold leading-tight tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
-                    {Math.round(totalPositiveAssetsBaseCurrency).toLocaleString()}
+                    {totalAssetsBaseCurrency.toLocaleString()}
                   </p>
-                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.investmentAssets}</p>
+                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{BASE_CURRENCY}</p>
                 </div>
                 <div className={`flex min-h-[122px] flex-col justify-between rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/80'}`}>
-                  <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{tTransactions('totalExpense')}</p>
+                  <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.expenseChangeInCurrency(BASE_CURRENCY)}</p>
                   <p className={`mt-3 text-[clamp(1.08rem,1.8vw,1.55rem)] font-bold leading-tight tabular-nums ${expenseMomentum > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
                     {expenseMomentum > 0 ? '+' : ''}
                     {Math.round(expenseMomentum).toLocaleString()}
                   </p>
-                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.expenseChange}</p>
+                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{BASE_CURRENCY}</p>
                 </div>
                 <div className={`flex min-h-[122px] flex-col justify-between rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/80'}`}>
-                  <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>KRW Mirror</p>
-                  <p className={`mt-3 text-[clamp(1.18rem,2vw,1.8rem)] font-bold leading-tight tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
-                    {Math.round(totalPositiveAssetsKRW).toLocaleString()}
-                  </p>
-                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.krwMirror}</p>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.mirrorCardLabel(mirrorCurrency)}</p>
+                      <p className={`mt-3 text-[clamp(1.18rem,2vw,1.8rem)] font-bold leading-tight tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
+                        {totalPositiveAssetsMirrorCurrency.toLocaleString()}
+                      </p>
+                    </div>
+                    <select
+                      value={mirrorCurrency}
+                      onChange={(event) => setMirrorCurrency(event.target.value as typeof mirrorCurrency)}
+                      className={`rounded-xl border px-3 py-2 text-xs font-semibold outline-none ${isDark ? 'border-white/10 bg-white/5 text-slate-200' : 'border-slate-200 bg-white text-slate-700'}`}
+                    >
+                      <option value="JPY">JPY</option>
+                      <option value="KRW">KRW</option>
+                      <option value="USD">USD</option>
+                      <option value="CNY">CNY</option>
+                      <option value="EUR">EUR</option>
+                      <option value="GBP">GBP</option>
+                    </select>
+                  </div>
+                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.mirrorCurrencyLabel}</p>
                 </div>
                 <div className={`flex min-h-[122px] flex-col justify-between rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5 text-white' : 'border border-slate-200 bg-blue-50 text-slate-950'}`}>
                   <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-blue-600/70'}`}>{tGoals('totalGoals')}</p>
@@ -380,13 +419,13 @@ export default function OverviewModern() {
                     <div className="flex items-center justify-between">
                       <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{tDashboard('japaneseAccounts')}</span>
                       <span className={`text-sm font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
-                        {Math.round(japaneseAccountsTotal).toLocaleString()}
+                        {Math.round(japaneseAccountsTotal).toLocaleString()} JPY
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{tDashboard('koreanAccounts')}</span>
                       <span className={`text-sm font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
-                        {Math.round(koreanAccountsTotal).toLocaleString()}
+                        {Math.round(koreanAccountsTotal).toLocaleString()} KRW
                       </span>
                     </div>
                   </div>
@@ -412,9 +451,9 @@ export default function OverviewModern() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className={`rounded-[24px] p-4 ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
-                  <p className={`text-[11px] uppercase tracking-[0.18em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{tTransactions('totalExpense')}</p>
+                  <p className={`text-[11px] uppercase tracking-[0.18em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{ui.overview.recentExpenseInCurrency(BASE_CURRENCY)}</p>
                   <p className="mt-3 text-2xl font-bold text-rose-600 tabular-nums">
-                    {totalExpensesLast30.toLocaleString()}
+                    {totalExpensesLast30.toLocaleString()} <span className="text-sm">{BASE_CURRENCY}</span>
                   </p>
                 </div>
                 <div className={`rounded-[24px] p-4 ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
@@ -514,13 +553,14 @@ export default function OverviewModern() {
           <article className={`rounded-[36px] p-6 backdrop-blur-xl ${isDark ? 'border border-white/10 bg-white/5 shadow-[0_18px_40px_rgba(0,0,0,0.24)]' : 'border border-white/80 bg-white/75 shadow-[0_18px_60px_rgba(148,163,184,0.12)]'}`}>
             <div className="mb-6 flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">{tAccounts('title')}</p>
-                <h3 className={`mt-2 text-[1.65rem] font-bold tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>{tDashboard('investmentSummary')}</h3>
+                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">{ui.overview.baseCurrencyLabel}</p>
+                <h3 className={`mt-2 text-[1.65rem] font-bold tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>{ui.overview.currencyBalances}</h3>
+                <p className={`mt-2 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.currencyBalancesDesc}</p>
               </div>
               <Wallet className="h-6 w-6 text-slate-400" />
             </div>
             <div className="space-y-3">
-              {Object.entries(totalBalanceByCurrency).map(([currency, balance]) => (
+              {Object.entries(totalAssetByCurrency).map(([currency, balance]) => (
                 <div key={currency} className={`flex items-center justify-between rounded-[24px] px-4 py-4 ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
                   <div>
                     <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>{currency}</p>

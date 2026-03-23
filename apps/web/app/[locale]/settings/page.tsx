@@ -8,15 +8,18 @@ import AIBulkImportBeta from '@/components/AIBulkImportBeta'
 import BudgetManager from '@/components/BudgetManager'
 import RecurringManager from '@/components/RecurringManager'
 import { useColorMode } from '@/context/ColorModeContext'
+import { useCurrencyPreferences } from '@/context/CurrencyPreferenceContext'
 import { useUiTheme } from '@/context/UiThemeContext'
 import { useLocale, useTranslations } from 'next-intl'
 import { useSearchParams } from 'next/navigation'
+import { SUPPORTED_CURRENCIES } from '@/lib/currency'
 
 export default function SettingsPage() {
   const tSettings = useTranslations('settings')
   const locale = useLocale()
   const { theme, setTheme } = useUiTheme()
   const { colorMode, setColorMode } = useColorMode()
+  const { baseCurrency, mirrorCurrency, setBaseCurrency, setMirrorCurrency } = useCurrencyPreferences()
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState('theme')
   const languageNames =
@@ -159,6 +162,39 @@ export default function SettingsPage() {
                       </div>
                       <p className={`mt-4 text-sm leading-7 ${colorMode === 'dark' ? 'text-slate-300' : 'text-slate-500'}`}>{tSettings('darkModeDesc')}</p>
                     </button>
+                  </div>
+                </div>
+
+                <div className="mt-8 border-t border-slate-200 pt-6">
+                  <h4 className="text-base font-black tracking-[-0.02em] text-slate-950">{tSettings('currencyDisplaySettings')}</h4>
+                  <p className="mt-2 text-sm text-slate-500">{tSettings('currencyDisplayDesc')}</p>
+                  <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    <div className="rounded-[24px] border border-slate-200 bg-white p-5">
+                      <label className="block text-sm font-bold uppercase tracking-[0.2em] text-slate-700">{tSettings('mainCurrency')}</label>
+                      <p className="mt-3 text-sm leading-6 text-slate-500">{tSettings('mainCurrencyDesc')}</p>
+                      <select
+                        value={baseCurrency}
+                        onChange={(event) => setBaseCurrency(event.target.value as typeof baseCurrency)}
+                        className="mt-4 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition-all focus:ring-2 focus:ring-blue-500"
+                      >
+                        {SUPPORTED_CURRENCIES.map((currency) => (
+                          <option key={currency} value={currency}>{currency}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="rounded-[24px] border border-slate-200 bg-white p-5">
+                      <label className="block text-sm font-bold uppercase tracking-[0.2em] text-slate-700">{tSettings('mirrorCurrency')}</label>
+                      <p className="mt-3 text-sm leading-6 text-slate-500">{tSettings('mirrorCurrencyDesc')}</p>
+                      <select
+                        value={mirrorCurrency}
+                        onChange={(event) => setMirrorCurrency(event.target.value as typeof mirrorCurrency)}
+                        className="mt-4 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition-all focus:ring-2 focus:ring-blue-500"
+                      >
+                        {SUPPORTED_CURRENCIES.map((currency) => (
+                          <option key={currency} value={currency}>{currency}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
               </div>
