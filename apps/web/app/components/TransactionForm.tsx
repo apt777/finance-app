@@ -20,6 +20,7 @@ interface TransactionFormData {
   type: string;
   amount: number | string;
   currency: string;
+  exchangeToAmount?: number | string;
   categoryKey?: string;
   notes?: string;
   applyBalanceAdjustment?: boolean;
@@ -78,6 +79,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
     type: 'expense',
     amount: '',
     currency: '',
+    exchangeToAmount: '',
     categoryKey: 'food',
     notes: '',
     applyBalanceAdjustment: true,
@@ -117,6 +119,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
         type: 'expense', 
         amount: '', 
         currency: '',
+        exchangeToAmount: '',
         categoryKey: 'food',
         notes: '',
         applyBalanceAdjustment: true,
@@ -160,13 +163,14 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
     setFormError(null);
 
     const isTransfer = formData.type === 'transfer';
+    const isExchange = formData.type === 'exchange';
 
     if (!formData.date || !formData.type || !formData.amount) {
       setFormError(tValidation('allFieldsRequired'));
       return
     }
 
-    if (isTransfer) {
+    if (isTransfer || isExchange) {
       if (!formData.fromAccountId || !formData.toAccountId) {
         setFormError(tValidation('allFieldsRequired'));
         return;
@@ -187,6 +191,11 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
       return;
     }
 
+    if (isExchange && (isNaN(Number(formData.exchangeToAmount)) || Number(formData.exchangeToAmount) <= 0)) {
+      setFormError(tValidation('amountGreaterThanZero'));
+      return;
+    }
+
     if (duplicateTransaction) {
       setFormError(ui.transactionForm.duplicateError);
       return;
@@ -195,6 +204,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
     mutation.mutate(formData)
   }
 
+  const selectedFromAccount = accounts?.find(acc => acc.id === formData.fromAccountId)
   const selectedAccount = accounts?.find(acc => acc.id === formData.accountId)
   const selectedToAccount = accounts?.find(acc => acc.id === formData.toAccountId)
   const isCreditCardPayment = formData.type === 'transfer' && selectedToAccount?.type === 'credit_card'
@@ -225,7 +235,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
         toAccountId: formData.toAccountId,
         date: formData.date,
         description: formData.description,
-        type: formData.type as 'income' | 'expense' | 'transfer',
+        type: formData.type as 'income' | 'expense' | 'transfer' | 'exchange',
         amount: normalizedAmount,
         currency: formData.currency,
       },
@@ -246,7 +256,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
     'w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-slate-50 text-slate-900 placeholder-slate-400'
 
   useEffect(() => {
-    if (formData.type === 'transfer') {
+    if (formData.type === 'transfer' || formData.type === 'exchange') {
       if (formData.categoryKey !== 'transfer') {
         setFormData((prev) => ({ ...prev, categoryKey: 'transfer' }))
       }
@@ -265,7 +275,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
         <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white">
           {formData.type === 'income' ? (
             <ArrowDownLeft className="w-6 h-6" />
-          ) : formData.type === 'transfer' ? (
+          ) : formData.type === 'transfer' || formData.type === 'exchange' ? (
             <ArrowRightLeft className="w-6 h-6" />
           ) : (
             <ArrowUpRight className="w-6 h-6" />
@@ -281,7 +291,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Account Selection */}
-          {formData.type === 'transfer' ? (
+          {formData.type === 'transfer' || formData.type === 'exchange' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label htmlFor="fromAccountId" className="block text-sm font-semibold text-slate-800 mb-2">
@@ -408,6 +418,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
                 <option value="expense">{tTransactions('expense')}</option>
                 <option value="income">{tTransactions('income')}</option>
                 <option value="transfer">{tTransactions('transfer')}</option>
+                <option value="exchange">{tTransactions('exchange')}</option>
               </select>
             </div>
           </div>
@@ -439,10 +450,10 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
                 id="categoryKey"
                 value={formData.categoryKey}
                 onChange={handleChange}
-                disabled={formData.type === 'transfer'}
+                disabled={formData.type === 'transfer' || formData.type === 'exchange'}
                 className={`${fieldClassName} disabled:bg-slate-100`}
               >
-                {formData.type === 'transfer' ? (
+                {formData.type === 'transfer' || formData.type === 'exchange' ? (
                   <option value="transfer">{tTransactions('transfer')}</option>
                 ) : (
                   filteredCategories.map((category) => (
@@ -470,11 +481,11 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
           </div>
 
           {/* Amount and Currency */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className={`grid grid-cols-1 gap-6 ${formData.type === 'exchange' ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label htmlFor="amount" className="block text-sm font-semibold text-slate-800">
-                  {tTransactions('amount')} <span className="text-red-500">*</span>
+                  {formData.type === 'exchange' ? tTransactions('exchangeFromAmount') : tTransactions('amount')} <span className="text-red-500">*</span>
                 </label>
                 {isCreditCardPayment && (
                   <div className="flex items-center">
@@ -525,19 +536,54 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
               )}
             </div>
 
+            {formData.type === 'exchange' && (
+              <div>
+                <label htmlFor="exchangeToAmount" className="block text-sm font-semibold text-slate-800 mb-2">
+                  {tTransactions('exchangeToAmount')} <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-3 text-slate-500 font-medium">
+                    {selectedToAccount?.currency === 'JPY' ? '¥' : selectedToAccount?.currency === 'KRW' ? '₩' : selectedToAccount?.currency === 'USD' ? '$' : selectedToAccount?.currency || ''}
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    onKeyDown={(e) => (e.key === '-' || e.key === 'e') && e.preventDefault()}
+                    name="exchangeToAmount"
+                    id="exchangeToAmount"
+                    value={formData.exchangeToAmount}
+                    onChange={handleChange}
+                    className="w-full pl-8 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
+                    placeholder="0"
+                    step="0.01"
+                    required
+                  />
+                </div>
+              </div>
+            )}
+
             <div>
               <label htmlFor="currency" className="block text-sm font-semibold text-slate-800 mb-2">
-                {tAccounts('currency')}
+                {formData.type === 'exchange' ? tTransactions('exchangeRate') : tAccounts('currency')}
               </label>
-              <input
-                type="text"
-                name="currency"
-                id="currency"
-                value={formData.currency}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 font-medium"
-                readOnly
-              />
+              {formData.type === 'exchange' ? (
+                <div className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 font-medium">
+                  {Number(formData.amount) > 0 && Number(formData.exchangeToAmount) > 0
+                    ? `1 ${selectedFromAccount?.currency || formData.currency} = ${(Number(formData.exchangeToAmount) / Number(formData.amount)).toFixed(6)} ${selectedToAccount?.currency || ''}`
+                    : `${selectedFromAccount?.currency || formData.currency || '-'} → ${selectedToAccount?.currency || '-'}`
+                  }
+                </div>
+              ) : (
+                <input
+                  type="text"
+                  name="currency"
+                  id="currency"
+                  value={formData.currency}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 font-medium"
+                  readOnly
+                />
+              )}
             </div>
           </div>
 
@@ -546,7 +592,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
             <div className={`rounded-xl p-4 border-2 ${
               formData.type === 'income'
                 ? 'bg-green-50 border-green-200'
-                : formData.type === 'transfer'
+                : formData.type === 'transfer' || formData.type === 'exchange'
                 ? 'bg-blue-50 border-blue-200'
                 : 'bg-red-50 border-red-200'
             }`}>
@@ -555,27 +601,28 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
                   <p className={`text-sm font-medium ${
                     formData.type === 'income'
                       ? 'text-green-700'
-                      : formData.type === 'transfer' ? 'text-blue-700' : 'text-red-700'
+                      : formData.type === 'transfer' || formData.type === 'exchange' ? 'text-blue-700' : 'text-red-700'
                   }`}>
-                    {formData.type === 'income' ? tTransactions('income') : formData.type === 'transfer' ? tTransactions('transfer') : tTransactions('expense')}
+                    {formData.type === 'income' ? tTransactions('income') : formData.type === 'transfer' ? tTransactions('transfer') : formData.type === 'exchange' ? tTransactions('exchange') : tTransactions('expense')}
                   </p>
                   <p className={`text-2xl font-bold mt-1 ${
                     formData.type === 'income'
                       ? 'text-green-600'
-                      : formData.type === 'transfer' ? 'text-blue-600' : 'text-red-600'
+                      : formData.type === 'transfer' || formData.type === 'exchange' ? 'text-blue-600' : 'text-red-600'
                   }`}>
-                    {formData.type === 'income' ? '+' : formData.type === 'transfer' ? '' : '-'}
+                    {formData.type === 'income' ? '+' : formData.type === 'transfer' ? '' : formData.type === 'exchange' ? '' : '-'}
                     {Number(formData.amount).toLocaleString()}
+                    {formData.type === 'exchange' && Number(formData.exchangeToAmount) > 0 ? ` → ${Number(formData.exchangeToAmount).toLocaleString()}` : ''}
                   </p>
                 </div>
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                   formData.type === 'income'
                     ? 'bg-green-100'
-                    : formData.type === 'transfer' ? 'bg-blue-100' : 'bg-red-100'
+                    : formData.type === 'transfer' || formData.type === 'exchange' ? 'bg-blue-100' : 'bg-red-100'
                 }`}>
                   {formData.type === 'income' ? (
                     <ArrowDownLeft className="w-6 h-6 text-green-600" />
-                  ) : formData.type === 'transfer' ? (
+                  ) : formData.type === 'transfer' || formData.type === 'exchange' ? (
                     <ArrowRightLeft className="w-6 h-6 text-blue-600" />
                   ) : (
                     <ArrowUpRight className="w-6 h-6 text-red-600" />

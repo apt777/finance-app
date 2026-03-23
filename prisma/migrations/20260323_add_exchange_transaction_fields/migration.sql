@@ -1,0 +1,4 @@
+ALTER TABLE "public"."Transaction"
+ADD COLUMN IF NOT EXISTS "exchangeToAmount" DOUBLE PRECISION,
+ADD COLUMN IF NOT EXISTS "exchangeToCurrency" TEXT,
+ADD COLUMN IF NOT EXISTS "exchangeRateApplied" DOUBLE PRECISION;

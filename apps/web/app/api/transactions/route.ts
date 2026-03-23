@@ -11,9 +11,12 @@ interface TransactionData {
   toAccountId?: string
   date: string
   description: string
-  type: 'income' | 'expense' | 'transfer'
+  type: 'income' | 'expense' | 'transfer' | 'exchange'
   amount: number
   currency: string
+  exchangeToAmount?: number
+  exchangeToCurrency?: string
+  exchangeRateApplied?: number
   categoryKey?: string
   notes?: string
   applyBalanceAdjustment?: boolean
@@ -101,7 +104,7 @@ async function findExistingDuplicate(userId: string, body: TransactionData, tran
         gte: dayRange.start,
         lte: dayRange.end,
       },
-      ...(body.type === 'transfer'
+      ...((body.type === 'transfer' || body.type === 'exchange')
         ? {
             fromAccountId: body.fromAccountId || null,
             toAccountId: body.toAccountId || null,
@@ -261,11 +264,11 @@ export async function POST(request: Request) {
       )
     }
 
-    if (type === 'transfer') {
+    if (type === 'transfer' || type === 'exchange') {
       const { fromAccountId, toAccountId } = body
 
       if (!fromAccountId || !toAccountId || fromAccountId === toAccountId) {
-        return NextResponse.json({ error: 'Invalid transfer accounts' }, { status: 400 })
+        return NextResponse.json({ error: type === 'exchange' ? 'Invalid exchange accounts' : 'Invalid transfer accounts' }, { status: 400 })
       }
 
       const [fromAccount, toAccount] = await Promise.all([
@@ -278,14 +281,26 @@ export async function POST(request: Request) {
       }
 
       const transactionOperations = []
+      const exchangeToAmount = Number(body.exchangeToAmount)
+      const creditedAmount = type === 'exchange' ? exchangeToAmount : transactionAmount
+      const exchangeToCurrency = body.exchangeToCurrency || toAccount.currency
+      const exchangeRateApplied = body.exchangeRateApplied
+        ? Number(body.exchangeRateApplied)
+        : type === 'exchange' && Number.isFinite(exchangeToAmount) && transactionAmount > 0
+          ? exchangeToAmount / transactionAmount
+          : null
+
+      if (type === 'exchange' && (!Number.isFinite(exchangeToAmount) || exchangeToAmount <= 0)) {
+        return NextResponse.json({ error: 'Invalid exchange amount' }, { status: 400 })
+      }
 
       if (applyBalance) {
         const newFromBalance = fromAccount.type === 'credit_card'
           ? fromAccount.balance + transactionAmount
           : fromAccount.balance - transactionAmount
         const newToBalance = toAccount.type === 'credit_card'
-          ? toAccount.balance - transactionAmount
-          : toAccount.balance + transactionAmount
+          ? toAccount.balance - creditedAmount
+          : toAccount.balance + creditedAmount
 
         transactionOperations.push(
           prisma.account.update({ where: { id: fromAccountId }, data: { balance: newFromBalance } }),
@@ -305,8 +320,11 @@ export async function POST(request: Request) {
             amount: transactionAmount,
             currency,
             categoryKey: categoryKey || 'transfer',
+            exchangeToAmount: type === 'exchange' ? exchangeToAmount : null,
+            exchangeToCurrency: type === 'exchange' ? exchangeToCurrency : null,
+            exchangeRateApplied: type === 'exchange' ? exchangeRateApplied : null,
             notes: storedNotes,
-          },
+          } as any,
         })
       )
 
@@ -403,13 +421,16 @@ export async function DELETE(request: Request) {
           continue
         }
 
-        if (transaction.type === 'transfer' && transaction.fromAccount && transaction.toAccount) {
+        if ((transaction.type === 'transfer' || transaction.type === 'exchange') && transaction.fromAccount && transaction.toAccount) {
+          const creditedAmount = transaction.type === 'exchange'
+            ? Math.abs((transaction as any).exchangeToAmount || 0)
+            : Math.abs(transaction.amount)
           const restoredFromBalance = transaction.fromAccount.type === 'credit_card'
-            ? transaction.fromAccount.balance - transaction.amount
-            : transaction.fromAccount.balance + transaction.amount
+            ? transaction.fromAccount.balance - Math.abs(transaction.amount)
+            : transaction.fromAccount.balance + Math.abs(transaction.amount)
           const restoredToBalance = transaction.toAccount.type === 'credit_card'
-            ? transaction.toAccount.balance + transaction.amount
-            : transaction.toAccount.balance - transaction.amount
+            ? transaction.toAccount.balance + creditedAmount
+            : transaction.toAccount.balance - creditedAmount
 
           await tx.account.update({
             where: { id: transaction.fromAccount.id },

@@ -17,6 +17,8 @@ interface Transaction {
   amount: number;
   type: string;
   currency: string;
+  exchangeToAmount?: number | null;
+  exchangeToCurrency?: string | null;
   categoryKey?: string | null;
   notes?: string | null;
   category?: {
@@ -45,7 +47,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
   const { data, error, isLoading } = useTransactions(accountId)
   const { data: categories } = useCategories()
   const [sortBy, setSortBy] = useState<'date' | 'amount'>('date')
-  const [filterType, setFilterType] = useState<'all' | 'income' | 'expense' | 'transfer'>('all')
+  const [filterType, setFilterType] = useState<'all' | 'income' | 'expense' | 'transfer' | 'exchange'>('all')
   const [filterCategory, setFilterCategory] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [showFilters, setShowFilters] = useState(false)
@@ -277,13 +279,14 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
               <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1.5 ml-1">{tTransactions('filterBy')}</label>
               <select
                 value={filterType}
-                onChange={(e) => setFilterType(e.target.value as 'all' | 'income' | 'expense' | 'transfer')}
+                onChange={(e) => setFilterType(e.target.value as 'all' | 'income' | 'expense' | 'transfer' | 'exchange')}
                 className="w-full px-3 py-2 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 text-sm"
               >
                 <option value="all">{tTransactions('all')}</option>
                 <option value="income">{tTransactions('incomeOnly')}</option>
                 <option value="expense">{tTransactions('expenseOnly')}</option>
                 <option value="transfer">{tTransactions('transferOnly')}</option>
+                <option value="exchange">{tTransactions('exchangeOnly')}</option>
               </select>
             </div>
             <div>
@@ -343,13 +346,13 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
                   transaction.type === 'income' 
                     ? 'bg-emerald-50 text-emerald-600' 
-                    : transaction.type === 'transfer'
+                    : transaction.type === 'transfer' || transaction.type === 'exchange'
                     ? 'bg-blue-50 text-blue-600'
                     : 'bg-rose-50 text-rose-600'
                 }`}>
                   {transaction.type === 'income' ? (
                     <ArrowDownLeft className="w-5 h-5" />
-                  ) : transaction.type === 'transfer' ? (
+                  ) : transaction.type === 'transfer' || transaction.type === 'exchange' ? (
                     <ArrowRight className="w-5 h-5" />
                   ) : (
                     <ArrowUpRight className="w-5 h-5" />
@@ -381,10 +384,10 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
                     </span>
                     <span>•</span>
                     <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">
-                      {transaction.type === 'income' ? tTransactions('income') : transaction.type === 'expense' ? tTransactions('expense') : tTransactions('transfer')}
+                      {transaction.type === 'income' ? tTransactions('income') : transaction.type === 'expense' ? tTransactions('expense') : transaction.type === 'exchange' ? tTransactions('exchange') : tTransactions('transfer')}
                     </span>
                     
-                    {transaction.type === 'transfer' ? (
+                    {transaction.type === 'transfer' || transaction.type === 'exchange' ? (
                       <>
                         <span>•</span>
                         <span className="truncate max-w-[60px]">{transaction.fromAccount?.name}</span>
@@ -411,15 +414,16 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
                 <p className={`text-base md:text-lg font-black ${
                   transaction.type === 'income' 
                     ? 'text-emerald-600' 
-                    : transaction.type === 'transfer'
+                    : transaction.type === 'transfer' || transaction.type === 'exchange'
                     ? 'text-blue-600'
                     : 'text-rose-600'
                 }`}>
-                  {transaction.type === 'income' ? '+' : transaction.type === 'transfer' ? '' : '-'}
+                  {transaction.type === 'income' ? '+' : transaction.type === 'transfer' ? '' : transaction.type === 'exchange' ? '' : '-'}
                   {Math.abs(transaction.amount).toLocaleString()}
+                  {transaction.type === 'exchange' && transaction.exchangeToAmount ? ` → ${Math.abs(transaction.exchangeToAmount).toLocaleString()}` : ''}
                 </p>
                 <p className="text-[10px] font-bold text-slate-400">
-                  {transaction.currency}
+                  {transaction.type === 'exchange' && transaction.exchangeToCurrency ? `${transaction.currency} → ${transaction.exchangeToCurrency}` : transaction.currency}
                 </p>
               </div>
             </div>

@@ -16,13 +16,13 @@ export type DuplicateCheckInput = {
   toAccountId?: string | null
   date: string
   description: string
-  type: 'income' | 'expense' | 'transfer'
+  type: 'income' | 'expense' | 'transfer' | 'exchange'
   amount: number
   currency?: string | null
 }
 
 function normalizeType(value: string) {
-  if (value === 'income' || value === 'expense' || value === 'transfer') {
+  if (value === 'income' || value === 'expense' || value === 'transfer' || value === 'exchange') {
     return value
   }
 
@@ -56,7 +56,12 @@ function normalizeAmount(type: DuplicateComparableTransaction['type'], amount: n
 }
 
 function hasSameAccountScope(a: DuplicateCheckInput, b: DuplicateComparableTransaction) {
-  if (a.type === 'transfer' || normalizeType(b.type) === 'transfer') {
+  if (
+    a.type === 'transfer' ||
+    a.type === 'exchange' ||
+    normalizeType(b.type) === 'transfer' ||
+    normalizeType(b.type) === 'exchange'
+  ) {
     return (a.fromAccountId || null) === (b.fromAccountId || null)
       && (a.toAccountId || null) === (b.toAccountId || null)
   }
