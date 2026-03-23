@@ -240,7 +240,8 @@ export async function POST(request: Request) {
     }
 
     if (categoryKey) {
-      const category = await findCategoryForUser(userId, categoryKey)
+      const categoryMap = await getCategoryMapSafely(userId)
+      const category = categoryMap.get(categoryKey) ?? await findCategoryForUser(userId, categoryKey)
 
       if (!category) {
         return NextResponse.json({ error: 'Category not found' }, { status: 400 })
