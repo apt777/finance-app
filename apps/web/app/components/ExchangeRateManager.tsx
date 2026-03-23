@@ -18,7 +18,7 @@ import {
   getCurrencyName,
   getReverseRate 
 } from '@/lib/currency'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import AppLoadingState from '@/components/AppLoadingState'
 
 // Interface matching Prisma schema field names
@@ -38,6 +38,7 @@ interface ExchangeRateRequest {
 }
 
 const ExchangeRateManager = () => {
+  const locale = useLocale()
   const tSettings = useTranslations('settings')
   const tCommon = useTranslations('common')
   const queryClient = useQueryClient()
@@ -95,12 +96,12 @@ const ExchangeRateManager = () => {
     e.preventDefault()
     
     if (!formData.from || !formData.to || !formData.rate) {
-      alert('Please fill in all fields.')
+      alert(tCommon('error'))
       return
     }
 
     if (formData.from === formData.to) {
-      alert('Source and destination currency cannot be the same.')
+      alert(tSettings('swap'))
       return
     }
 
@@ -145,21 +146,21 @@ const ExchangeRateManager = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">{tSettings('exchangeRates')}</h2>
-          <p className="text-slate-600 text-sm mt-1">Manage your exchange rates manually</p>
+          <p className="text-slate-600 text-sm mt-1">{tSettings('exchangeRateDesc')}</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
           className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
         >
           <Plus className="w-5 h-5" />
-          <span>Add Rate</span>
+          <span>{tSettings('addRate')}</span>
         </button>
       </div>
 
       {/* Add/Edit Form */}
       {showForm && (
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-          <h3 className="text-lg font-bold text-slate-800 mb-4">Rate Settings</h3>
+          <h3 className="text-lg font-bold text-slate-800 mb-4">{tSettings('rateSettings')}</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
               {/* From Currency */}
@@ -187,7 +188,7 @@ const ExchangeRateManager = () => {
                   type="button"
                   onClick={handleSwapCurrencies}
                   className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                  title="Swap"
+                  title={tSettings('swap')}
                 >
                   <ArrowRightLeft className="w-5 h-5 text-slate-600" />
                 </button>
@@ -227,7 +228,7 @@ const ExchangeRateManager = () => {
                 value={formData.rate}
                 onChange={(e) => setFormData({ ...formData, rate: e.target.value })}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-white text-slate-900 placeholder-slate-400"
-                placeholder="e.g., 10.5"
+                placeholder={tSettings('rateExample', { from: formData.from, to: formData.to })}
                 required
               />
             </div>
@@ -301,7 +302,7 @@ const ExchangeRateManager = () => {
 
               {/* Rate Display */}
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 mb-4">
-                <p className="text-sm text-slate-600 mb-1">Current Rate</p>
+                <p className="text-sm text-slate-600 mb-1">{tSettings('currentRate')}</p>
                 <p className="text-2xl font-bold text-slate-800">
                   {rate.rate.toFixed(6)}
                 </p>
@@ -315,7 +316,7 @@ const ExchangeRateManager = () => {
                 <div className="flex items-center space-x-2 text-xs text-slate-500">
                   <Calendar className="w-4 h-4" />
                   <span>
-                    {tSettings('lastUpdated')}: {new Date(rate.updatedAt).toLocaleDateString('en-US', {
+                    {tSettings('lastUpdated')}: {new Date(rate.updatedAt).toLocaleDateString(locale === 'ko' ? 'ko-KR' : locale === 'ja' ? 'ja-JP' : locale === 'zh' ? 'zh-CN' : 'en-US', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',
@@ -332,13 +333,13 @@ const ExchangeRateManager = () => {
       ) : (
         <div className="bg-white rounded-2xl p-12 shadow-sm border border-slate-100 text-center">
           <RefreshCw className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-600 font-medium mb-4">No exchange rates configured.</p>
+          <p className="text-slate-600 font-medium mb-4">{tSettings('noRates')}</p>
           <button
             onClick={() => setShowForm(true)}
             className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
           >
             <Plus className="w-5 h-5" />
-            <span>Add your first rate</span>
+            <span>{tSettings('addFirstRate')}</span>
           </button>
         </div>
       )}
@@ -346,14 +347,14 @@ const ExchangeRateManager = () => {
       {/* Error Messages */}
       {updateRateMutation.isError && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-600 text-sm">
-          <p className="font-medium">Error updating rate</p>
+          <p className="font-medium">{tCommon('error')}</p>
           <p className="text-xs mt-1">{updateRateMutation.error.message}</p>
         </div>
       )}
 
       {deleteRateMutation.isError && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-600 text-sm">
-          <p className="font-medium">Error deleting rate</p>
+          <p className="font-medium">{tCommon('error')}</p>
           <p className="text-xs mt-1">{deleteRateMutation.error.message}</p>
         </div>
       )}
