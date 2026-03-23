@@ -46,6 +46,14 @@ const DISPLAY_PRIORITY: Record<string, number> = {
 }
 
 function getReadableQuote(rate: number) {
+  if (rate >= 1) {
+    return {
+      multiplier: 1,
+      converted: rate,
+      maximumFractionDigits: rate >= 100 ? 2 : rate >= 1 ? 4 : 6,
+    }
+  }
+
   const multipliers = [1, 10, 100, 1000, 10000, 100000, 1000000]
   const multiplier = multipliers.find((value) => rate * value >= 0.1 && rate * value < 1000) ?? 1000000
   const converted = rate * multiplier
