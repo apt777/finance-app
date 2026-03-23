@@ -5,9 +5,10 @@ import { useTransactions } from '@/hooks/useTransactions'
 import { useCategories } from '@/hooks/useCategories'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowUpRight, ArrowDownLeft, Filter, Download, Calendar, Search, Trash2, X, ArrowRight } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useUiTheme } from '@/context/UiThemeContext'
 import AppLoadingState from '@/components/AppLoadingState'
+import { getUiCopy } from '@/lib/uiCopy'
 
 interface Transaction {
   id: string;
@@ -42,6 +43,8 @@ interface Transaction {
 
 const TransactionList = ({ accountId }: { accountId?: string }) => {
   const { theme } = useUiTheme()
+  const locale = useLocale()
+  const ui = getUiCopy(locale)
   const tTransactions = useTranslations('transactions')
   const tCommon = useTranslations('common')
   const { data, error, isLoading } = useTransactions(accountId)
@@ -143,7 +146,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
       t.type,
       t.amount,
       t.currency,
-      t.account?.name || 'N/A'
+      t.account?.name || ui.transactionList.notAvailable
     ])
 
     const csv = [headers, ...rows].map(row => row.join(',')).join('\n')
@@ -321,7 +324,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
                 className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
               />
               <label htmlFor="select-all" className="ml-3 text-xs text-slate-500 font-medium cursor-pointer">
-                Select All ({selectedIds.length})
+                {ui.transactionList.selectAll(selectedIds.length)}
               </label>
             </div>
           )}

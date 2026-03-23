@@ -435,7 +435,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
               value={formData.description}
               onChange={handleChange}
               className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
-              placeholder="e.g., Lunch, Salary"
+              placeholder={ui.transactionForm.descriptionPlaceholder}
               required
             />
           </div>

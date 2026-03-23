@@ -7,10 +7,12 @@ import { Link } from '@/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { useColorMode } from '@/context/ColorModeContext'
 import { useUiTheme } from '@/context/UiThemeContext'
+import { getUiCopy } from '@/lib/uiCopy'
 
 export default function GoalsPage() {
   const t = useTranslations('goals')
   const locale = useLocale()
+  const ui = getUiCopy(locale)
   const { theme } = useUiTheme()
   const { colorMode } = useColorMode()
   const isDark = colorMode === 'dark'
@@ -33,7 +35,7 @@ export default function GoalsPage() {
                 <Target className="h-6 w-6" />
               </div>
               <div>
-                <p className={`text-[11px] font-bold uppercase tracking-[0.24em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Goal workspace</p>
+                <p className={`text-[11px] font-bold uppercase tracking-[0.24em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{ui.goals.workspaceLabel}</p>
                 <h1 className={`mt-2 text-[2rem] font-bold tracking-[-0.02em] ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('title')}</h1>
                 <p className={`mt-2 max-w-2xl text-sm leading-7 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                   {modernSubtitle}
@@ -64,7 +66,7 @@ export default function GoalsPage() {
           </div>
           <div>
             <h1 className="text-3xl font-black tracking-[-0.04em] text-slate-800">{t('title')}</h1>
-            <p className="text-slate-600 text-sm mt-1">Set financial goals and track your progress</p>
+            <p className="text-slate-600 text-sm mt-1">{ui.goals.classicSubtitle}</p>
           </div>
         </div>
         <Link

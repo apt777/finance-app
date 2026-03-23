@@ -111,21 +111,21 @@ export default function Login() {
                   <div className="mt-3 space-y-3">
                     <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-3 animate-[fadeIn_0.9s_ease-in-out]">
                       <div>
-                        <p className="text-sm font-semibold text-slate-900">Lunch</p>
+                        <p className="text-sm font-semibold text-slate-900">{ui.login.sampleLunch}</p>
                         <p className="text-xs text-slate-500">{ui.login.food}</p>
                       </div>
                       <p className="text-sm font-bold text-rose-600">-12,000</p>
                     </div>
                     <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-3 animate-[fadeIn_1.2s_ease-in-out]">
                       <div>
-                        <p className="text-sm font-semibold text-slate-900">Salary</p>
+                        <p className="text-sm font-semibold text-slate-900">{ui.login.sampleSalary}</p>
                         <p className="text-xs text-slate-500">{ui.login.salary}</p>
                       </div>
                       <p className="text-sm font-bold text-emerald-600">+320,000</p>
                     </div>
                     <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-3 animate-[fadeIn_1.5s_ease-in-out]">
                       <div>
-                        <p className="text-sm font-semibold text-slate-900">ETF Buy</p>
+                        <p className="text-sm font-semibold text-slate-900">{ui.login.sampleEtf}</p>
                         <p className="text-xs text-slate-500">{ui.login.investment}</p>
                       </div>
                       <p className="text-sm font-bold text-slate-900">-80,000</p>
@@ -164,7 +164,7 @@ export default function Login() {
                   autoComplete="email"
                   required
                   className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  placeholder="your@email.com"
+                  placeholder={ui.login.emailPlaceholder}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
@@ -186,7 +186,7 @@ export default function Login() {
                   autoComplete="current-password"
                   required
                   className="w-full pl-12 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  placeholder="••••••••"
+                  placeholder={ui.login.passwordPlaceholder}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}

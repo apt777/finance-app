@@ -100,7 +100,7 @@ export default function Register() {
             {/* Email Input */}
             <div>
               <label htmlFor="email-address" className="block text-sm font-medium text-slate-700 mb-2">
-                Email
+                {ui.register.emailLabel}
               </label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -111,7 +111,7 @@ export default function Register() {
                   autoComplete="email"
                   required
                   className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  placeholder="your@email.com"
+                  placeholder={ui.register.emailPlaceholder}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
@@ -122,7 +122,7 @@ export default function Register() {
             {/* Password Input */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">
-                Password
+                {ui.register.passwordLabel}
               </label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -133,7 +133,7 @@ export default function Register() {
                   autoComplete="new-password"
                   required
                   className="w-full pl-12 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  placeholder="••••••••"
+                  placeholder={ui.register.passwordPlaceholder}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
@@ -175,7 +175,7 @@ export default function Register() {
             {/* Confirm Password Input */}
             <div>
               <label htmlFor="confirm-password" className="block text-sm font-medium text-slate-700 mb-2">
-                Confirm password
+                {ui.register.confirmPasswordLabel}
               </label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -186,7 +186,7 @@ export default function Register() {
                   autoComplete="new-password"
                   required
                   className="w-full pl-12 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  placeholder="••••••••"
+                  placeholder={ui.register.confirmPasswordPlaceholder}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   disabled={isLoading}

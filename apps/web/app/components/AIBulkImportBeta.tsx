@@ -78,7 +78,7 @@ export default function AIBulkImportBeta() {
         ? 'この下書き一覧の中で重複しています。'
         : locale === 'zh'
           ? '与本次草稿列表中的交易重复。'
-          : '이번 일괄 등록 목록 안에서 중복됩니다.'
+          : '이번 미리보기 목록 안에서 중복됩니다.'
   const duplicateBadgeLabel =
     locale === 'en'
       ? 'Possible duplicate'
