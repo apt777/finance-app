@@ -9,6 +9,29 @@ interface ExchangeRateData {
 }
 
 const UPDATE_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
+const DEFAULT_TRACKED_CURRENCIES = ['JPY', 'USD', 'KRW']
+
+async function getTrackedCurrencies(userId: string) {
+  try {
+    const setting = await prisma.userSetting.findUnique({
+      where: {
+        userId_key: {
+          userId,
+          key: 'tracked_currencies',
+        },
+      },
+    })
+
+    if (!setting?.value) {
+      return DEFAULT_TRACKED_CURRENCIES
+    }
+
+    const parsed = JSON.parse(setting.value)
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_TRACKED_CURRENCIES
+  } catch {
+    return DEFAULT_TRACKED_CURRENCIES
+  }
+}
 
 async function updateRatesFromExternalApi(userId: string) {
   try {
@@ -21,7 +44,8 @@ async function updateRatesFromExternalApi(userId: string) {
     }
 
     const rates = data.rates;
-    const targets = ['KRW', 'USD', 'CNY', 'EUR', 'GBP']; // Major currencies to track
+    const trackedCurrencies = await getTrackedCurrencies(userId)
+    const targets = trackedCurrencies.filter((currency) => currency !== 'JPY')
 
     // Prepare operations for transaction
     const operations = [];
@@ -55,65 +79,7 @@ async function updateRatesFromExternalApi(userId: string) {
           })
         );
 
-        // Target -> JPY (Inverse)
-        if (rate !== 0) {
-          operations.push(
-            prisma.exchangeRate.upsert({
-              where: {
-                userId_fromCurrency_toCurrency: {
-                  userId,
-                  fromCurrency: target,
-                  toCurrency: 'JPY',
-                }
-              },
-              update: {
-                rate: 1 / rate,
-                source: 'api',
-                updatedAt: new Date(),
-              },
-              create: {
-                userId,
-                fromCurrency: target,
-                toCurrency: 'JPY',
-                rate: 1 / rate,
-                source: 'api',
-              }
-            })
-          );
-        }
       }
-    }
-
-    // Also handle KRW -> USD (Derived from JPY->KRW and JPY->USD)
-    // KRW -> USD = (JPY -> USD) / (JPY -> KRW)
-    if (rates['KRW'] && rates['USD']) {
-        const krwToUsd = rates['USD'] / rates['KRW'];
-        operations.push(
-            prisma.exchangeRate.upsert({
-                where: {
-                    userId_fromCurrency_toCurrency: {
-                        userId,
-                        fromCurrency: 'KRW',
-                        toCurrency: 'USD',
-                    }
-                },
-                update: { rate: krwToUsd, source: 'api', updatedAt: new Date() },
-                create: { userId, fromCurrency: 'KRW', toCurrency: 'USD', rate: krwToUsd, source: 'api' }
-            })
-        );
-         operations.push(
-            prisma.exchangeRate.upsert({
-                where: {
-                    userId_fromCurrency_toCurrency: {
-                        userId,
-                        fromCurrency: 'USD',
-                        toCurrency: 'KRW',
-                    }
-                },
-                update: { rate: 1 / krwToUsd, source: 'api', updatedAt: new Date() },
-                create: { userId, fromCurrency: 'USD', toCurrency: 'KRW', rate: 1 / krwToUsd, source: 'api' }
-            })
-        );
     }
 
     await prisma.$transaction(operations);

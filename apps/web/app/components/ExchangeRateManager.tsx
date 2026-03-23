@@ -14,11 +14,11 @@ import {
 } from 'lucide-react'
 import { 
   SUPPORTED_CURRENCIES, 
-  getCurrencySymbol, 
   getReverseRate 
 } from '@/lib/currency'
 import { useLocale, useTranslations } from 'next-intl'
 import AppLoadingState from '@/components/AppLoadingState'
+import { useTrackedCurrencies } from '@/hooks/useTrackedCurrencies'
 
 // Interface matching Prisma schema field names
 interface ExchangeRate {
@@ -42,6 +42,7 @@ const ExchangeRateManager = () => {
   const tCommon = useTranslations('common')
   const queryClient = useQueryClient()
   const { data, isLoading, isError } = useExchangeRates()
+  const { trackedCurrencies, updateTrackedCurrencies, isSaving } = useTrackedCurrencies()
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
@@ -125,6 +126,18 @@ const ExchangeRateManager = () => {
     }
   }
 
+  const handleToggleTrackedCurrency = async (currency: string) => {
+    const next = trackedCurrencies.includes(currency)
+      ? trackedCurrencies.filter((item) => item !== currency)
+      : [...trackedCurrencies, currency]
+
+    if (next.length < 2) {
+      return
+    }
+
+    await updateTrackedCurrencies(next)
+  }
+
   if (isLoading) {
     return <AppLoadingState label={tSettings('exchangeRates')} />
   }
@@ -138,6 +151,35 @@ const ExchangeRateManager = () => {
   }
 
   const exchangeRates: ExchangeRate[] = (data as ExchangeRate[]) || []
+  const visibleRates = exchangeRates
+    .filter((rate) => trackedCurrencies.includes(rate.fromCurrency) && trackedCurrencies.includes(rate.toCurrency))
+    .reduce<ExchangeRate[]>((list, current) => {
+      const existingIndex = list.findIndex((item) => {
+        return (
+          (item.fromCurrency === current.fromCurrency && item.toCurrency === current.toCurrency) ||
+          (item.fromCurrency === current.toCurrency && item.toCurrency === current.fromCurrency)
+        )
+      })
+
+      if (existingIndex === -1) {
+        list.push(current)
+        return list
+      }
+
+      const existing = list[existingIndex]
+      if (!existing) {
+        return list
+      }
+
+      const currentScore = current.rate >= 0.1 && current.rate < 1000 ? 1 : 0
+      const existingScore = existing.rate >= 0.1 && existing.rate < 1000 ? 1 : 0
+
+      if (currentScore > existingScore) {
+        list[existingIndex] = current
+      }
+
+      return list
+    }, [])
 
   return (
     <div className="space-y-6">
@@ -154,6 +196,32 @@ const ExchangeRateManager = () => {
           <Plus className="w-5 h-5" />
           <span>{tSettings('addRate')}</span>
         </button>
+      </div>
+
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <h3 className="text-lg font-bold text-slate-800">{tSettings('currencies')}</h3>
+        <p className="text-slate-600 text-sm mt-1">{tSettings('trackedCurrenciesDesc')}</p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          {SUPPORTED_CURRENCIES.map((currency) => {
+            const isActive = trackedCurrencies.includes(currency)
+
+            return (
+              <button
+                key={currency}
+                type="button"
+                onClick={() => handleToggleTrackedCurrency(currency)}
+                disabled={isSaving}
+                className={`rounded-full border px-4 py-2 text-sm font-semibold transition-all ${
+                  isActive
+                    ? 'border-blue-200 bg-blue-50 text-blue-700'
+                    : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700'
+                }`}
+              >
+                {currency}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* Add/Edit Form */}
@@ -258,9 +326,9 @@ const ExchangeRateManager = () => {
       )}
 
       {/* Exchange Rates List */}
-      {exchangeRates.length > 0 ? (
+      {visibleRates.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {exchangeRates.map((rate) => (
+          {visibleRates.map((rate) => (
             <div
               key={rate.id}
               className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-xl transition-all duration-200 card-hover"
@@ -306,7 +374,7 @@ const ExchangeRateManager = () => {
                   {rate.rate.toFixed(6)}
                 </p>
                 <p className="text-xs text-slate-500 mt-2">
-                  1 {getCurrencySymbol(rate.fromCurrency as any)} = {rate.rate.toFixed(6)} {getCurrencySymbol(rate.toCurrency as any)}
+                  1 {rate.fromCurrency} = {rate.rate.toFixed(6)} {rate.toCurrency}
                 </p>
               </div>
 

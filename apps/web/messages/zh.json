@@ -154,6 +154,7 @@
     "exchangeRateDesc": "只保留你需要的汇率，并在这里管理",
     "rateSettings": "汇率设置",
     "currencies": "货币",
+    "trackedCurrenciesDesc": "只选择你真正会使用的货币，让汇率列表更简洁。",
     "from": "从",
     "to": "到",
     "rate": "汇率",

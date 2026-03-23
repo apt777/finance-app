@@ -154,6 +154,7 @@
     "exchangeRateDesc": "必要な為替レートだけを追加して管理します",
     "rateSettings": "レート設定",
     "currencies": "通貨",
+    "trackedCurrenciesDesc": "実際に使う通貨だけを選び、為替レート一覧を見やすく保ちます。",
     "from": "出発地",
     "to": "目的地",
     "rate": "レート",

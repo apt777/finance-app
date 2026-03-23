@@ -13,6 +13,7 @@ import { useUiTheme } from '@/context/UiThemeContext'
 import { useLocale, useTranslations } from 'next-intl'
 import { useSearchParams } from 'next/navigation'
 import { SUPPORTED_CURRENCIES } from '@/lib/currency'
+import { useTrackedCurrencies } from '@/hooks/useTrackedCurrencies'
 
 export default function SettingsPage() {
   const tSettings = useTranslations('settings')
@@ -20,6 +21,7 @@ export default function SettingsPage() {
   const { theme, setTheme } = useUiTheme()
   const { colorMode, setColorMode } = useColorMode()
   const { baseCurrency, mirrorCurrency, setBaseCurrency, setMirrorCurrency } = useCurrencyPreferences()
+  const { trackedCurrencies, updateTrackedCurrencies, isSaving: isSavingTrackedCurrencies } = useTrackedCurrencies()
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState('theme')
   const languageNames =
@@ -51,6 +53,18 @@ export default function SettingsPage() {
     { id: 'security', label: tSettings('security'), icon: Lock },
     { id: 'notifications', label: tSettings('notifications'), icon: Bell },
   ]
+
+  const toggleTrackedCurrency = async (currency: string) => {
+    const next = trackedCurrencies.includes(currency)
+      ? trackedCurrencies.filter((item) => item !== currency)
+      : [...trackedCurrencies, currency]
+
+    if (next.length < 2) {
+      return
+    }
+
+    await updateTrackedCurrencies(next)
+  }
 
   return (
     <div className="space-y-6">
@@ -195,6 +209,32 @@ export default function SettingsPage() {
                         ))}
                       </select>
                     </div>
+                  </div>
+                </div>
+
+                <div className="mt-8 border-t border-slate-200 pt-6">
+                  <h4 className="text-base font-black tracking-[-0.02em] text-slate-950">{tSettings('currencies')}</h4>
+                  <p className="mt-2 text-sm text-slate-500">{tSettings('trackedCurrenciesDesc')}</p>
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    {SUPPORTED_CURRENCIES.map((currency) => {
+                      const active = trackedCurrencies.includes(currency)
+
+                      return (
+                        <button
+                          key={currency}
+                          type="button"
+                          onClick={() => toggleTrackedCurrency(currency)}
+                          disabled={isSavingTrackedCurrencies}
+                          className={`rounded-full border px-4 py-2 text-sm font-semibold transition-all ${
+                            active
+                              ? 'border-blue-300 bg-blue-50 text-blue-700 shadow-sm'
+                              : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-800'
+                          }`}
+                        >
+                          {currency}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
               </div>

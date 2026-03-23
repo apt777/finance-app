@@ -176,6 +176,7 @@
     "exchangeRateDesc": "Manage your exchange rates manually",
     "rateSettings": "Rate Settings",
     "currencies": "Currencies",
+    "trackedCurrenciesDesc": "Choose only the currencies you actively use to keep the exchange rate list focused.",
     "from": "From",
     "to": "To",
     "rate": "Rate",
