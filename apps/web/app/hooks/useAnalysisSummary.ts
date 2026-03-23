@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthProviderClient'
 export interface AnalysisSummary {
   monthly: Array<{ month: string; income: number; expense: number; net: number }>
   yearly: Array<{ year: number; income: number; expense: number; net: number }>
+  exchangeMonthly: Array<{ month: string; fromAmount: number; toAmount: number; count: number }>
   topCategories: Array<{ key: string; name: string; amount: number }>
   monthlyCategoryBreakdown: Array<{
     month: string

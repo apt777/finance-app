@@ -44,6 +44,10 @@ function normalizeTransactionType(
     return 'transfer'
   }
 
+  if (normalizedType === 'exchange') {
+    return 'exchange'
+  }
+
   if (categoryType === 'income' || categoryType === 'expense') {
     return categoryType
   }
@@ -90,6 +94,7 @@ export async function GET() {
     const categoryTotals = new Map<string, number>()
     const monthlyCategoryTotals = new Map<string, Map<string, number>>()
     const yearlyMap = new Map<number, { year: number; income: number; expense: number; net: number }>()
+    const exchangeMonthlyMap = new Map<string, { month: string; fromAmount: number; toAmount: number; count: number }>()
 
     for (const transaction of transactions) {
       const date = new Date(transaction.date)
@@ -108,6 +113,16 @@ export async function GET() {
       }
 
       const key = monthKey(date)
+
+      if (transactionType === 'exchange') {
+        const exchangeItem = exchangeMonthlyMap.get(key) ?? { month: key, fromAmount: 0, toAmount: 0, count: 0 }
+        exchangeItem.fromAmount += Math.abs(convertAmount(transaction.amount, transaction.currency, baseCurrency))
+        exchangeItem.toAmount += Math.abs(convertAmount(transaction.exchangeToAmount || 0, transaction.exchangeToCurrency || baseCurrency, baseCurrency))
+        exchangeItem.count += 1
+        exchangeMonthlyMap.set(key, exchangeItem)
+        continue
+      }
+
       const monthly = monthlyMap.get(key) ?? { month: key, income: 0, expense: 0, net: 0 }
       const yearly = yearlyMap.get(date.getFullYear()) ?? { year: date.getFullYear(), income: 0, expense: 0, net: 0 }
       const normalizedAmount = Math.abs(convertAmount(transaction.amount, transaction.currency, baseCurrency))
@@ -198,6 +213,7 @@ export async function GET() {
     return NextResponse.json({
       monthly: Array.from(monthlyMap.values()).slice(-12),
       yearly: Array.from(yearlyMap.values()).sort((a, b) => a.year - b.year),
+      exchangeMonthly: Array.from(exchangeMonthlyMap.values()).sort((a, b) => a.month.localeCompare(b.month)).slice(-12),
       topCategories,
       monthlyCategoryBreakdown,
       baseCurrency,
@@ -209,6 +225,7 @@ export async function GET() {
       {
         monthly: [],
         yearly: [],
+        exchangeMonthly: [],
         topCategories: [],
         monthlyCategoryBreakdown: [],
         baseCurrency: 'JPY',

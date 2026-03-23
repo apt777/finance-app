@@ -69,6 +69,7 @@ export default function AnalysisDashboard() {
 
   const currentMonth = data.monthly[data.monthly.length - 1]
   const previousMonth = data.monthly[data.monthly.length - 2]
+  const currentExchangeMonth = data.exchangeMonthly[data.exchangeMonthly.length - 1]
   const expenseDelta = currentMonth && previousMonth ? currentMonth.expense - previousMonth.expense : 0
   const overBudgetCount = data.budgetStatus.filter((item) => item.usagePercentage >= 100).length
   const categoryNameMap = new Map(categories.map((category) => [category.key, category.name]))
@@ -149,6 +150,32 @@ export default function AnalysisDashboard() {
           </p>
         </Link>
       </section>
+
+      {data.exchangeMonthly.length > 0 && (
+        <section className={`rounded-3xl border p-6 ${theme === 'modern' ? isDark ? 'border-white/10 bg-white/5 shadow-sm' : 'border-white/80 bg-white/80 shadow-sm' : 'border-slate-200 bg-white'}`}>
+          <div className="mb-6 flex items-start justify-between gap-4">
+            <div>
+              <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{ui.analysis.exchangeFlow}</h2>
+              <p className={`mt-1 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.analysis.exchangeFlowDesc}</p>
+            </div>
+            {currentExchangeMonth ? (
+              <span className={`inline-flex rounded-full px-3 py-1.5 text-xs font-semibold ${isDark ? 'bg-white/10 text-slate-200' : 'bg-slate-100 text-slate-700'}`}>
+                {ui.analysis.exchangeCount(currentExchangeMonth.count)}
+              </span>
+            ) : null}
+          </div>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={data.exchangeMonthly}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis dataKey="month" stroke="#64748b" />
+              <YAxis stroke="#64748b" />
+              <Tooltip />
+              <Bar dataKey="fromAmount" fill="#64748b" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="toAmount" fill="#2563eb" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </section>
+      )}
 
       <section className="grid grid-cols-1 xl:grid-cols-5 gap-6">
         <article className={`xl:col-span-3 rounded-3xl border p-6 ${theme === 'modern' ? isDark ? 'border-white/10 bg-white/5 shadow-sm' : 'border-white/80 bg-white/80 shadow-sm' : 'border-slate-200 bg-white'}`}>
