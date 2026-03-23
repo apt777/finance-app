@@ -2,8 +2,10 @@
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { useLocale } from 'next-intl'
+import { getLocaleBaseCurrency, getLocaleMirrorCurrency } from '@/lib/currencyPreferences'
+import type { SupportedCurrency } from '@/lib/currencyPreferences'
 
-export type SupportedCurrency = 'JPY' | 'KRW' | 'USD' | 'CNY' | 'EUR' | 'GBP'
+export type { SupportedCurrency }
 
 interface CurrencyPreferenceContextValue {
   baseCurrency: SupportedCurrency
@@ -15,7 +17,6 @@ interface CurrencyPreferenceContextValue {
 
 const BASE_STORAGE_KEY = 'kablus-base-currency'
 const MIRROR_STORAGE_KEY = 'kablus-mirror-currency'
-const FALLBACK_BASE_CURRENCY: SupportedCurrency = 'JPY'
 
 const CurrencyPreferenceContext = createContext<CurrencyPreferenceContextValue | undefined>(undefined)
 
@@ -23,17 +24,9 @@ const isSupportedCurrency = (value: string | null): value is SupportedCurrency =
   return value === 'JPY' || value === 'KRW' || value === 'USD' || value === 'CNY' || value === 'EUR' || value === 'GBP'
 }
 
-const getLocaleMirrorCurrency = (locale: string): SupportedCurrency => {
-  if (locale === 'ko') return 'KRW'
-  if (locale === 'ja') return 'JPY'
-  if (locale === 'zh') return 'CNY'
-  if (locale === 'en') return 'USD'
-  return 'KRW'
-}
-
 export function CurrencyPreferenceProvider({ children }: { children: React.ReactNode }) {
   const locale = useLocale()
-  const [baseCurrency, setBaseCurrencyState] = useState<SupportedCurrency>(FALLBACK_BASE_CURRENCY)
+  const [baseCurrency, setBaseCurrencyState] = useState<SupportedCurrency>(getLocaleBaseCurrency(locale))
   const [mirrorCurrency, setMirrorCurrencyState] = useState<SupportedCurrency>(getLocaleMirrorCurrency(locale))
   const [mounted, setMounted] = useState(false)
 
@@ -41,7 +34,7 @@ export function CurrencyPreferenceProvider({ children }: { children: React.React
     const savedBase = window.localStorage.getItem(BASE_STORAGE_KEY)
     const savedMirror = window.localStorage.getItem(MIRROR_STORAGE_KEY)
 
-    setBaseCurrencyState(isSupportedCurrency(savedBase) ? savedBase : FALLBACK_BASE_CURRENCY)
+    setBaseCurrencyState(isSupportedCurrency(savedBase) ? savedBase : getLocaleBaseCurrency(locale))
     setMirrorCurrencyState(isSupportedCurrency(savedMirror) ? savedMirror : getLocaleMirrorCurrency(locale))
     setMounted(true)
   }, [locale])

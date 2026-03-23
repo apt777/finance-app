@@ -3,6 +3,7 @@ import prisma from '@lib/prisma'
 import { requireRouteSession } from '@/lib/server-auth'
 import { ensureDefaultCategories } from '@/lib/categories'
 import { normalizeAppLocale } from '@/lib/defaultCategories'
+import { getLocaleBaseCurrency, getLocaleMirrorCurrency, getLocaleTrackedCurrencies } from '@/lib/currencyPreferences'
 
 interface AccountInput {
   name: string
@@ -69,19 +70,42 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { accounts, exchangeRates, budgets, recurringTransactions, locale } = await request.json() as {
+    const {
+      accounts,
+      exchangeRates,
+      budgets,
+      recurringTransactions,
+      locale,
+      trackedCurrencies,
+      baseCurrency,
+      mirrorCurrency,
+    } = await request.json() as {
       accounts: AccountInput[]
       exchangeRates: ExchangeRateInput[]
       budgets?: BudgetInput[]
       recurringTransactions?: RecurringInput[]
       locale?: string
+      trackedCurrencies?: string[]
+      baseCurrency?: string
+      mirrorCurrency?: string
     }
 
     if (!Array.isArray(accounts) || !Array.isArray(exchangeRates)) {
       return NextResponse.json({ error: 'Invalid setup payload' }, { status: 400 })
     }
 
-    await ensureDefaultCategories(userId, normalizeAppLocale(locale))
+    const normalizedLocale = normalizeAppLocale(locale)
+    const resolvedTrackedCurrencies = Array.isArray(trackedCurrencies) && trackedCurrencies.length >= 2
+      ? trackedCurrencies
+      : getLocaleTrackedCurrencies(normalizedLocale)
+    const resolvedBaseCurrency = typeof baseCurrency === 'string'
+      ? baseCurrency
+      : getLocaleBaseCurrency(normalizedLocale)
+    const resolvedMirrorCurrency = typeof mirrorCurrency === 'string'
+      ? mirrorCurrency
+      : getLocaleMirrorCurrency(normalizedLocale)
+
+    await ensureDefaultCategories(userId, normalizedLocale)
 
     const accountIdMap = new Map<string, string>()
 
@@ -190,6 +214,57 @@ export async function POST(request: NextRequest) {
           userId,
           key: 'onboarding_completed',
           value: 'true',
+        },
+      })
+
+      await tx.userSetting.upsert({
+        where: {
+          userId_key: {
+            userId,
+            key: 'tracked_currencies',
+          },
+        },
+        update: {
+          value: JSON.stringify(resolvedTrackedCurrencies),
+        },
+        create: {
+          userId,
+          key: 'tracked_currencies',
+          value: JSON.stringify(resolvedTrackedCurrencies),
+        },
+      })
+
+      await tx.userSetting.upsert({
+        where: {
+          userId_key: {
+            userId,
+            key: 'dashboard_base_currency',
+          },
+        },
+        update: {
+          value: resolvedBaseCurrency,
+        },
+        create: {
+          userId,
+          key: 'dashboard_base_currency',
+          value: resolvedBaseCurrency,
+        },
+      })
+
+      await tx.userSetting.upsert({
+        where: {
+          userId_key: {
+            userId,
+            key: 'dashboard_mirror_currency',
+          },
+        },
+        update: {
+          value: resolvedMirrorCurrency,
+        },
+        create: {
+          userId,
+          key: 'dashboard_mirror_currency',
+          value: resolvedMirrorCurrency,
         },
       })
     })

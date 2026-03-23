@@ -9,6 +9,9 @@ import { useQueryClient } from '@tanstack/react-query'
 import { getDefaultTransactionCategories } from '@/lib/defaultCategories'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import { getUiCopy } from '@/lib/uiCopy'
+import { SUPPORTED_CURRENCIES } from '@/lib/currency'
+import { getLocaleBaseCurrency, getLocaleMirrorCurrency, getLocaleTrackedCurrencies } from '@/lib/currencyPreferences'
+import type { SupportedCurrency } from '@/lib/currencyPreferences'
 
 interface AccountInput {
   name?: string
@@ -64,16 +67,19 @@ export default function SetupPage() {
   const [currencies, setCurrencies] = useState<Array<{ code: string }>>([])
   const [accountTypes, setAccountTypes] = useState<Array<{ key: string; name: string }>>([])
   const [categories, setCategories] = useState<Array<{ key: string; name: string; type: string }>>([])
+  const [baseCurrency, setBaseCurrency] = useState(getLocaleBaseCurrency(locale))
+  const [mirrorCurrency, setMirrorCurrency] = useState(getLocaleMirrorCurrency(locale))
+  const [trackedCurrencies, setTrackedCurrencies] = useState<string[]>(getLocaleTrackedCurrencies(locale))
 
   const [accounts, setAccounts] = useState<AccountInput[]>([
-    { name: '', type: 'checking', currency: 'JPY', balance: '' },
+    { name: '', type: 'checking', currency: getLocaleBaseCurrency(locale), balance: '' },
   ])
   const [budgets, setBudgets] = useState<BudgetInput[]>([
     {
       name: ui.setup.defaultBudgetName,
       categoryKey: 'food',
       amount: '',
-      currency: 'JPY',
+      currency: getLocaleBaseCurrency(locale),
       period: 'monthly',
       year: today.getFullYear(),
       month: today.getMonth() + 1,
@@ -86,7 +92,7 @@ export default function SetupPage() {
       description: '',
       type: 'expense',
       amount: '',
-      currency: 'JPY',
+      currency: getLocaleBaseCurrency(locale),
       categoryKey: 'housing',
       accountName: '',
       fromAccountName: '',
@@ -135,6 +141,12 @@ export default function SetupPage() {
     }
   }, [searchParams])
 
+  useEffect(() => {
+    setBaseCurrency((current) => current || getLocaleBaseCurrency(locale))
+    setMirrorCurrency((current) => current || getLocaleMirrorCurrency(locale))
+    setTrackedCurrencies((current) => (current.length >= 2 ? current : getLocaleTrackedCurrencies(locale)))
+  }, [locale])
+
   const expenseCategories = useMemo(
     () => categories.filter((category) => category.type === 'expense'),
     [categories]
@@ -155,7 +167,7 @@ export default function SetupPage() {
       .map((account) => ({
         name: account.name?.trim(),
         type: account.type || 'checking',
-        currency: account.currency || 'JPY',
+        currency: account.currency || baseCurrency,
         balance: Number(account.balance) || 0,
       }))
 
@@ -167,6 +179,9 @@ export default function SetupPage() {
           accounts: normalizedAccounts,
           exchangeRates: [],
           locale,
+          trackedCurrencies,
+          baseCurrency,
+          mirrorCurrency,
           budgets: budgets.filter((budget) => Number(budget.amount) > 0),
           recurringTransactions: recurringTransactions
             .filter((item) => item.name && item.description && Number(item.amount) > 0)
@@ -192,7 +207,11 @@ export default function SetupPage() {
         queryClient.invalidateQueries({ queryKey: ['accounts'] }),
         queryClient.invalidateQueries({ queryKey: ['budgets'] }),
         queryClient.invalidateQueries({ queryKey: ['recurring-transactions'] }),
+        queryClient.invalidateQueries({ queryKey: ['trackedCurrencies'] }),
       ])
+
+      window.localStorage.setItem('kablus-base-currency', baseCurrency)
+      window.localStorage.setItem('kablus-mirror-currency', mirrorCurrency)
 
       router.push('/')
     } catch (submitError: any) {
@@ -203,7 +222,7 @@ export default function SetupPage() {
   }
 
   const addAccount = () => {
-    setAccounts((current) => [...current, { name: '', type: 'checking', currency: 'JPY', balance: '' }])
+    setAccounts((current) => [...current, { name: '', type: 'checking', currency: baseCurrency, balance: '' }])
   }
 
   const addBudget = () => {
@@ -213,7 +232,7 @@ export default function SetupPage() {
         name: '',
         categoryKey: expenseCategories[0]?.key ?? 'food',
         amount: '',
-        currency: 'JPY',
+        currency: baseCurrency,
         period: 'monthly',
         year: today.getFullYear(),
         month: today.getMonth() + 1,
@@ -234,6 +253,9 @@ export default function SetupPage() {
           accounts: [],
           exchangeRates: [],
           locale,
+          trackedCurrencies,
+          baseCurrency,
+          mirrorCurrency,
           budgets: [],
           recurringTransactions: [],
         }),
@@ -245,6 +267,9 @@ export default function SetupPage() {
       }
 
       await queryClient.invalidateQueries({ queryKey: ['setup-status'] })
+      await queryClient.invalidateQueries({ queryKey: ['trackedCurrencies'] })
+      window.localStorage.setItem('kablus-base-currency', baseCurrency)
+      window.localStorage.setItem('kablus-mirror-currency', mirrorCurrency)
       router.push('/')
     } catch (skipError: any) {
       setError(skipError.message)
@@ -261,7 +286,7 @@ export default function SetupPage() {
         description: '',
         type: 'expense',
         amount: '',
-        currency: 'JPY',
+        currency: baseCurrency,
         categoryKey: expenseCategories[0]?.key ?? 'food',
         accountName: '',
         fromAccountName: '',
@@ -284,6 +309,48 @@ export default function SetupPage() {
   const deleteButtonClassName =
     'inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors'
 
+  const ensureTrackedCurrency = (currency: string) => {
+    setTrackedCurrencies((current) => (current.includes(currency) ? current : [...current, currency]))
+  }
+
+  const handleBaseCurrencyChange = (currency: SupportedCurrency) => {
+    setBaseCurrency((current) => {
+      setAccounts((items) => items.map((item) => ({
+        ...item,
+        currency: item.currency === current ? currency : item.currency,
+      })))
+      setBudgets((items) => items.map((item) => ({
+        ...item,
+        currency: item.currency === current ? currency : item.currency,
+      })))
+      setRecurringTransactions((items) => items.map((item) => ({
+        ...item,
+        currency: item.currency === current ? currency : item.currency,
+      })))
+      return currency
+    })
+
+    ensureTrackedCurrency(currency)
+  }
+
+  const handleMirrorCurrencyChange = (currency: SupportedCurrency) => {
+    setMirrorCurrency(currency)
+    ensureTrackedCurrency(currency)
+  }
+
+  const toggleTrackedCurrency = (currency: string) => {
+    setTrackedCurrencies((current) => {
+      if (current.includes(currency)) {
+        if (currency === baseCurrency || currency === mirrorCurrency) {
+          return current
+        }
+        return current.length <= 2 ? current : current.filter((item) => item !== currency)
+      }
+
+      return [...current, currency]
+    })
+  }
+
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       <section className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8">
@@ -304,6 +371,70 @@ export default function SetupPage() {
               <p className="mt-1 text-xs text-slate-500">{ui.setup.languageDesc}</p>
               <div className="mt-3">
                 <LanguageSwitcher align="start" />
+              </div>
+            </div>
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-semibold text-slate-800">{ui.setup.currencyTitle}</p>
+              <p className="mt-1 text-xs text-slate-500">{ui.setup.currencyDesc}</p>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    {ui.setup.baseCurrencyLabel}
+                  </label>
+                  <select
+                    value={baseCurrency}
+                    onChange={(event) => handleBaseCurrencyChange(event.target.value as SupportedCurrency)}
+                    className={`${selectClassName} mt-2`}
+                  >
+                    {SUPPORTED_CURRENCIES.map((currency) => (
+                      <option key={currency} value={currency}>
+                        {currency}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    {ui.setup.mirrorCurrencyLabel}
+                  </label>
+                  <select
+                    value={mirrorCurrency}
+                    onChange={(event) => handleMirrorCurrencyChange(event.target.value as SupportedCurrency)}
+                    className={`${selectClassName} mt-2`}
+                  >
+                    {SUPPORTED_CURRENCIES.map((currency) => (
+                      <option key={currency} value={currency}>
+                        {currency}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="mt-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  {ui.setup.trackedCurrenciesLabel}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">{ui.setup.trackedCurrenciesDesc}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {SUPPORTED_CURRENCIES.map((currency) => {
+                    const active = trackedCurrencies.includes(currency)
+
+                    return (
+                      <button
+                        key={currency}
+                        type="button"
+                        onClick={() => toggleTrackedCurrency(currency)}
+                        className={`rounded-full border px-4 py-2 text-sm font-semibold transition-all ${
+                          active
+                            ? 'border-blue-300 bg-blue-50 text-blue-700 shadow-sm'
+                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-800'
+                        }`}
+                      >
+                        {currency}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
             </div>
           </div>
