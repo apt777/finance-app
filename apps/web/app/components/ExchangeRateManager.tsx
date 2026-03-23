@@ -36,6 +36,18 @@ interface ExchangeRateRequest {
   rate: number
 }
 
+function getReadableQuote(rate: number) {
+  const multipliers = [1, 10, 100, 1000, 10000, 100000, 1000000]
+  const multiplier = multipliers.find((value) => rate * value >= 0.1 && rate * value < 1000) ?? 1000000
+  const converted = rate * multiplier
+
+  return {
+    multiplier,
+    converted,
+    maximumFractionDigits: converted >= 100 ? 2 : converted >= 1 ? 4 : 6,
+  }
+}
+
 const ExchangeRateManager = () => {
   const locale = useLocale()
   const tSettings = useTranslations('settings')
@@ -180,6 +192,19 @@ const ExchangeRateManager = () => {
 
       return list
     }, [])
+    .sort((left, right) => {
+      const leftFromIndex = trackedCurrencies.indexOf(left.fromCurrency)
+      const rightFromIndex = trackedCurrencies.indexOf(right.fromCurrency)
+      const leftToIndex = trackedCurrencies.indexOf(left.toCurrency)
+      const rightToIndex = trackedCurrencies.indexOf(right.toCurrency)
+
+      return (
+        leftFromIndex - rightFromIndex ||
+        leftToIndex - rightToIndex ||
+        left.fromCurrency.localeCompare(right.fromCurrency) ||
+        left.toCurrency.localeCompare(right.toCurrency)
+      )
+    })
 
   return (
     <div className="space-y-6">
@@ -328,74 +353,82 @@ const ExchangeRateManager = () => {
       {/* Exchange Rates List */}
       {visibleRates.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {visibleRates.map((rate) => (
-            <div
-              key={rate.id}
-              className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-xl transition-all duration-200 card-hover"
-            >
-              {/* Header */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                  <TrendingUp className="w-5 h-5 text-blue-600" />
-                  <span className="font-bold text-slate-800">
-                    {rate.fromCurrency} → {rate.toCurrency}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => {
-                      setEditingId(rate.id)
-                      setFormData({
-                        from: rate.fromCurrency,
-                        to: rate.toCurrency,
-                        rate: rate.rate.toString(),
-                      })
-                      setShowForm(true)
-                    }}
-                    className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                    title={tCommon('edit')}
-                  >
-                    <Edit2 className="w-4 h-4 text-slate-600" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(rate.id)}
-                    className="p-2 hover:bg-red-50 rounded-lg transition-colors"
-                    title={tCommon('delete')}
-                  >
-                    <Trash2 className="w-4 h-4 text-red-500" />
-                  </button>
-                </div>
-              </div>
+          {visibleRates.map((rate) => {
+            const quote = getReadableQuote(rate.rate)
+            const formattedQuote = quote.converted.toLocaleString(
+              locale === 'ko' ? 'ko-KR' : locale === 'ja' ? 'ja-JP' : locale === 'zh' ? 'zh-CN' : 'en-US',
+              {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: quote.maximumFractionDigits,
+              }
+            )
 
-              {/* Rate Display */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 mb-4">
-                <p className="text-sm text-slate-600 mb-1">{tSettings('currentRate')}</p>
-                <p className="text-2xl font-bold text-slate-800">
-                  {rate.rate.toFixed(6)}
-                </p>
-                <p className="text-xs text-slate-500 mt-2">
-                  1 {rate.fromCurrency} = {rate.rate.toFixed(6)} {rate.toCurrency}
-                </p>
-              </div>
-
-              {/* Last Updated */}
-              {rate.updatedAt && (
-                <div className="flex items-center space-x-2 text-xs text-slate-500">
-                  <Calendar className="w-4 h-4" />
-                  <span>
-                    {tSettings('lastUpdated')}: {new Date(rate.updatedAt).toLocaleDateString(locale === 'ko' ? 'ko-KR' : locale === 'ja' ? 'ja-JP' : locale === 'zh' ? 'zh-CN' : 'en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: 'numeric',
-                      minute: 'numeric',
-                      hour12: false
-                    })}
-                  </span>
+            return (
+              <div
+                key={rate.id}
+                className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-xl transition-all duration-200 card-hover"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-2">
+                    <TrendingUp className="w-5 h-5 text-blue-600" />
+                    <span className="font-bold text-slate-800">
+                      {rate.fromCurrency} → {rate.toCurrency}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => {
+                        setEditingId(rate.id)
+                        setFormData({
+                          from: rate.fromCurrency,
+                          to: rate.toCurrency,
+                          rate: rate.rate.toString(),
+                        })
+                        setShowForm(true)
+                      }}
+                      className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                      title={tCommon('edit')}
+                    >
+                      <Edit2 className="w-4 h-4 text-slate-600" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(rate.id)}
+                      className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                      title={tCommon('delete')}
+                    >
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </button>
+                  </div>
                 </div>
-              )}
-            </div>
-          ))}
+
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 mb-4">
+                  <p className="text-sm text-slate-600 mb-1">{tSettings('currentRate')}</p>
+                  <p className="text-2xl font-bold text-slate-800">
+                    {formattedQuote}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-2">
+                    {quote.multiplier.toLocaleString()} {rate.fromCurrency} = {formattedQuote} {rate.toCurrency}
+                  </p>
+                </div>
+
+                {rate.updatedAt && (
+                  <div className="flex items-center space-x-2 text-xs text-slate-500">
+                    <Calendar className="w-4 h-4" />
+                    <span>
+                      {tSettings('lastUpdated')}: {new Date(rate.updatedAt).toLocaleDateString(locale === 'ko' ? 'ko-KR' : locale === 'ja' ? 'ja-JP' : locale === 'zh' ? 'zh-CN' : 'en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: 'numeric',
+                        hour12: false
+                      })}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
       ) : (
         <div className="bg-white rounded-2xl p-12 shadow-sm border border-slate-100 text-center">
