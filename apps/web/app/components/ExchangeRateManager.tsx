@@ -36,6 +36,15 @@ interface ExchangeRateRequest {
   rate: number
 }
 
+const DISPLAY_PRIORITY: Record<string, number> = {
+  USD: 6,
+  EUR: 5,
+  GBP: 4,
+  CNY: 3,
+  JPY: 2,
+  KRW: 1,
+}
+
 function getReadableQuote(rate: number) {
   const multipliers = [1, 10, 100, 1000, 10000, 100000, 1000000]
   const multiplier = multipliers.find((value) => rate * value >= 0.1 && rate * value < 1000) ?? 1000000
@@ -48,6 +57,23 @@ function getReadableQuote(rate: number) {
   }
 }
 
+function getDisplayRate(rate: ExchangeRate) {
+  const fromPriority = DISPLAY_PRIORITY[rate.fromCurrency] ?? 0
+  const toPriority = DISPLAY_PRIORITY[rate.toCurrency] ?? 0
+  const shouldSwap = toPriority > fromPriority && rate.rate !== 0
+  const displayFromCurrency = shouldSwap ? rate.toCurrency : rate.fromCurrency
+  const displayToCurrency = shouldSwap ? rate.fromCurrency : rate.toCurrency
+  const effectiveRate = shouldSwap ? 1 / rate.rate : rate.rate
+  const quote = getReadableQuote(effectiveRate)
+
+  return {
+    displayFromCurrency,
+    displayToCurrency,
+    effectiveRate,
+    quote,
+  }
+}
+
 const ExchangeRateManager = () => {
   const locale = useLocale()
   const tSettings = useTranslations('settings')
@@ -55,6 +81,7 @@ const ExchangeRateManager = () => {
   const queryClient = useQueryClient()
   const { data, isLoading, isError } = useExchangeRates()
   const { trackedCurrencies, updateTrackedCurrencies, isSaving } = useTrackedCurrencies()
+  const [pendingCurrency, setPendingCurrency] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
@@ -147,7 +174,12 @@ const ExchangeRateManager = () => {
       return
     }
 
-    await updateTrackedCurrencies(next)
+    try {
+      setPendingCurrency(currency)
+      await updateTrackedCurrencies(next)
+    } finally {
+      setPendingCurrency(null)
+    }
   }
 
   if (isLoading) {
@@ -242,11 +274,19 @@ const ExchangeRateManager = () => {
                     : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700'
                 }`}
               >
-                {currency}
+                <span className="inline-flex items-center gap-2">
+                  {pendingCurrency === currency ? (
+                    <span className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                  ) : null}
+                  {currency}
+                </span>
               </button>
             )
           })}
         </div>
+        {pendingCurrency ? (
+          <p className="mt-3 text-xs text-slate-500">{tCommon('loading')}</p>
+        ) : null}
       </div>
 
       {/* Add/Edit Form */}
@@ -354,7 +394,7 @@ const ExchangeRateManager = () => {
       {visibleRates.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {visibleRates.map((rate) => {
-            const quote = getReadableQuote(rate.rate)
+            const { displayFromCurrency, displayToCurrency, quote } = getDisplayRate(rate)
             const formattedQuote = quote.converted.toLocaleString(
               locale === 'ko' ? 'ko-KR' : locale === 'ja' ? 'ja-JP' : locale === 'zh' ? 'zh-CN' : 'en-US',
               {
@@ -372,7 +412,7 @@ const ExchangeRateManager = () => {
                   <div className="flex items-center space-x-2">
                     <TrendingUp className="w-5 h-5 text-blue-600" />
                     <span className="font-bold text-slate-800">
-                      {rate.fromCurrency} → {rate.toCurrency}
+                      {displayFromCurrency} → {displayToCurrency}
                     </span>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -407,7 +447,7 @@ const ExchangeRateManager = () => {
                     {formattedQuote}
                   </p>
                   <p className="text-xs text-slate-500 mt-2">
-                    {quote.multiplier.toLocaleString()} {rate.fromCurrency} = {formattedQuote} {rate.toCurrency}
+                    {quote.multiplier.toLocaleString()} {displayFromCurrency} = {formattedQuote} {displayToCurrency}
                   </p>
                 </div>
 

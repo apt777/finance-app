@@ -329,10 +329,11 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
           {sortedTransactions.map((transaction: Transaction) => (
             <div
               key={transaction.id}
-              className={`bg-white rounded-2xl p-4 shadow-sm border transition-all duration-200 flex items-center justify-between group ${
+              className={`bg-white rounded-2xl p-4 shadow-sm border transition-all duration-200 group ${
                 isEditMode && selectedIds.includes(transaction.id) ? 'border-blue-300 bg-blue-50/30' : 'border-slate-100 hover:border-blue-100'
               }`}
             >
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center space-x-3 flex-1 min-w-0">
                 {isEditMode && (
                   <input
@@ -361,13 +362,13 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
 
                 {/* Details */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <p className="font-bold text-slate-800 text-sm md:text-base truncate group-hover:text-blue-600 transition-colors">
                       {transaction.description}
                     </p>
                     {transaction.category && (
                       <span
-                        className="text-[10px] font-semibold px-2 py-1 rounded-full"
+                        className="max-w-full truncate text-[10px] font-semibold px-2 py-1 rounded-full"
                         style={{
                           backgroundColor: `${transaction.category.color || '#cbd5e1'}22`,
                           color: transaction.category.color || '#475569',
@@ -377,7 +378,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 text-[10px] md:text-xs text-slate-400 mt-0.5">
+                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] md:text-xs text-slate-400">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
                       {new Date(transaction.date).toLocaleDateString()}
@@ -390,15 +391,15 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
                     {transaction.type === 'transfer' || transaction.type === 'exchange' ? (
                       <>
                         <span>•</span>
-                        <span className="truncate max-w-[60px]">{transaction.fromAccount?.name}</span>
+                        <span className="max-w-[96px] truncate">{transaction.fromAccount?.name}</span>
                         <ArrowRight className="w-3 h-3 mx-0.5" />
-                        <span className="truncate max-w-[60px]">{transaction.toAccount?.name}</span>
+                        <span className="max-w-[96px] truncate">{transaction.toAccount?.name}</span>
                       </>
                     ) : (
                       transaction.account && (
                         <>
                           <span>•</span>
-                          <span className="truncate max-w-[80px]">{transaction.account.name}</span>
+                          <span className="max-w-[112px] truncate">{transaction.account.name}</span>
                         </>
                       )
                     )}
@@ -410,7 +411,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
               </div>
 
               {/* Amount */}
-              <div className="text-right ml-3">
+              <div className="ml-[52px] text-left sm:ml-3 sm:text-right">
                 <p className={`text-base md:text-lg font-black ${
                   transaction.type === 'income' 
                     ? 'text-emerald-600' 
@@ -425,6 +426,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
                 <p className="text-[10px] font-bold text-slate-400">
                   {transaction.type === 'exchange' && transaction.exchangeToCurrency ? `${transaction.currency} → ${transaction.exchangeToCurrency}` : transaction.currency}
                 </p>
+              </div>
               </div>
             </div>
           ))}

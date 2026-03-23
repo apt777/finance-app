@@ -193,12 +193,12 @@ const HoldingsList = () => {
                 >
                   {/* Header */}
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 border-b border-slate-200">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="text-2xl font-bold text-slate-800">{holding.symbol}</h3>
-                        <p className="text-sm text-slate-600 mt-1">{holding.name || accountName}</p>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="truncate text-2xl font-bold text-slate-800">{holding.symbol}</h3>
+                        <p className="mt-1 truncate text-sm text-slate-600">{holding.name || accountName}</p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 shrink-0">
                         <button
                           type="button"
                           onClick={() => handleDeleteHolding(holding.id)}
@@ -232,7 +232,7 @@ const HoldingsList = () => {
                     </div>
 
                     {/* Cost Basis */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="bg-slate-50 rounded-lg p-4">
                         <p className="text-xs text-slate-600 mb-1">{tHoldings('costBasis')}</p>
                         <p className="text-sm font-bold text-slate-800">
@@ -258,7 +258,7 @@ const HoldingsList = () => {
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <Link
                         href={`/holdings/add?mode=buy&holdingId=${holding.id}`}
                         className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"

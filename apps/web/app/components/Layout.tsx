@@ -424,9 +424,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <div className={`min-h-screen pb-8 ${isDark ? 'text-slate-100' : ''}`}>
       {modernTopNav}
       <main
-        className="px-4 pb-16 md:px-8 md:pb-20 md:pt-[148px]"
+        className="px-4 pb-16 md:px-8 md:pb-20 md:pt-[156px]"
         style={{
-          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 140px)',
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 156px)',
         }}
       >
         <div className="mx-auto max-w-[1680px] fade-in">
