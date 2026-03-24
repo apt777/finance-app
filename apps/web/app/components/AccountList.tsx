@@ -5,7 +5,7 @@ import { useAccounts } from '@/hooks/useAccounts'
 import { Link } from '@/navigation'
 import { useRouter } from '@/navigation'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Trash2, Plus, Wallet, CreditCard, PiggyBank, TrendingUp, Filter, ChevronRight } from 'lucide-react'
+import { Trash2, Plus, Wallet, CreditCard, PiggyBank, TrendingUp, Filter, ChevronRight, Pencil } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useUiTheme } from '@/context/UiThemeContext'
 import AppLoadingState from '@/components/AppLoadingState'
@@ -209,6 +209,16 @@ const AccountList = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      router.push(`/accounts/${account.id}/edit`)
+                    }}
+                    className="p-2 text-slate-300 hover:text-blue-500 transition-colors"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
                   <button
                     onClick={(e) => handleDelete(e, account.id, account.name)}
                     className="p-2 text-slate-300 hover:text-red-500 transition-colors"

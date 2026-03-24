@@ -17,19 +17,21 @@ interface ParsedRow {
   description?: string
   amount?: number
   type?: 'income' | 'expense' | 'transfer'
+  accountId?: string | null
+  accountName?: string | null
   categoryKey?: string | null
   categoryName?: string | null
   confidence?: number
   error?: string | null
 }
 
-const parseTransactions = async (input: string) => {
+const parseTransactions = async ({ input, defaultAccountId }: { input: string; defaultAccountId?: string }) => {
   const response = await fetch('/api/beta/transaction-bulk-parse', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ input }),
+    body: JSON.stringify({ input, defaultAccountId }),
   })
 
   if (!response.ok) {
@@ -114,7 +116,8 @@ export default function AIBulkImportBeta() {
   const [feedback, setFeedback] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const selectedAccount = accounts.find((account) => account.id === selectedAccountId)
+  const getEffectiveAccountId = (row: ParsedRow) => row.accountId || selectedAccountId
+  const getEffectiveAccount = (row: ParsedRow) => accounts.find((account) => account.id === getEffectiveAccountId(row))
   const duplicateState = useMemo(() => {
     const result = new Map<string, string>()
     const seenDraftRows: Array<{
@@ -127,18 +130,21 @@ export default function AIBulkImportBeta() {
     }> = []
 
     for (const row of rows) {
-      if (!selectedAccountId || row.error || row.type === 'transfer' || !row.date || !row.description || !row.amount || !row.type) {
+      const effectiveAccountId = getEffectiveAccountId(row)
+      const effectiveAccount = accounts.find((account) => account.id === effectiveAccountId)
+
+      if (!effectiveAccountId || row.error || row.type === 'transfer' || !row.date || !row.description || !row.amount || !row.type) {
         continue
       }
 
       const duplicateInExisting = findDuplicateTransaction(
         {
-          accountId: selectedAccountId,
+          accountId: effectiveAccountId,
           date: row.date,
           description: row.description,
           type: row.type,
           amount: Number(row.amount),
-          currency: selectedAccount?.currency,
+          currency: effectiveAccount?.currency,
         },
         existingTransactions
       )
@@ -150,12 +156,12 @@ export default function AIBulkImportBeta() {
 
       const duplicateInDraft = findDuplicateTransaction(
         {
-          accountId: selectedAccountId,
+          accountId: effectiveAccountId,
           date: row.date,
           description: row.description,
           type: row.type,
           amount: Number(row.amount),
-          currency: selectedAccount?.currency,
+          currency: effectiveAccount?.currency,
         },
         seenDraftRows
       )
@@ -167,7 +173,7 @@ export default function AIBulkImportBeta() {
 
       seenDraftRows.push({
         id: row.id,
-        accountId: selectedAccountId,
+        accountId: effectiveAccountId,
         date: row.date,
         description: row.description,
         type: row.type,
@@ -176,8 +182,8 @@ export default function AIBulkImportBeta() {
     }
 
     return result
-  }, [existingTransactions, rows, selectedAccount?.currency, selectedAccountId])
-  const validRows = rows.filter((row) => !row.error && row.type !== 'transfer' && !duplicateState.has(row.id))
+  }, [accounts, existingTransactions, rows, selectedAccountId])
+  const validRows = rows.filter((row) => !row.error && row.type !== 'transfer' && !duplicateState.has(row.id) && Boolean(getEffectiveAccountId(row)))
 
   const parseMutation = useMutation({
     mutationFn: parseTransactions,
@@ -194,10 +200,6 @@ export default function AIBulkImportBeta() {
 
   const importMutation = useMutation({
     mutationFn: async () => {
-      if (!selectedAccount) {
-        throw new Error(tSettings('betaSelectAccount'))
-      }
-
       let importedCount = 0
       let skippedDuplicateCount = 0
 
@@ -206,14 +208,19 @@ export default function AIBulkImportBeta() {
           continue
         }
 
+        const targetAccount = getEffectiveAccount(row)
+        if (!targetAccount) {
+          continue
+        }
+
         try {
           await createTransaction({
-            accountId: selectedAccount.id,
+            accountId: targetAccount.id,
             date: row.date,
             description: row.description,
             type: row.type,
             amount: Number(row.amount),
-            currency: selectedAccount.currency,
+            currency: targetAccount.currency,
             categoryKey: row.categoryKey || undefined,
           })
           importedCount += 1
@@ -325,7 +332,7 @@ export default function AIBulkImportBeta() {
 
             <button
               type="button"
-              onClick={() => parseMutation.mutate(input)}
+              onClick={() => parseMutation.mutate({ input, defaultAccountId: selectedAccountId || undefined })}
               disabled={!input.trim() || parseMutation.isPending}
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -336,7 +343,7 @@ export default function AIBulkImportBeta() {
             <button
               type="button"
               onClick={() => importMutation.mutate()}
-              disabled={!selectedAccount || validRows.length === 0 || importMutation.isPending}
+              disabled={validRows.length === 0 || importMutation.isPending}
               className="flex w-full items-center justify-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 transition-all hover:border-blue-300 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <CheckCircle2 className="h-4 w-4" />
@@ -390,7 +397,7 @@ export default function AIBulkImportBeta() {
 
               return (
                 <div key={row.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="grid grid-cols-1 gap-3 md:grid-cols-[150px_minmax(0,1fr)_140px_140px_180px_auto] md:items-center">
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-[150px_minmax(0,1fr)_140px_140px_180px_180px_auto] md:items-center">
                     <input
                       type="date"
                       value={row.date || ''}
@@ -436,6 +443,18 @@ export default function AIBulkImportBeta() {
                         </option>
                       ))}
                     </select>
+                    <select
+                      value={getEffectiveAccountId(row) || ''}
+                      onChange={(event) => updateRow(row.id, { accountId: event.target.value || null })}
+                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">{tSettings('betaSelectAccount')}</option>
+                      {accounts.map((account) => (
+                        <option key={account.id} value={account.id}>
+                          {account.name} ({account.currency})
+                        </option>
+                      ))}
+                    </select>
                     <div className="flex items-center justify-between gap-2 md:justify-end">
                       <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
                         (row.confidence || 0) >= 0.9
@@ -460,6 +479,11 @@ export default function AIBulkImportBeta() {
                     {row.categoryKey ? (
                       <span className="rounded-full bg-white px-2.5 py-1 text-slate-600 shadow-sm">
                         {categoryMap.get(row.categoryKey)?.name || row.categoryName || row.categoryKey}
+                      </span>
+                    ) : null}
+                    {getEffectiveAccount(row) ? (
+                      <span className="rounded-full bg-white px-2.5 py-1 text-slate-600 shadow-sm">
+                        {getEffectiveAccount(row)?.name}
                       </span>
                     ) : null}
                     {duplicateState.get(row.id) ? (

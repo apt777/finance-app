@@ -3,6 +3,70 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import prisma from '@lib/prisma'
 
+export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params
+  const cookieStore = await cookies()
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore as any })
+
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const account = await prisma.account.findFirst({
+      where: { id: params.id, userId: session.user.id },
+    })
+
+    if (!account) {
+      return NextResponse.json({ error: 'Account not found' }, { status: 404 })
+    }
+
+    return NextResponse.json(account)
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || 'Failed to fetch account' }, { status: 500 })
+  }
+}
+
+export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params
+  const cookieStore = await cookies()
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore as any })
+
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const account = await prisma.account.findFirst({
+      where: { id: params.id, userId: session.user.id },
+    })
+
+    if (!account) {
+      return NextResponse.json({ error: 'Account not found' }, { status: 404 })
+    }
+
+    const { name, type, balance, currency } = await request.json()
+
+    const updatedAccount = await prisma.account.update({
+      where: { id: params.id },
+      data: {
+        name,
+        type,
+        balance: Number(balance),
+        currency,
+      },
+    })
+
+    return NextResponse.json(updatedAccount)
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || 'Failed to update account' }, { status: 500 })
+  }
+}
+
 export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const cookieStore = await cookies()
@@ -17,7 +81,7 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
     const { id } = params
 
     // Ensure the account belongs to the logged-in user
-    const account = await prisma.account.findUnique({
+    const account = await prisma.account.findFirst({
       where: { id: id, userId: session.user.id },
     })
 

@@ -23,7 +23,7 @@ export default function SettingsPage() {
   const { baseCurrency, mirrorCurrency, setBaseCurrency, setMirrorCurrency } = useCurrencyPreferences()
   const { trackedCurrencies, updateTrackedCurrencies, isSaving: isSavingTrackedCurrencies } = useTrackedCurrencies()
   const searchParams = useSearchParams()
-  const [activeTab, setActiveTab] = useState('theme')
+  const [activeTab, setActiveTab] = useState('general')
   const languageNames =
     locale === 'en'
       ? { ko: 'Korean', ja: 'Japanese', en: 'English', zh: 'Chinese' }
@@ -37,14 +37,14 @@ export default function SettingsPage() {
     const requestedTab = searchParams.get('tab')
     if (!requestedTab) return
 
-    const allowedTabs = new Set(['theme', 'language', 'categories', 'budgets', 'recurring', 'beta', 'security', 'notifications'])
+    const allowedTabs = new Set(['general', 'theme', 'language', 'categories', 'budgets', 'recurring', 'beta', 'security', 'notifications'])
     if (allowedTabs.has(requestedTab)) {
-      setActiveTab(requestedTab)
+      setActiveTab(requestedTab === 'theme' ? 'general' : requestedTab)
     }
   }, [searchParams])
 
   const tabs = [
-    { id: 'theme', label: tSettings('theme'), icon: Settings },
+    { id: 'general', label: tSettings('general'), icon: Settings },
     { id: 'language', label: tSettings('language'), icon: Languages },
     { id: 'categories', label: tSettings('categories'), icon: Tags },
     { id: 'budgets', label: tSettings('budgetSettings'), icon: PiggyBank },
@@ -74,7 +74,7 @@ export default function SettingsPage() {
             <Settings className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">{tSettings('theme')}</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">{tSettings('general')}</p>
             <h1 className="mt-2 text-3xl font-black tracking-[-0.04em] text-slate-950">{tSettings('title')}</h1>
             <p className="mt-2 text-sm text-slate-500">{tSettings('manageSettings')}</p>
           </div>
@@ -105,7 +105,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="p-6">
-          {activeTab === 'theme' && (
+          {activeTab === 'general' && (
             <div className="space-y-6">
               <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-6">
                 <h3 className="text-xl font-black tracking-[-0.03em] text-slate-950">{tSettings('themeSettings')}</h3>

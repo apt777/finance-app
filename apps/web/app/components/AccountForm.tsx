@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, AlertCircle, CheckCircle, Wallet } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { useRouter } from '@/navigation'
 
 // userId is no longer needed from the form
 interface AccountFormData {
@@ -31,30 +32,56 @@ const createAccount = async (accountData: Omit<AccountFormData, 'userId'>) => {
   return res.json()
 }
 
-interface AccountFormProps {
-  onAccountAdded?: () => void;
+const updateAccount = async (accountId: string, accountData: Omit<AccountFormData, 'userId'>) => {
+  const res = await fetch(`/api/accounts/${accountId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      ...accountData,
+      balance: Number(accountData.balance),
+    }),
+  })
+  if (!res.ok) {
+    const errorData = await res.json()
+    throw new Error(errorData.error || 'Error')
+  }
+  return res.json()
 }
 
-const AccountForm = ({ onAccountAdded }: AccountFormProps) => {
+interface AccountFormProps {
+  onAccountAdded?: () => void;
+  initialData?: Partial<AccountFormData> & { id?: string }
+}
+
+const AccountForm = ({ onAccountAdded, initialData }: AccountFormProps) => {
   const tAccounts = useTranslations('accounts')
   const tCommon = useTranslations('common')
   const tValidation = useTranslations('validation')
+  const router = useRouter()
   const queryClient = useQueryClient()
+  const isEditMode = Boolean(initialData?.id)
   const [formError, setFormError] = useState<string | null>(null);
   const [formData, setFormData] = useState<AccountFormData>({
-    name: '',
-    type: 'checking',
-    balance: '',
-    currency: 'JPY',
+    name: initialData?.name || '',
+    type: initialData?.type || 'checking',
+    balance: initialData?.balance ?? '',
+    currency: initialData?.currency || 'JPY',
   })
 
   const mutation = useMutation<any, Error, AccountFormData>({ // Explicitly type mutation
-    mutationFn: createAccount,
+    mutationFn: (nextData) => (isEditMode && initialData?.id ? updateAccount(initialData.id, nextData) : createAccount(nextData)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
-      setFormData({ name: '', type: 'checking', balance: '', currency: 'JPY' }) // Clear form
+      if (!isEditMode) {
+        setFormData({ name: '', type: 'checking', balance: '', currency: 'JPY' })
+      }
       setFormError(null)
-      onAccountAdded?.(); // Call the callback
+      onAccountAdded?.();
+      if (isEditMode) {
+        router.push('/accounts')
+      }
     },
   })
 
@@ -99,8 +126,8 @@ const AccountForm = ({ onAccountAdded }: AccountFormProps) => {
           <Wallet className="w-6 h-6" />
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">{tAccounts('addNewAccount')}</h2>
-          <p className="text-sm text-slate-600">{tAccounts('addAccountDesc')}</p>
+          <h2 className="text-2xl font-bold text-slate-800">{isEditMode ? tCommon('edit') : tAccounts('addNewAccount')}</h2>
+          <p className="text-sm text-slate-600">{isEditMode ? tAccounts('editAccountDesc') : tAccounts('addAccountDesc')}</p>
         </div>
       </div>
 
@@ -199,7 +226,7 @@ const AccountForm = ({ onAccountAdded }: AccountFormProps) => {
         {mutation.isSuccess && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start space-x-3">
             <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-            <p className="text-green-700 text-sm">{tAccounts('accountAdded')}</p>
+            <p className="text-green-700 text-sm">{isEditMode ? tAccounts('accountUpdated') : tAccounts('accountAdded')}</p>
           </div>
         )}
 
@@ -225,7 +252,7 @@ const AccountForm = ({ onAccountAdded }: AccountFormProps) => {
           ) : (
             <>
               <Plus className="w-5 h-5" />
-              <span>{tAccounts('addNewAccount')}</span>
+              <span>{isEditMode ? tCommon('save') : tAccounts('addNewAccount')}</span>
             </>
           )}
         </button>

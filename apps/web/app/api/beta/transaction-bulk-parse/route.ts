@@ -1,17 +1,25 @@
 import { NextResponse } from 'next/server'
 import { ensureDefaultCategories } from '@/lib/categories'
 import { requireRouteSession } from '@/lib/server-auth'
+import prisma from '@lib/prisma'
 
 type ParsedType = 'income' | 'expense' | 'transfer'
 
 interface ParseRequestBody {
   input?: string
+  defaultAccountId?: string
 }
 
 interface CategoryShape {
   key: string
   name: string
   type?: string | null
+}
+
+interface AccountShape {
+  id: string
+  name: string
+  currency: string
 }
 
 const INCOME_HINTS = [
@@ -32,18 +40,36 @@ const INCOME_HINTS = [
   'interest',
 ]
 
-const CATEGORY_KEYWORD_MAP: Record<string, string[]> = {
-  food: ['스타벅스', '커피', '카페', '점심', '저녁', '식비', '배달', '쿠팡이츠', '배민', '맥도날드', '버거', 'food', 'meal'],
-  transportation: ['지하철', '버스', '택시', '전철', '교통', '주유', '주차', 'transport', 'uber'],
-  shopping: ['쿠팡', '쇼핑', '네이버', '무신사', '올리브영', '다이소', 'shopping'],
+const CATEGORY_GROUP_KEYWORDS: Record<string, string[]> = {
+  cafe: ['스타벅스', '투썸', '메가커피', '이디야', '커피', '카페', 'coffee', 'cafe'],
+  food: ['점심', '저녁', '아침', '식비', '배달', '쿠팡이츠', '배민', '맥도날드', '버거', 'food', 'meal', 'restaurant'],
+  transport: ['지하철', '버스', '택시', '전철', '교통', '주유', '주차', 'transport', 'uber', 'train', 'subway'],
+  shopping: ['쿠팡', '쇼핑', '네이버', '무신사', '올리브영', '다이소', 'shopping', 'mart'],
   entertainment: ['영화', '넷플릭스', '게임', '콘서트', '유튜브', 'entertainment'],
   housing: ['월세', '관리비', '전기', '가스', '수도', 'house', 'rent'],
   healthcare: ['병원', '약국', '의원', 'health', 'medical'],
   education: ['학원', '책', '강의', '수업', 'education'],
   salary: ['월급', '급여', 'salary', 'payroll'],
   bonus: ['보너스', '상여', 'bonus'],
+  allowance: ['용돈', 'allowance'],
   freelance: ['프리랜서', '외주', 'freelance'],
-  investment: ['투자', '주식', '매수', '적금', '펀드', 'investment'],
+  investment: ['투자', '주식', '매수', '적금', '펀드', 'investment', 'etf'],
+}
+
+const CATEGORY_GROUP_ALIASES: Record<string, string[]> = {
+  cafe: ['카페', '커피', 'cafe', 'coffee'],
+  food: ['식비', 'food', 'meal', 'dining'],
+  transport: ['교통', 'transport', 'transit', 'train', 'subway', 'bus'],
+  shopping: ['쇼핑', 'shopping', '구매'],
+  entertainment: ['문화', 'entertainment', '여가'],
+  housing: ['주거', 'housing', 'rent', '월세'],
+  healthcare: ['의료', 'health', 'medical'],
+  education: ['교육', 'education'],
+  salary: ['급여', 'salary'],
+  bonus: ['보너스', 'bonus'],
+  allowance: ['용돈', 'allowance'],
+  freelance: ['프리랜서', 'freelance'],
+  investment: ['투자', 'investment'],
 }
 
 function normalizeWhitespace(value: string) {
@@ -94,6 +120,13 @@ function tokenizeCategoryValue(value: string) {
     .filter((token) => !['카테고리', 'category', 'income', 'expense'].includes(token))
 }
 
+function inferCategoryGroups(category: CategoryShape) {
+  const source = `${category.key} ${category.name}`.toLowerCase()
+  return Object.entries(CATEGORY_GROUP_ALIASES)
+    .filter(([, aliases]) => aliases.some((alias) => source.includes(alias.toLowerCase())))
+    .map(([group]) => group)
+}
+
 function scoreCategory(description: string, category: CategoryShape) {
   const lower = description.toLowerCase()
   const nameLower = category.name.toLowerCase()
@@ -113,9 +146,11 @@ function scoreCategory(description: string, category: CategoryShape) {
     return 0.9
   }
 
-  const mappedKeywords = CATEGORY_KEYWORD_MAP[category.key] || []
-  if (mappedKeywords.some((keyword) => lower.includes(keyword.toLowerCase()))) {
-    return 0.9
+  for (const group of inferCategoryGroups(category)) {
+    const keywords = CATEGORY_GROUP_KEYWORDS[group] || []
+    if (keywords.some((keyword) => lower.includes(keyword.toLowerCase()))) {
+      return group === 'cafe' ? 0.97 : 0.92
+    }
   }
 
   return 0
@@ -157,7 +192,27 @@ function recommendCategory(description: string, type: ParsedType, categories: Ca
   }
 }
 
-function parseLine(line: string, categories: CategoryShape[], index: number) {
+function inferAccount(description: string, accounts: AccountShape[], defaultAccountId?: string) {
+  const lower = description.toLowerCase()
+  const defaultAccount = accounts.find((account) => account.id === defaultAccountId) || null
+
+  const exactMatch = accounts.find((account) => lower.includes(account.name.toLowerCase()))
+  if (exactMatch) return exactMatch
+
+  if (/(엔|jpy|yen|¥)/i.test(description)) {
+    return accounts.find((account) => account.currency === 'JPY') || defaultAccount
+  }
+  if (/(원|krw|₩)/i.test(description)) {
+    return accounts.find((account) => account.currency === 'KRW') || defaultAccount
+  }
+  if (/(usd|\$|달러|dollar)/i.test(description)) {
+    return accounts.find((account) => account.currency === 'USD') || defaultAccount
+  }
+
+  return defaultAccount
+}
+
+function parseLine(line: string, categories: CategoryShape[], accounts: AccountShape[], index: number, defaultAccountId?: string) {
   const trimmed = normalizeWhitespace(line)
   if (!trimmed) return null
 
@@ -199,6 +254,7 @@ function parseLine(line: string, categories: CategoryShape[], index: number) {
 
   const type = inferType(numericAmount, description)
   const category = recommendCategory(description, type, categories)
+  const account = inferAccount(description, accounts, defaultAccountId)
   const today = new Date().toISOString().split('T')[0] || ''
 
   return {
@@ -208,6 +264,8 @@ function parseLine(line: string, categories: CategoryShape[], index: number) {
     description,
     amount: Math.abs(numericAmount),
     type,
+    accountId: account?.id || null,
+    accountName: account?.name || null,
     categoryKey: category.categoryKey,
     categoryName: category.categoryName,
     confidence: category.confidence,
@@ -222,13 +280,18 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { input }: ParseRequestBody = await request.json()
+    const { input, defaultAccountId }: ParseRequestBody = await request.json()
 
     if (!input?.trim()) {
       return NextResponse.json({ error: '입력 내용이 비어 있습니다.' }, { status: 400 })
     }
 
     const categories = await ensureDefaultCategories(userId)
+    const accounts = await prisma.account.findMany({
+      where: { userId },
+      select: { id: true, name: true, currency: true },
+      orderBy: { name: 'asc' },
+    })
     const lines = input
       .replace(/\r/g, '')
       .split('\n')
@@ -236,7 +299,7 @@ export async function POST(request: Request) {
       .filter(Boolean)
 
     const rows = lines
-      .map((line, index) => parseLine(line, categories, index))
+      .map((line, index) => parseLine(line, categories, accounts, index, defaultAccountId))
       .filter(Boolean)
 
     return NextResponse.json({
