@@ -19,6 +19,7 @@ export type DuplicateCheckInput = {
   type: 'income' | 'expense' | 'transfer' | 'exchange'
   amount: number
   currency?: string | null
+  ignoreDescription?: boolean
 }
 
 function normalizeType(value: string) {
@@ -87,7 +88,7 @@ export function isDuplicateTransactionCandidate(
     return false
   }
 
-  if (normalizeDescription(input.description) !== normalizeDescription(existing.description)) {
+  if (!input.ignoreDescription && normalizeDescription(input.description) !== normalizeDescription(existing.description)) {
     return false
   }
 

@@ -127,18 +127,19 @@ async function findExistingDuplicate(userId: string, body: TransactionData, tran
   })
 
   return findDuplicateTransaction(
-    {
-      accountId: body.accountId,
-      fromAccountId: body.fromAccountId,
-      toAccountId: body.toAccountId,
-      date: body.date,
-      description: body.description,
-      type: body.type,
-      amount: transactionAmount,
-      currency: body.currency,
-    },
-    candidates
-  )
+      {
+        accountId: body.accountId,
+        fromAccountId: body.fromAccountId,
+        toAccountId: body.toAccountId,
+        date: body.date,
+        description: body.description,
+        type: body.type,
+        amount: transactionAmount,
+        currency: body.currency,
+        ignoreDescription: true,
+      },
+      candidates
+    )
 }
 
 async function findCategoryForUser(userId: string, categoryKey: string) {

@@ -4,7 +4,8 @@ import React, { useState } from 'react'
 import { useTransactions } from '@/hooks/useTransactions'
 import { useCategories } from '@/hooks/useCategories'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowUpRight, ArrowDownLeft, Filter, Download, Calendar, Search, Trash2, X, ArrowRight } from 'lucide-react'
+import { ArrowUpRight, ArrowDownLeft, Filter, Download, Calendar, Search, Trash2, X, ArrowRight, Pencil } from 'lucide-react'
+import { useRouter } from '@/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { useUiTheme } from '@/context/UiThemeContext'
 import AppLoadingState from '@/components/AppLoadingState'
@@ -45,6 +46,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
   const { theme } = useUiTheme()
   const locale = useLocale()
   const ui = getUiCopy(locale)
+  const router = useRouter()
   const tTransactions = useTranslations('transactions')
   const tCommon = useTranslations('common')
   const { data, error, isLoading } = useTransactions(accountId)
@@ -429,6 +431,16 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
                 <p className="text-[10px] font-bold text-slate-400">
                   {transaction.type === 'exchange' && transaction.exchangeToCurrency ? `${transaction.currency} → ${transaction.exchangeToCurrency}` : transaction.currency}
                 </p>
+                {!isEditMode && (
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/transactions/${transaction.id}/edit`)}
+                    className="mt-2 inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition-colors hover:border-blue-200 hover:text-blue-600"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    <span>{tCommon('edit')}</span>
+                  </button>
+                )}
               </div>
               </div>
             </div>

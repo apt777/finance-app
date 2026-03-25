@@ -56,9 +56,29 @@ const createTransaction = async (transactionData: TransactionFormData) => {
 
 interface TransactionFormProps {
   onTransactionAdded?: () => void;
+  transactionId?: string;
+  initialData?: Partial<TransactionFormData>;
 }
 
-const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
+const updateTransaction = async (transactionId: string, transactionData: TransactionFormData) => {
+  const res = await fetch(`/api/transactions/${transactionId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      ...transactionData,
+      amount: Number(transactionData.amount),
+    }),
+  })
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.error || 'Error');
+  }
+  return res.json()
+}
+
+const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: TransactionFormProps) => {
   const tTransactions = useTranslations('transactions')
   const tCommon = useTranslations('common')
   const tAccounts = useTranslations('accounts')
@@ -69,20 +89,21 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
   const { data: accounts, isLoading: isLoadingAccounts, error: accountsError } = useAccounts()
   const { data: categories } = useCategories()
   const { data: existingTransactions = [] } = useTransactions()
+  const isEditMode = Boolean(transactionId)
   const [formError, setFormError] = useState<string | null>(null);
   const [formData, setFormData] = useState<TransactionFormData>({
-    accountId: '',
-    fromAccountId: '',
-    toAccountId: '',
-    date: new Date().toISOString().split('T')[0] ?? '',
-    description: '',
-    type: 'expense',
-    amount: '',
-    currency: '',
-    exchangeToAmount: '',
-    categoryKey: 'food',
-    notes: '',
-    applyBalanceAdjustment: true,
+    accountId: initialData?.accountId || '',
+    fromAccountId: initialData?.fromAccountId || '',
+    toAccountId: initialData?.toAccountId || '',
+    date: initialData?.date || (new Date().toISOString().split('T')[0] ?? ''),
+    description: initialData?.description || '',
+    type: initialData?.type || 'expense',
+    amount: initialData?.amount ?? '',
+    currency: initialData?.currency || '',
+    exchangeToAmount: initialData?.exchangeToAmount ?? '',
+    categoryKey: initialData?.categoryKey || 'food',
+    notes: initialData?.notes || '',
+    applyBalanceAdjustment: initialData?.applyBalanceAdjustment ?? true,
   })
 
   const searchParams = useSearchParams()
@@ -106,24 +127,26 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
   }, [searchParams])
 
   const mutation = useMutation<any, Error, TransactionFormData>({
-    mutationFn: createTransaction,
+    mutationFn: (nextData) => (isEditMode && transactionId ? updateTransaction(transactionId, nextData) : createTransaction(nextData)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
-      setFormData({ 
-        accountId: '', 
-        fromAccountId: '', 
-        toAccountId: '', 
-        date: new Date().toISOString().split('T')[0] ?? '', 
-        description: '', 
-        type: 'expense', 
-        amount: '', 
-        currency: '',
-        exchangeToAmount: '',
-        categoryKey: 'food',
-        notes: '',
-        applyBalanceAdjustment: true,
-      })
+      if (!isEditMode) {
+        setFormData({ 
+          accountId: '', 
+          fromAccountId: '', 
+          toAccountId: '', 
+          date: new Date().toISOString().split('T')[0] ?? '', 
+          description: '', 
+          type: 'expense', 
+          amount: '', 
+          currency: '',
+          exchangeToAmount: '',
+          categoryKey: 'food',
+          notes: '',
+          applyBalanceAdjustment: true,
+        })
+      }
       setFormError(null)
       onTransactionAdded?.();
     },
@@ -238,8 +261,9 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
         type: formData.type as 'income' | 'expense' | 'transfer' | 'exchange',
         amount: normalizedAmount,
         currency: formData.currency,
+        ignoreDescription: true,
       },
-      existingTransactions
+      existingTransactions.filter((transaction: any) => transaction.id !== transactionId)
     )
   }, [
     existingTransactions,
@@ -251,6 +275,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
     formData.fromAccountId,
     formData.toAccountId,
     formData.type,
+    transactionId,
   ])
   const fieldClassName =
     'w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-slate-50 text-slate-900 placeholder-slate-400'
@@ -387,8 +412,8 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
           </div>
 
           {/* Date and Type */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="min-w-0">
               <label htmlFor="date" className="block text-sm font-semibold text-slate-800 mb-2">
                 {tTransactions('date')} <span className="text-red-500">*</span>
               </label>
@@ -398,12 +423,12 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
                 id="date"
                 value={formData.date}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
+                className="w-full min-w-0 px-4 py-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
                 required
               />
             </div>
 
-            <div>
+            <div className="min-w-0">
               <label htmlFor="type" className="block text-sm font-semibold text-slate-800 mb-2">
                 {tTransactions('type')} <span className="text-red-500">*</span>
               </label>
@@ -412,7 +437,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
                 id="type"
                 value={formData.type}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
+                className="w-full min-w-0 px-4 py-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
                 required
               >
                 <option value="expense">{tTransactions('expense')}</option>
@@ -686,7 +711,7 @@ const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
                 ) : (
                   <ArrowUpRight className="w-5 h-5" />
                 )}
-                <span>{tTransactions('addTransaction')}</span>
+                <span>{isEditMode ? tCommon('save') : tTransactions('addTransaction')}</span>
               </>
             )}
           </button>
