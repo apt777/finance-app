@@ -62,9 +62,7 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
           userId,
           OR: [{ accountId: id }, { fromAccountId: id }, { toAccountId: id }],
         },
-        orderBy: {
-          date: 'desc',
-        },
+        orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
         include: {
           account: {
             select: { id: true, name: true, currency: true },

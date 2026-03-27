@@ -203,7 +203,7 @@ export async function GET() {
     const [transactions, categoryMap] = await Promise.all([
       prisma.transaction.findMany({
         where: { userId },
-        orderBy: { date: 'desc' },
+        orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
         include: {
           account: { select: { id: true, name: true, currency: true } },
           fromAccount: { select: { id: true, name: true, currency: true } },

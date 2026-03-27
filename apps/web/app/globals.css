@@ -50,6 +50,11 @@ body {
   font-feature-settings: "ss01" 1, "cv05" 1, "tnum" 1;
 }
 
+.date-input-fix {
+  max-width: 100%;
+  inline-size: 100%;
+}
+
 html[data-ui-theme='modern'] body {
   background:
     radial-gradient(circle at top left, rgba(255, 255, 255, 0.84), transparent 28%),

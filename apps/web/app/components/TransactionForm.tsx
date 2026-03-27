@@ -26,6 +26,23 @@ interface TransactionFormData {
   applyBalanceAdjustment?: boolean;
 }
 
+interface TransactionLike {
+  id: string
+  accountId?: string
+  fromAccountId?: string
+  toAccountId?: string
+  date: string
+  description: string
+  type: string
+  amount: number
+  currency: string
+  exchangeToAmount?: number | null
+  exchangeToCurrency?: string | null
+  categoryKey?: string
+  notes?: string | null
+  createdAt?: string
+}
+
 const getTodayDateString = () => {
   const today = new Date()
   const year = today.getFullYear()
@@ -129,6 +146,56 @@ const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: Tra
   const mutation = useMutation<any, Error, TransactionFormData>({
     mutationFn: (nextData) => (isEditMode && transactionId ? updateTransaction(transactionId, nextData) : createTransaction(nextData)),
     onSuccess: () => {
+      const currentToAccount = accounts?.find((account) => account.id === formData.toAccountId)
+      const optimisticAmount = Number(formData.amount)
+      const nextTransaction: TransactionLike = {
+        id: transactionId || `temp-${Date.now()}`,
+        accountId: formData.accountId,
+        fromAccountId: formData.fromAccountId,
+        toAccountId: formData.toAccountId,
+        date: formData.date,
+        description: formData.description,
+        type: formData.type,
+        amount: formData.type === 'expense' ? -optimisticAmount : optimisticAmount,
+        currency: formData.currency,
+        exchangeToAmount: formData.type === 'exchange' ? Number(formData.exchangeToAmount || 0) : null,
+        exchangeToCurrency: formData.type === 'exchange' ? currentToAccount?.currency || null : null,
+        categoryKey: formData.categoryKey,
+        notes: formData.notes || null,
+        createdAt: new Date().toISOString(),
+      }
+
+      queryClient.setQueryData<TransactionLike[]>(['transactions', 'all'], (current = []) => {
+        if (isEditMode) {
+          return current.map((transaction) => (transaction.id === transactionId ? { ...transaction, ...nextTransaction } : transaction))
+        }
+        return [nextTransaction, ...current]
+      })
+
+      if (formData.accountId) {
+        queryClient.setQueryData<TransactionLike[]>(['transactions', formData.accountId], (current = []) =>
+          isEditMode
+            ? current.map((transaction) => (transaction.id === transactionId ? { ...transaction, ...nextTransaction } : transaction))
+            : [nextTransaction, ...current]
+        )
+      }
+
+      if (formData.fromAccountId) {
+        queryClient.setQueryData<TransactionLike[]>(['transactions', formData.fromAccountId], (current = []) =>
+          isEditMode
+            ? current.map((transaction) => (transaction.id === transactionId ? { ...transaction, ...nextTransaction } : transaction))
+            : [nextTransaction, ...current]
+        )
+      }
+
+      if (formData.toAccountId && formData.toAccountId !== formData.fromAccountId) {
+        queryClient.setQueryData<TransactionLike[]>(['transactions', formData.toAccountId], (current = []) =>
+          isEditMode
+            ? current.map((transaction) => (transaction.id === transactionId ? { ...transaction, ...nextTransaction } : transaction))
+            : [nextTransaction, ...current]
+        )
+      }
+
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
       if (!isEditMode) {
@@ -423,7 +490,7 @@ const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: Tra
                 id="date"
                 value={formData.date}
                 onChange={handleChange}
-                className="w-full min-w-0 px-4 py-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
+                className="date-input-fix w-full min-w-0 appearance-none px-4 py-3 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
                 required
               />
             </div>

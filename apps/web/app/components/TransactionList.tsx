@@ -21,6 +21,7 @@ interface Transaction {
   currency: string;
   exchangeToAmount?: number | null;
   exchangeToCurrency?: string | null;
+  createdAt?: string;
   categoryKey?: string | null;
   notes?: string | null;
   category?: {
@@ -129,7 +130,19 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
   // Sort transactions
   const sortedTransactions = [...filteredTransactions].sort((a, b) => {
     if (sortBy === 'date') {
-      return new Date(b.date).getTime() - new Date(a.date).getTime()
+      const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime()
+      if (dateDiff !== 0) {
+        return dateDiff
+      }
+
+      const createdAtDiff =
+        new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+
+      if (createdAtDiff !== 0) {
+        return createdAtDiff
+      }
+
+      return b.id.localeCompare(a.id)
     } else {
       return Math.abs(b.amount) - Math.abs(a.amount)
     }
