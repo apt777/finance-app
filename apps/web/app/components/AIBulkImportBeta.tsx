@@ -42,7 +42,7 @@ const parseTransactions = async ({ input, defaultAccountId }: { input: string; d
   return response.json() as Promise<{ rows: ParsedRow[]; total: number }>
 }
 
-const createTransaction = async (payload: {
+const createTransactionsBulk = async (rows: Array<{
   accountId: string
   date: string
   description: string
@@ -50,18 +50,18 @@ const createTransaction = async (payload: {
   amount: number
   currency: string
   categoryKey?: string | null
-}) => {
-  const response = await fetch('/api/transactions', {
+}>) => {
+  const response = await fetch('/api/transactions/bulk', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ rows }),
   })
 
   if (!response.ok) {
     const error = await response.json()
-    throw new Error(error.error || 'Failed to create transaction')
+    throw new Error(error.error || 'Failed to create transactions')
   }
 
   return response.json()
@@ -200,21 +200,18 @@ export default function AIBulkImportBeta() {
 
   const importMutation = useMutation({
     mutationFn: async () => {
-      let importedCount = 0
-      let skippedDuplicateCount = 0
+      const payload = validRows
+        .map((row) => {
+          if (!row.date || !row.description || !row.amount || !row.type || row.type === 'transfer') {
+            return null
+          }
 
-      for (const row of validRows) {
-        if (!row.date || !row.description || !row.amount || !row.type || row.type === 'transfer') {
-          continue
-        }
+          const targetAccount = getEffectiveAccount(row)
+          if (!targetAccount) {
+            return null
+          }
 
-        const targetAccount = getEffectiveAccount(row)
-        if (!targetAccount) {
-          continue
-        }
-
-        try {
-          await createTransaction({
+          return {
             accountId: targetAccount.id,
             date: row.date,
             description: row.description,
@@ -222,26 +219,11 @@ export default function AIBulkImportBeta() {
             amount: Number(row.amount),
             currency: targetAccount.currency,
             categoryKey: row.categoryKey || undefined,
-          })
-          importedCount += 1
-        } catch (error) {
-          const message = error instanceof Error ? error.message : ''
-
-          if (
-            message.includes('이미 같은 날짜') ||
-            message.includes('duplicate') ||
-            message.includes('same date') ||
-            message.includes('already exists')
-          ) {
-            skippedDuplicateCount += 1
-            continue
           }
+        })
+        .filter((row): row is NonNullable<typeof row> => Boolean(row))
 
-          throw error
-        }
-      }
-
-      return { importedCount, skippedDuplicateCount }
+      return createTransactionsBulk(payload)
     },
     onSuccess: ({ importedCount, skippedDuplicateCount }) => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
@@ -347,7 +329,15 @@ export default function AIBulkImportBeta() {
               className="flex w-full items-center justify-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 transition-all hover:border-blue-300 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <CheckCircle2 className="h-4 w-4" />
-              {importMutation.isPending ? tCommon('loading') : tSettings('betaImport')}
+              {importMutation.isPending
+                ? (locale === 'en'
+                    ? `Saving ${validRows.length}`
+                    : locale === 'ja'
+                      ? `${validRows.length}件を保存中`
+                      : locale === 'zh'
+                        ? `正在保存 ${validRows.length} 条`
+                        : `${validRows.length}건 저장 중`)
+                : tSettings('betaImport')}
             </button>
           </div>
         </div>

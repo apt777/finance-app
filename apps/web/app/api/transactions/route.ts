@@ -243,28 +243,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid transaction payload' }, { status: 400 })
     }
 
-    if (categoryKey) {
-      const categoryMap = await getCategoryMapSafely(userId)
-      const category = categoryMap.get(categoryKey) ?? await findCategoryForUser(userId, categoryKey)
-
-      if (!category) {
-        return NextResponse.json({ error: 'Category not found' }, { status: 400 })
-      }
-    }
-
-    const duplicateTransaction = await findExistingDuplicate(userId, body, transactionAmount)
-
-    if (duplicateTransaction) {
-      return NextResponse.json(
-        {
-          error: '이미 같은 날짜, 금액, 유형, 내용의 거래가 등록되어 있습니다.',
-          duplicate: true,
-          transactionId: duplicateTransaction.id,
-        },
-        { status: 409 }
-      )
-    }
-
     if (type === 'transfer' || type === 'exchange') {
       const { fromAccountId, toAccountId } = body
 
@@ -272,13 +250,30 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: type === 'exchange' ? 'Invalid exchange accounts' : 'Invalid transfer accounts' }, { status: 400 })
       }
 
-      const [fromAccount, toAccount] = await Promise.all([
+      const [fromAccount, toAccount, duplicateTransaction, category] = await Promise.all([
         prisma.account.findFirst({ where: { id: fromAccountId, userId } }),
         prisma.account.findFirst({ where: { id: toAccountId, userId } }),
+        findExistingDuplicate(userId, body, transactionAmount),
+        categoryKey ? findCategoryForUser(userId, categoryKey) : Promise.resolve(null),
       ])
 
       if (!fromAccount || !toAccount) {
         return NextResponse.json({ error: 'Account not found' }, { status: 404 })
+      }
+
+      if (categoryKey && !category) {
+        return NextResponse.json({ error: 'Category not found' }, { status: 400 })
+      }
+
+      if (duplicateTransaction) {
+        return NextResponse.json(
+          {
+            error: '이미 같은 날짜, 금액, 유형, 내용의 거래가 등록되어 있습니다.',
+            duplicate: true,
+            transactionId: duplicateTransaction.id,
+          },
+          { status: 409 }
+        )
       }
 
       const transactionOperations = []
@@ -341,12 +336,31 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Account is required' }, { status: 400 })
     }
 
-    const account = await prisma.account.findFirst({
-      where: { id: accountId, userId },
-    })
+    const [account, duplicateTransaction, category] = await Promise.all([
+      prisma.account.findFirst({
+        where: { id: accountId, userId },
+      }),
+      findExistingDuplicate(userId, body, transactionAmount),
+      categoryKey ? findCategoryForUser(userId, categoryKey) : Promise.resolve(null),
+    ])
 
     if (!account) {
       return NextResponse.json({ error: 'Account not found' }, { status: 404 })
+    }
+
+    if (categoryKey && !category) {
+      return NextResponse.json({ error: 'Category not found' }, { status: 400 })
+    }
+
+    if (duplicateTransaction) {
+      return NextResponse.json(
+        {
+          error: '이미 같은 날짜, 금액, 유형, 내용의 거래가 등록되어 있습니다.',
+          duplicate: true,
+          transactionId: duplicateTransaction.id,
+        },
+        { status: 409 }
+      )
     }
 
     const transactionOperations = []
