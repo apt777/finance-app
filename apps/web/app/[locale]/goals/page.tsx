@@ -28,7 +28,7 @@ export default function GoalsPage() {
   if (theme === 'modern') {
     return (
       <div className="space-y-6 pb-10 md:pb-12">
-        <section className={`rounded-[36px] p-6 md:p-7 ${isDark ? 'border border-white/10 bg-white/5 shadow-[0_18px_50px_rgba(0,0,0,0.24)] backdrop-blur-xl' : 'border border-white/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] shadow-[0_18px_50px_rgba(148,163,184,0.14)] backdrop-blur-xl'}`}>
+        <section className={`rounded-[32px] p-6 ${isDark ? 'border border-white/10 bg-white/5 shadow-[0_18px_50px_rgba(0,0,0,0.24)] backdrop-blur-xl' : 'border border-white/80 bg-white/70 shadow-[0_18px_60px_rgba(148,163,184,0.14)] backdrop-blur-xl'}`}>
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-start space-x-4">
               <div className={`mt-1 flex h-12 w-12 items-center justify-center rounded-2xl ${isDark ? 'bg-white/8 text-white' : 'bg-slate-950 text-white'}`}>
@@ -36,15 +36,15 @@ export default function GoalsPage() {
               </div>
               <div>
                 <p className={`text-[11px] font-bold uppercase tracking-[0.24em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{ui.goals.workspaceLabel}</p>
-                <h1 className={`mt-2 text-[2rem] font-bold tracking-[-0.02em] ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('title')}</h1>
-                <p className={`mt-2 max-w-2xl text-sm leading-7 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                <h1 className={`mt-2 text-3xl font-black tracking-[-0.04em] ${isDark ? 'text-white' : 'text-slate-950'}`}>{t('title')}</h1>
+                <p className={`mt-2 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                   {modernSubtitle}
                 </p>
               </div>
             </div>
             <Link
               href="/goals/add"
-              className={`inline-flex items-center justify-center space-x-2 rounded-2xl px-5 py-3 font-semibold transition-all ${isDark ? 'border border-white/10 bg-white/5 text-white hover:bg-white/10' : 'bg-slate-900 text-white shadow-md hover:bg-slate-800'}`}
+              className={`inline-flex items-center justify-center space-x-2 rounded-2xl px-5 py-3 font-semibold transition-all ${isDark ? 'border border-white/10 bg-white/5 text-white hover:bg-white/10' : 'bg-slate-950 text-white shadow-md hover:bg-slate-800'}`}
             >
               <Plus className="h-5 w-5" />
               <span>{t('addGoal')}</span>

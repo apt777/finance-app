@@ -285,7 +285,7 @@ const ExchangeRateManager = () => {
                 disabled={isSaving}
                 className={`rounded-full border px-4 py-2 text-sm font-semibold transition-all ${
                   isActive
-                    ? 'border-slate-900 bg-slate-950 text-white'
+                    ? 'border-blue-200 bg-blue-50 text-blue-700'
                     : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700'
                 }`}
               >
@@ -458,7 +458,7 @@ const ExchangeRateManager = () => {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 mb-4">
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 mb-4">
                   <p className="text-sm text-slate-600 mb-1">{tSettings('currentRate')}</p>
                   <p className="text-2xl font-bold text-slate-800">
                     {formattedQuote}

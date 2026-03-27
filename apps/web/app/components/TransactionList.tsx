@@ -236,7 +236,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
       {/* Summary Cards - Horizontal scroll on mobile */}
       {transactions.length > 0 && (
         <div className="flex overflow-x-auto pb-2 gap-4 snap-x no-scrollbar -mx-1 px-1">
-          <div className={`min-w-[160px] flex-1 snap-start rounded-2xl p-4 ${theme === 'modern' ? 'border border-slate-200/80 bg-slate-50/80 shadow-[0_8px_18px_rgba(148,163,184,0.08)]' : 'border border-slate-100 bg-white shadow-sm'}`}>
+          <div className={`min-w-[160px] flex-1 snap-start rounded-2xl p-4 ${theme === 'modern' ? 'border border-slate-200/80 bg-white/92 shadow-[0_1px_2px_rgba(148,163,184,0.08)]' : 'border border-slate-100 bg-white shadow-sm'}`}>
             <div className="flex items-center justify-between mb-2">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{tTransactions('totalIncome')}</p>
               <ArrowDownLeft className="w-4 h-4 text-emerald-500" />
@@ -245,7 +245,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
               +{Math.round(totalIncome).toLocaleString()}
             </p>
           </div>
-          <div className={`min-w-[160px] flex-1 snap-start rounded-2xl p-4 ${theme === 'modern' ? 'border border-slate-200/80 bg-slate-50/80 shadow-[0_8px_18px_rgba(148,163,184,0.08)]' : 'border border-slate-100 bg-white shadow-sm'}`}>
+          <div className={`min-w-[160px] flex-1 snap-start rounded-2xl p-4 ${theme === 'modern' ? 'border border-slate-200/80 bg-white/92 shadow-[0_1px_2px_rgba(148,163,184,0.08)]' : 'border border-slate-100 bg-white shadow-sm'}`}>
             <div className="flex items-center justify-between mb-2">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{tTransactions('totalExpense')}</p>
               <ArrowUpRight className="w-4 h-4 text-rose-500" />
@@ -254,7 +254,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
               -{Math.round(totalExpense).toLocaleString()}
             </p>
           </div>
-          <div className={`min-w-[160px] flex-1 snap-start rounded-2xl p-4 ${theme === 'modern' ? 'border border-slate-200/80 bg-slate-50/80 shadow-[0_8px_18px_rgba(148,163,184,0.08)]' : 'border border-slate-100 bg-white shadow-sm'}`}>
+          <div className={`min-w-[160px] flex-1 snap-start rounded-2xl p-4 ${theme === 'modern' ? 'border border-slate-200/80 bg-white/92 shadow-[0_1px_2px_rgba(148,163,184,0.08)]' : 'border border-slate-100 bg-white shadow-sm'}`}>
             <div className="flex items-center justify-between mb-2">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{tTransactions('netChange')}</p>
               <div className={`w-4 h-4 ${totalIncome - totalExpense >= 0 ? 'text-blue-500' : 'text-rose-500'}`}>
