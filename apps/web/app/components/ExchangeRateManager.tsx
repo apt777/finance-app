@@ -248,19 +248,26 @@ const ExchangeRateManager = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-800">{tSettings('exchangeRates')}</h2>
-          <p className="text-slate-600 text-sm mt-1">{tSettings('exchangeRateDesc')}</p>
+      <div className="rounded-[32px] border border-white/80 bg-white/70 p-6 shadow-[0_18px_60px_rgba(148,163,184,0.14)] backdrop-blur-xl">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white">
+              <TrendingUp className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">{tSettings('exchangeRates')}</p>
+              <h2 className="mt-2 text-3xl font-black tracking-[-0.04em] text-slate-950">{tSettings('exchangeRates')}</h2>
+              <p className="mt-2 text-sm text-slate-500">{tSettings('exchangeRateDesc')}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="inline-flex items-center justify-center space-x-2 rounded-2xl bg-slate-950 px-5 py-3 font-semibold text-white shadow-md transition-all hover:bg-slate-800"
+          >
+            <Plus className="w-5 h-5" />
+            <span>{tSettings('addRate')}</span>
+          </button>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-        >
-          <Plus className="w-5 h-5" />
-          <span>{tSettings('addRate')}</span>
-        </button>
       </div>
 
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
@@ -278,7 +285,7 @@ const ExchangeRateManager = () => {
                 disabled={isSaving}
                 className={`rounded-full border px-4 py-2 text-sm font-semibold transition-all ${
                   isActive
-                    ? 'border-blue-200 bg-blue-50 text-blue-700'
+                    ? 'border-slate-900 bg-slate-950 text-white'
                     : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700'
                 }`}
               >
@@ -378,7 +385,7 @@ const ExchangeRateManager = () => {
               <button
                 type="submit"
                 disabled={updateRateMutation.isPending}
-                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-lg transition-colors"
+                className="flex-1 px-4 py-2 bg-slate-950 hover:bg-slate-800 disabled:opacity-50 text-white font-semibold rounded-lg transition-colors"
               >
                 {updateRateMutation.isPending ? tCommon('loading') : tCommon('save')}
               </button>
@@ -418,7 +425,9 @@ const ExchangeRateManager = () => {
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-2">
-                    <TrendingUp className="w-5 h-5 text-blue-600" />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-slate-950 text-white">
+                      <TrendingUp className="w-4 h-4" />
+                    </div>
                     <span className="font-bold text-slate-800">
                       {displayFromCurrency} → {displayToCurrency}
                     </span>
@@ -449,7 +458,7 @@ const ExchangeRateManager = () => {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 mb-4">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 mb-4">
                   <p className="text-sm text-slate-600 mb-1">{tSettings('currentRate')}</p>
                   <p className="text-2xl font-bold text-slate-800">
                     {formattedQuote}
@@ -484,7 +493,7 @@ const ExchangeRateManager = () => {
           <p className="text-slate-600 font-medium mb-4">{tSettings('noRates')}</p>
           <button
             onClick={() => setShowForm(true)}
-            className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+            className="inline-flex items-center space-x-2 px-4 py-2 bg-slate-950 hover:bg-slate-800 text-white font-semibold rounded-lg transition-colors"
           >
             <Plus className="w-5 h-5" />
             <span>{tSettings('addFirstRate')}</span>

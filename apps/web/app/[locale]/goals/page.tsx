@@ -31,7 +31,7 @@ export default function GoalsPage() {
         <section className={`rounded-[36px] p-6 md:p-7 ${isDark ? 'border border-white/10 bg-white/5 shadow-[0_18px_50px_rgba(0,0,0,0.24)] backdrop-blur-xl' : 'border border-white/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] shadow-[0_18px_50px_rgba(148,163,184,0.14)] backdrop-blur-xl'}`}>
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-start space-x-4">
-              <div className={`mt-1 flex h-12 w-12 items-center justify-center rounded-2xl ${isDark ? 'bg-white/8 text-white' : 'bg-blue-50 text-blue-600'}`}>
+              <div className={`mt-1 flex h-12 w-12 items-center justify-center rounded-2xl ${isDark ? 'bg-white/8 text-white' : 'bg-slate-950 text-white'}`}>
                 <Target className="h-6 w-6" />
               </div>
               <div>

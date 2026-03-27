@@ -142,9 +142,11 @@ const HoldingsList = () => {
   return (
     <div className={`space-y-6 ${theme === 'modern' ? 'rounded-[34px] border border-white/80 bg-white/55 p-4 shadow-[0_18px_50px_rgba(148,163,184,0.12)] backdrop-blur-xl md:p-6' : ''}`}>
       {/* Filter Card */}
-      <div className={`rounded-2xl p-6 ${theme === 'modern' ? 'border border-white/80 bg-white shadow-[0_10px_30px_rgba(148,163,184,0.14)]' : 'border border-slate-100 bg-white shadow-sm'}`}>
+        <div className={`rounded-2xl p-6 ${theme === 'modern' ? 'border border-white/80 bg-white shadow-[0_10px_30px_rgba(148,163,184,0.14)]' : 'border border-slate-100 bg-white shadow-sm'}`}>
         <div className="flex items-center space-x-3 mb-4">
-          <Filter className="w-5 h-5 text-blue-600" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-950 text-white">
+            <Filter className="w-5 h-5" />
+          </div>
           <h3 className="text-lg font-bold text-slate-800">{tTransactions('filterBy')}</h3>
         </div>
         <select
@@ -192,7 +194,7 @@ const HoldingsList = () => {
                   className={`overflow-hidden rounded-2xl border transition-all duration-200 ${theme === 'modern' ? 'border-white/80 bg-white shadow-[0_14px_34px_rgba(148,163,184,0.14)] hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(148,163,184,0.18)]' : 'border-slate-100 bg-white shadow-sm hover:shadow-xl'}`}
                 >
                   {/* Header */}
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 border-b border-slate-200">
+                  <div className="bg-slate-50/80 p-6 border-b border-slate-200">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <h3 className="truncate text-2xl font-bold text-slate-800">{holding.symbol}</h3>
@@ -214,8 +216,8 @@ const HoldingsList = () => {
                             </span>
                           ) : null}
                         </button>
-                        <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                          <TrendingUp className="w-5 h-5 text-blue-600" />
+                        <div className="w-10 h-10 bg-slate-950 rounded-xl flex items-center justify-center text-white">
+                          <TrendingUp className="w-5 h-5" />
                         </div>
                       </div>
                     </div>

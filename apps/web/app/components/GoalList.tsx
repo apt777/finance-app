@@ -82,7 +82,7 @@ const GoalList = () => {
               <div className="p-5">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center space-x-3">
-                    <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${theme === 'modern' ? isDark ? 'bg-white/8 text-white' : 'bg-blue-50 text-blue-600' : 'bg-indigo-50 text-indigo-600'}`}>
+                    <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${theme === 'modern' ? isDark ? 'bg-white/8 text-white' : 'bg-slate-950 text-white' : 'bg-indigo-50 text-indigo-600'}`}>
                       <Target className="w-5 h-5" />
                     </div>
                     <div>
