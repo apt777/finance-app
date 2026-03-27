@@ -364,7 +364,7 @@ const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: Tra
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center space-x-3">
-        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white">
+        <div className="w-10 h-10 rounded-xl bg-slate-950 flex items-center justify-center text-white">
           {formData.type === 'income' ? (
             <ArrowDownLeft className="w-6 h-6" />
           ) : formData.type === 'transfer' || formData.type === 'exchange' ? (
