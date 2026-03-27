@@ -26,11 +26,11 @@ export default function HoldingsPage() {
     <div className="space-y-6">
       <div className="rounded-[32px] border border-white/80 bg-white/70 p-6 shadow-[0_18px_60px_rgba(148,163,184,0.14)] backdrop-blur-xl">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center space-x-3">
-            <div className={`flex h-12 w-12 items-center justify-center rounded-2xl text-white ${theme === 'modern' ? 'bg-slate-950' : 'bg-gradient-to-br from-blue-500 to-indigo-600'}`}>
+          <div className="flex items-start space-x-3 md:items-center">
+            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white ${theme === 'modern' ? 'bg-slate-950' : 'bg-gradient-to-br from-blue-500 to-indigo-600'}`}>
               <Briefcase className="w-6 h-6" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">{t('title')}</p>
               <h1 className="mt-2 text-3xl font-black tracking-[-0.04em] text-slate-950">{t('title')}</h1>
               <p className="mt-2 text-sm text-slate-500">{holdingsSubtitle}</p>
