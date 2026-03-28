@@ -213,6 +213,7 @@
     "quickActionsDesc": "把常用交易草稿保存下来，在仪表盘里只填金额就能快速登记。",
     "addQuickAction": "添加快捷操作",
     "quickActionsEmpty": "还没有保存任何快捷操作。",
+    "quickActionUntitled": "未命名快捷操作",
     "quickActionLabel": "按钮名称",
     "quickActionLabelPlaceholder": "例如：午餐信用卡",
     "quickActionDescriptionPlaceholder": "例如：午餐",

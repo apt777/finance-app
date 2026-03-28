@@ -29,6 +29,7 @@ export default function QuickActionManager() {
   const { quickActions, saveQuickActions, isSaving } = useQuickActions()
   const [drafts, setDrafts] = React.useState<QuickActionItem[]>([])
   const [saveState, setSaveState] = React.useState<'idle' | 'done' | 'error'>('idle')
+  const [expandedId, setExpandedId] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     setDrafts(quickActions)
@@ -57,12 +58,15 @@ export default function QuickActionManager() {
   }
 
   const handleAdd = () => {
-    setDrafts((current) => [...current, createEmptyAction()].slice(0, 6))
+    const next = createEmptyAction()
+    setDrafts((current) => [...current, next].slice(0, 6))
+    setExpandedId(next.id)
     setSaveState('idle')
   }
 
   const handleDelete = (id: string) => {
     setDrafts((current) => current.filter((item) => item.id !== id))
+    setExpandedId((current) => (current === id ? null : current))
     setSaveState('idle')
   }
 
@@ -113,122 +117,140 @@ export default function QuickActionManager() {
           ) : (
             drafts.map((action) => {
               const filteredCategories = categories.filter((category) => category.type === action.type)
+              const isExpanded = expandedId === action.id
 
               return (
                 <div key={action.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-800">{tSettings('quickActionLabel')}</label>
-                      <input
-                        value={action.label}
-                        onChange={(event) => setAction(action.id, { label: event.target.value })}
-                        className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition-all focus:ring-2 focus:ring-blue-500"
-                        placeholder={tSettings('quickActionLabelPlaceholder')}
-                      />
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="text-base font-bold text-slate-950">{action.label || tSettings('quickActionUntitled')}</p>
+                      <p className="mt-1 truncate text-sm text-slate-500">{action.description || tSettings('quickActionDescriptionPlaceholder')}</p>
                     </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-800">{tTransactions('type')}</label>
-                      <select
-                        value={action.type}
-                        onChange={(event) => setAction(action.id, { type: event.target.value as QuickActionItem['type'] })}
-                        className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition-all focus:ring-2 focus:ring-blue-500"
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setExpandedId((current) => (current === action.id ? null : action.id))}
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-600 transition-all hover:bg-slate-100"
                       >
-                        <option value="expense">{tTransactions('expense')}</option>
-                        <option value="income">{tTransactions('income')}</option>
-                        <option value="transfer">{tTransactions('transfer')}</option>
-                      </select>
+                        <Plus className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-45' : ''}`} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(action.id)}
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 text-rose-600 transition-all hover:bg-rose-100"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
 
-                  <div className="mt-4">
-                    <label className="block text-sm font-semibold text-slate-800">{tTransactions('description')}</label>
-                    <input
-                      value={action.description}
-                      onChange={(event) => setAction(action.id, { description: event.target.value })}
-                      className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition-all focus:ring-2 focus:ring-blue-500"
-                      placeholder={tSettings('quickActionDescriptionPlaceholder')}
-                    />
-                  </div>
+                  {isExpanded ? (
+                    <>
+                      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-800">{tSettings('quickActionLabel')}</label>
+                          <input
+                            value={action.label}
+                            onChange={(event) => setAction(action.id, { label: event.target.value })}
+                            className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition-all focus:ring-2 focus:ring-blue-500"
+                            placeholder={tSettings('quickActionLabelPlaceholder')}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-800">{tTransactions('type')}</label>
+                          <select
+                            value={action.type}
+                            onChange={(event) => setAction(action.id, { type: event.target.value as QuickActionItem['type'] })}
+                            className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition-all focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="expense">{tTransactions('expense')}</option>
+                            <option value="income">{tTransactions('income')}</option>
+                            <option value="transfer">{tTransactions('transfer')}</option>
+                          </select>
+                        </div>
+                      </div>
 
-                  {action.type === 'transfer' ? (
-                    <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-                      <div>
-                        <label className="block text-sm font-semibold text-slate-800">{tTransactions('fromAccount')}</label>
-                        <select
-                          value={action.fromAccountId || ''}
-                          onChange={(event) => setAction(action.id, { fromAccountId: event.target.value })}
+                      <div className="mt-4">
+                        <label className="block text-sm font-semibold text-slate-800">{tTransactions('description')}</label>
+                        <input
+                          value={action.description}
+                          onChange={(event) => setAction(action.id, { description: event.target.value })}
                           className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition-all focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="">{tAccounts('selectAccount')}</option>
-                          {accounts.map((account: any) => (
-                            <option key={account.id} value={account.id}>{account.name}</option>
-                          ))}
-                        </select>
+                          placeholder={tSettings('quickActionDescriptionPlaceholder')}
+                        />
                       </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-slate-800">{tTransactions('toAccount')}</label>
-                        <select
-                          value={action.toAccountId || ''}
-                          onChange={(event) => setAction(action.id, { toAccountId: event.target.value })}
-                          className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition-all focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="">{tAccounts('selectAccount')}</option>
-                          {accounts.map((account: any) => (
-                            <option key={account.id} value={account.id}>{account.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-                      <div>
-                        <label className="block text-sm font-semibold text-slate-800">{tTransactions('account')}</label>
-                        <select
-                          value={action.accountId || ''}
-                          onChange={(event) => setAction(action.id, { accountId: event.target.value })}
-                          className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition-all focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="">{tAccounts('selectAccount')}</option>
-                          {accounts.map((account: any) => (
-                            <option key={account.id} value={account.id}>{account.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-slate-800">{tTransactions('category')}</label>
-                        <select
-                          value={action.categoryKey || ''}
-                          onChange={(event) => setAction(action.id, { categoryKey: event.target.value })}
-                          className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition-all focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="">{tTransactions('allCategories')}</option>
-                          {filteredCategories.map((category: any) => (
-                            <option key={category.id} value={category.key}>{category.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  )}
 
-                  <div className="mt-4 flex items-end justify-between gap-4">
-                    <div className="flex-1">
-                      <label className="block text-sm font-semibold text-slate-800">{tTransactions('notes')}</label>
-                      <input
-                        value={action.notes || ''}
-                        onChange={(event) => setAction(action.id, { notes: event.target.value })}
-                        className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition-all focus:ring-2 focus:ring-blue-500"
-                        placeholder={tTransactions('notesPlaceholder')}
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(action.id)}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-600 transition-all hover:bg-rose-100"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span>{tCommon('delete')}</span>
-                    </button>
-                  </div>
+                      {action.type === 'transfer' ? (
+                        <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-800">{tTransactions('fromAccount')}</label>
+                            <select
+                              value={action.fromAccountId || ''}
+                              onChange={(event) => setAction(action.id, { fromAccountId: event.target.value })}
+                              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition-all focus:ring-2 focus:ring-blue-500"
+                            >
+                              <option value="">{tAccounts('selectAccount')}</option>
+                              {accounts.map((account: any) => (
+                                <option key={account.id} value={account.id}>{account.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-800">{tTransactions('toAccount')}</label>
+                            <select
+                              value={action.toAccountId || ''}
+                              onChange={(event) => setAction(action.id, { toAccountId: event.target.value })}
+                              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition-all focus:ring-2 focus:ring-blue-500"
+                            >
+                              <option value="">{tAccounts('selectAccount')}</option>
+                              {accounts.map((account: any) => (
+                                <option key={account.id} value={account.id}>{account.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-800">{tTransactions('account')}</label>
+                            <select
+                              value={action.accountId || ''}
+                              onChange={(event) => setAction(action.id, { accountId: event.target.value })}
+                              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition-all focus:ring-2 focus:ring-blue-500"
+                            >
+                              <option value="">{tAccounts('selectAccount')}</option>
+                              {accounts.map((account: any) => (
+                                <option key={account.id} value={account.id}>{account.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-800">{tTransactions('category')}</label>
+                            <select
+                              value={action.categoryKey || ''}
+                              onChange={(event) => setAction(action.id, { categoryKey: event.target.value })}
+                              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition-all focus:ring-2 focus:ring-blue-500"
+                            >
+                              <option value="">{tTransactions('allCategories')}</option>
+                              {filteredCategories.map((category: any) => (
+                                <option key={category.id} value={category.key}>{category.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-4">
+                        <label className="block text-sm font-semibold text-slate-800">{tTransactions('notes')}</label>
+                        <input
+                          value={action.notes || ''}
+                          onChange={(event) => setAction(action.id, { notes: event.target.value })}
+                          className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition-all focus:ring-2 focus:ring-blue-500"
+                          placeholder={tTransactions('notesPlaceholder')}
+                        />
+                      </div>
+                    </>
+                  ) : null}
                 </div>
               )
             })

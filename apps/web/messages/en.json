@@ -228,6 +228,7 @@
     "quickActionsDesc": "Save your frequent transaction drafts and launch them from the dashboard with only the amount left to enter.",
     "addQuickAction": "Add Quick Action",
     "quickActionsEmpty": "No quick actions saved yet.",
+    "quickActionUntitled": "Untitled quick action",
     "quickActionLabel": "Button Label",
     "quickActionLabelPlaceholder": "e.g., Lunch card payment",
     "quickActionDescriptionPlaceholder": "e.g., Lunch",

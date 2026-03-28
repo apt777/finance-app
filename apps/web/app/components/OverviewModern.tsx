@@ -544,7 +544,7 @@ export default function OverviewModern() {
                       {ui.overview.jumpNow}
                     </Link>
                   </div>
-                  <div className="grid grid-cols-1 gap-3">
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                     {savedQuickActions.map((action) => (
                       <Link
                         key={action.id}

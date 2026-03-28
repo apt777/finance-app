@@ -213,6 +213,7 @@
     "quickActionsDesc": "よく使う取引の下書きを保存し、ダッシュボードから金額だけ入れてすぐ登録できます。",
     "addQuickAction": "クイック行動を追加",
     "quickActionsEmpty": "保存されたクイック行動はまだありません。",
+    "quickActionUntitled": "名前未設定のクイック行動",
     "quickActionLabel": "ボタン名",
     "quickActionLabelPlaceholder": "例: ランチカード決済",
     "quickActionDescriptionPlaceholder": "例: ランチ",
