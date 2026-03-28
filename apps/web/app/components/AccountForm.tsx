@@ -80,7 +80,7 @@ const AccountForm = ({ onAccountAdded, initialData }: AccountFormProps) => {
       setFormError(null)
       onAccountAdded?.();
       if (isEditMode) {
-        router.push('/accounts')
+        router.push('/accounts?flash=account-updated')
       }
     },
   })

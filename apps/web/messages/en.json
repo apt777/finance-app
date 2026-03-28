@@ -150,6 +150,7 @@
     "payFullBalance": "Pay full balance",
     "amountExceedsBalance": "Amount exceeds current balance. (Expected remaining: {balance})",
     "transactionAdded": "Transaction added successfully!",
+    "transactionUpdated": "Transaction updated successfully!",
     "bulkImport": "Bulk Import",
     "searchPlaceholder": "Search transactions or accounts...",
     "category": "Category",

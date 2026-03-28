@@ -10,6 +10,7 @@ import { ArrowUpRight, ArrowDownLeft, AlertCircle, CheckCircle, ArrowRightLeft }
 import { useLocale, useTranslations } from 'next-intl'
 import { findDuplicateTransaction } from '@/lib/transactionDuplicates'
 import { getUiCopy } from '@/lib/uiCopy'
+import { useRouter } from '@/navigation'
 
 interface TransactionFormData {
   accountId?: string;
@@ -100,6 +101,7 @@ const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: Tra
   const tCommon = useTranslations('common')
   const tAccounts = useTranslations('accounts')
   const tValidation = useTranslations('validation')
+  const router = useRouter()
   const locale = useLocale()
   const ui = getUiCopy(locale)
   const queryClient = useQueryClient()
@@ -216,6 +218,9 @@ const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: Tra
       }
       setFormError(null)
       onTransactionAdded?.();
+      if (isEditMode) {
+        router.push('/transactions?flash=transaction-updated')
+      }
     },
   })
 

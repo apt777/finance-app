@@ -1,15 +1,25 @@
 'use client'
 
 import { Plus, ReceiptText } from 'lucide-react'
+import FlashBanner from '@/components/FlashBanner'
 import TransactionList from '@/components/TransactionList'
-import { Link } from '@/navigation'
+import { Link, usePathname, useRouter } from '@/navigation'
 import { useTranslations } from 'next-intl'
+import { useSearchParams } from 'next/navigation'
 
 export default function TransactionsPage() {
   const tTransactions = useTranslations('transactions')
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const flash = searchParams.get('flash')
+  const flashMessage = flash === 'transaction-updated' ? tTransactions('transactionUpdated') : null
 
   return (
     <div className="space-y-6 pb-10 md:pb-12">
+      {flashMessage ? (
+        <FlashBanner message={flashMessage} onDone={() => router.replace(pathname)} />
+      ) : null}
       <div className="rounded-[32px] border border-white/80 bg-white/70 p-6 shadow-[0_18px_60px_rgba(148,163,184,0.14)] backdrop-blur-xl">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center space-x-3">

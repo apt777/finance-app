@@ -138,6 +138,7 @@
     "payFullBalance": "全额偿还",
     "amountExceedsBalance": "金额超过当前余额。(预计剩余: {balance})",
     "transactionAdded": "交易已成功添加！",
+    "transactionUpdated": "交易已成功更新！",
     "searchPlaceholder": "搜索交易或账户...",
     "category": "分类",
     "allCategories": "所有分类",

@@ -138,6 +138,7 @@
     "payFullBalance": "全額返済",
     "amountExceedsBalance": "金額が現在の残高を超えています。(予想残高: {balance})",
     "transactionAdded": "取引が追加されました。",
+    "transactionUpdated": "取引を更新しました。",
     "searchPlaceholder": "取引や口座を検索...",
     "category": "カテゴリ",
     "allCategories": "すべてのカテゴリ",

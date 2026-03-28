@@ -150,6 +150,7 @@
     "payFullBalance": "부채 전액 상환",
     "amountExceedsBalance": "현재 부채보다 많은 금액을 상환합니다. (예상 잔액: {balance})",
     "transactionAdded": "거래 내역이 성공적으로 추가되었습니다!",
+    "transactionUpdated": "거래 내역이 성공적으로 수정되었습니다!",
     "bulkImport": "일괄 가져오기",
     "searchPlaceholder": "거래 내용 또는 계좌 검색...",
     "category": "카테고리",
