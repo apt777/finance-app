@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 import { requireRouteSession } from '@/lib/server-auth'
 import { DEFAULT_TRANSACTION_CATEGORIES } from '@/lib/defaultCategories'
+import { ensureDefaultCategories } from '@/lib/categories'
 
 const NO_BALANCE_SYNC_MARKER = '[[KABLUS_NO_BALANCE_SYNC]]'
 
@@ -63,21 +64,60 @@ function transactionAffectsBalance(transaction: { notes?: string | null }) {
   return !transaction.notes?.includes(NO_BALANCE_SYNC_MARKER)
 }
 
-async function findCategoryForUser(userId: string, categoryKey: string) {
+async function getCategoryMapSafely(userId: string) {
   try {
-    return await prisma.transactionCategory.findFirst({
-      where: {
-        key: categoryKey,
-        OR: [{ userId }, { isDefault: true, userId: null }],
-      },
-    })
-  } catch {
-    const legacyRows = await prisma.$queryRawUnsafe<Array<{ key: string }>>(
-      'SELECT "key" FROM "TransactionCategory" WHERE "key" = $1 LIMIT 1',
-      categoryKey
+    const categories = await ensureDefaultCategories(userId)
+
+    return new Map(
+      categories.map((category) => [
+        category.key,
+        {
+          key: category.key,
+          name: category.name,
+        },
+      ])
     )
-    return legacyRows[0] || DEFAULT_TRANSACTION_CATEGORIES.find((item) => item.key === categoryKey) || null
+  } catch {
+    const legacyRows = await prisma.$queryRawUnsafe<Array<{ key: string; name: string }>>(
+      'SELECT "key", "name" FROM "TransactionCategory"'
+    )
+
+    const categoryMap = new Map<string, { key: string; name: string }>()
+
+    for (const category of legacyRows) {
+      categoryMap.set(category.key, category)
+    }
+
+    for (const category of DEFAULT_TRANSACTION_CATEGORIES) {
+      if (!categoryMap.has(category.key)) {
+        categoryMap.set(category.key, { key: category.key, name: category.name })
+      }
+    }
+
+    return categoryMap
   }
+}
+
+async function resolveCategorySelection(userId: string, categoryValue?: string | null) {
+  if (!categoryValue) {
+    return null
+  }
+
+  const categoryMap = await getCategoryMapSafely(userId)
+  const directMatch = categoryMap.get(categoryValue)
+  if (directMatch) {
+    return directMatch
+  }
+
+  const normalizedValue = categoryValue.trim().toLowerCase()
+  return (
+    Array.from(categoryMap.values()).find((category) => {
+      return (
+        category.name.trim().toLowerCase() === normalizedValue ||
+        category.key.trim().toLowerCase() === normalizedValue
+      )
+    }) ?? null
+  )
 }
 
 export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
@@ -117,6 +157,8 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
   try {
     const body: TransactionData = await request.json()
     const transactionAmount = Number(body.amount)
+    const resolvedCategory = await resolveCategorySelection(userId, body.categoryKey)
+    const normalizedCategoryKey = resolvedCategory?.key || body.categoryKey
 
     const existingTransaction = await prisma.transaction.findFirst({
       where: { id: params.id, userId },
@@ -135,11 +177,8 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       return NextResponse.json({ error: 'Invalid transaction payload' }, { status: 400 })
     }
 
-    if (body.categoryKey) {
-      const category = await findCategoryForUser(userId, body.categoryKey)
-      if (!category) {
-        return NextResponse.json({ error: 'Category not found' }, { status: 400 })
-      }
+    if (body.categoryKey && !resolvedCategory) {
+      return NextResponse.json({ error: 'Category not found' }, { status: 400 })
     }
 
     const applyBalance = shouldApplyBalanceAdjustment(body.date, body.applyBalanceAdjustment)
@@ -245,7 +284,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
             type: body.type,
             amount: transactionAmount,
             currency: body.currency,
-            categoryKey: body.categoryKey || 'transfer',
+            categoryKey: normalizedCategoryKey || 'transfer',
             exchangeToAmount: body.type === 'exchange' ? exchangeToAmount : null,
             exchangeToCurrency: body.type === 'exchange' ? exchangeToCurrency : null,
             exchangeRateApplied: body.type === 'exchange' ? exchangeRateApplied : null,
@@ -292,7 +331,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
             type: body.type,
             amount: body.type === 'expense' ? -transactionAmount : transactionAmount,
             currency: body.currency,
-            categoryKey: body.categoryKey,
+            categoryKey: normalizedCategoryKey,
             exchangeToAmount: null,
             exchangeToCurrency: null,
             exchangeRateApplied: null,
