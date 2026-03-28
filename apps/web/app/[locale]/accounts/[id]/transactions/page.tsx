@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { useAccounts } from '@/hooks/useAccounts'
 import AppLoadingState from '@/components/AppLoadingState'
 import TransactionList from '@/components/TransactionList'
+import CreditCardPaymentPlan from '@/components/CreditCardPaymentPlan'
 
 export default function AccountTransactionsPage() {
   const params = useParams()
@@ -24,10 +25,16 @@ export default function AccountTransactionsPage() {
   const account = accounts.find((item) => item.id === id)
 
   return (
-    <div>
-      <h1 className="mb-4 text-2xl font-bold">
-        {account ? `${account.name} · ${Math.round(account.balance).toLocaleString()} ${account.currency}` : `${tAccounts('accountName')}: ${id}`}
-      </h1>
+    <div className="space-y-6">
+      <div className="rounded-[32px] border border-white/80 bg-white/70 p-6 shadow-[0_18px_60px_rgba(148,163,184,0.14)] backdrop-blur-xl">
+        <h1 className="text-3xl font-black tracking-[-0.04em] text-slate-950">
+          {account ? `${account.name} · ${Math.round(account.balance).toLocaleString()} ${account.currency}` : `${tAccounts('accountName')}: ${id}`}
+        </h1>
+        <p className="mt-2 text-sm text-slate-500">{tAccounts('accountDetailDesc')}</p>
+      </div>
+      {account?.type === 'credit_card' ? (
+        <CreditCardPaymentPlan accountId={id} currency={account.currency} />
+      ) : null}
       <TransactionList accountId={id} />
     </div>
   )

@@ -28,7 +28,7 @@ export default function AccountsPage() {
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">{tAccounts('title')}</p>
             <h1 className="mt-2 text-3xl font-black tracking-[-0.04em] text-slate-950">{tAccounts('title')}</h1>
-            <p className="mt-2 text-sm text-slate-500">{tAccounts('totalAccounts')}</p>
+            <p className="mt-2 text-sm text-slate-500">{tAccounts('pageDesc')}</p>
           </div>
         </div>
       </div>

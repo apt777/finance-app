@@ -117,6 +117,7 @@ const AccountForm = ({ onAccountAdded, initialData }: AccountFormProps) => {
     { value: 'KRW', label: 'KRW (₩)' },
     { value: 'USD', label: 'USD ($)' },
   ]
+  const isCreditCard = formData.type === 'credit_card'
 
   return (
     <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl shadow-sm border border-slate-100 p-8">
@@ -193,7 +194,7 @@ const AccountForm = ({ onAccountAdded, initialData }: AccountFormProps) => {
         {/* Balance */}
         <div>
           <label htmlFor="balance" className="block text-sm font-semibold text-slate-800 mb-2">
-            {tAccounts('initialBalance')} <span className="text-red-500">*</span>
+            {isCreditCard ? tAccounts('paymentDueAmount') : tAccounts('initialBalance')} <span className="text-red-500">*</span>
           </label>
           <div className="relative">
             <input
@@ -212,6 +213,9 @@ const AccountForm = ({ onAccountAdded, initialData }: AccountFormProps) => {
               {formData.currency}
             </span>
           </div>
+          {isCreditCard ? (
+            <p className="mt-2 text-xs text-slate-500">{tAccounts('paymentDueAmountDesc')}</p>
+          ) : null}
         </div>
 
         {/* Error Message */}

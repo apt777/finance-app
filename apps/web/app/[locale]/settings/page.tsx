@@ -1,12 +1,13 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { Bell, Globe, Languages, Lock, PiggyBank, Repeat, Settings, Sparkles, Tags } from 'lucide-react'
+import { Bell, Globe, Languages, Lock, PiggyBank, Repeat, Settings, Sparkles, Tags, Zap } from 'lucide-react'
 import CategoryManager from '@/components/CategoryManager'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import AIBulkImportBeta from '@/components/AIBulkImportBeta'
 import BudgetManager from '@/components/BudgetManager'
 import RecurringManager from '@/components/RecurringManager'
+import QuickActionManager from '@/components/QuickActionManager'
 import { useColorMode } from '@/context/ColorModeContext'
 import { useCurrencyPreferences } from '@/context/CurrencyPreferenceContext'
 import { useUiTheme } from '@/context/UiThemeContext'
@@ -37,7 +38,7 @@ export default function SettingsPage() {
     const requestedTab = searchParams.get('tab')
     if (!requestedTab) return
 
-    const allowedTabs = new Set(['general', 'theme', 'language', 'categories', 'budgets', 'recurring', 'beta', 'security', 'notifications'])
+    const allowedTabs = new Set(['general', 'quickActions', 'theme', 'language', 'categories', 'budgets', 'recurring', 'beta', 'security', 'notifications'])
     if (allowedTabs.has(requestedTab)) {
       setActiveTab(requestedTab === 'theme' ? 'general' : requestedTab)
     }
@@ -45,6 +46,7 @@ export default function SettingsPage() {
 
   const tabs = [
     { id: 'general', label: tSettings('general'), icon: Settings },
+    { id: 'quickActions', label: tSettings('quickActions'), icon: Zap },
     { id: 'language', label: tSettings('language'), icon: Languages },
     { id: 'categories', label: tSettings('categories'), icon: Tags },
     { id: 'budgets', label: tSettings('budgetSettings'), icon: PiggyBank },
@@ -287,6 +289,8 @@ export default function SettingsPage() {
               </div>
             </div>
           )}
+
+          {activeTab === 'quickActions' && <QuickActionManager />}
 
           {activeTab === 'categories' && <CategoryManager />}
 

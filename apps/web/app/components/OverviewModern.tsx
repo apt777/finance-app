@@ -18,6 +18,7 @@ import { useColorMode } from '@/context/ColorModeContext'
 import { useCurrencyPreferences } from '@/context/CurrencyPreferenceContext'
 import AppLoadingState from '@/components/AppLoadingState'
 import { getUiCopy } from '@/lib/uiCopy'
+import { useQuickActions } from '@/hooks/useQuickActions'
 
 interface Account {
   id: string
@@ -86,6 +87,7 @@ export default function OverviewModern() {
   const locale = useLocale()
   const ui = getUiCopy(locale)
   const { baseCurrency, mirrorCurrency, setMirrorCurrency } = useCurrencyPreferences()
+  const { quickActions: storedQuickActions } = useQuickActions()
 
   const { data, isLoading, isError } = useOverviewData()
   const { data: exchangeRates, isLoading: ratesLoading, isError: ratesError } = useExchangeRates()
@@ -217,7 +219,7 @@ export default function OverviewModern() {
     : isDark
       ? 'text-emerald-300'
       : 'text-emerald-600'
-  const quickActions = [
+  const defaultQuickActions = [
     {
       href: '/transactions/add',
       eyebrow: ui.overview.quickAdd,
@@ -246,6 +248,23 @@ export default function OverviewModern() {
       darkAccent: 'bg-amber-500/15 text-amber-300',
     },
   ] as const
+  const savedQuickActions = storedQuickActions.slice(0, 3).map((action) => {
+    const params = new URLSearchParams({
+      type: action.type,
+      description: action.description,
+    })
+
+    if (action.categoryKey) params.set('categoryKey', action.categoryKey)
+    if (action.notes) params.set('notes', action.notes)
+    if (action.accountId) params.set('accountId', action.accountId)
+    if (action.fromAccountId) params.set('fromAccountId', action.fromAccountId)
+    if (action.toAccountId) params.set('toAccountId', action.toAccountId)
+
+    return {
+      ...action,
+      href: `/transactions/add?${params.toString()}`,
+    }
+  })
 
   return (
     <div className="space-y-8">
@@ -304,7 +323,7 @@ export default function OverviewModern() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  {quickActions.map((action) => {
+                  {defaultQuickActions.map((action) => {
                     const ActionIcon = action.icon
 
                     return (
@@ -517,6 +536,45 @@ export default function OverviewModern() {
                   </div>
                 )}
               </div>
+              {savedQuickActions.length > 0 ? (
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{tDashboard('quickActions')}</p>
+                    <Link href="/settings?tab=quickActions" className={`text-[11px] font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                      {ui.overview.jumpNow}
+                    </Link>
+                  </div>
+                  <div className="grid grid-cols-1 gap-3">
+                    {savedQuickActions.map((action) => (
+                      <Link
+                        key={action.id}
+                        href={action.href}
+                        className={`flex min-h-[92px] flex-col justify-between rounded-[24px] p-4 transition-all ${
+                          isDark
+                            ? 'border border-white/10 bg-white/5 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.08]'
+                            : 'border border-slate-200 bg-white/90 hover:-translate-y-0.5 hover:bg-white hover:shadow-md'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.quickAdd}</p>
+                            <p className={`mt-2 text-base font-bold ${isDark ? 'text-white' : 'text-slate-950'}`}>{action.label}</p>
+                          </div>
+                          <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${isDark ? 'bg-white/10 text-slate-200' : 'bg-slate-100 text-slate-700'}`}>
+                            {action.type === 'expense'
+                              ? tTransactions('expense')
+                              : action.type === 'income'
+                                ? tTransactions('income')
+                                : tTransactions('transfer')}
+                          </span>
+                        </div>
+                        <p className={`mt-3 text-xs leading-6 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{action.description}</p>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
               <Link
                 href="/settings?tab=beta"
                 className={`mt-4 flex min-h-[112px] flex-col justify-between rounded-[24px] p-4 transition-all ${

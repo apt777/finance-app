@@ -16,14 +16,7 @@ export default function GoalsPage() {
   const { theme } = useUiTheme()
   const { colorMode } = useColorMode()
   const isDark = colorMode === 'dark'
-  const modernSubtitle =
-    locale === 'en'
-      ? 'See goal progress and the remaining amount in one tidy workspace.'
-      : locale === 'ja'
-        ? '目標の進捗と残り金額を、ひと目で整理して確認できます。'
-        : locale === 'zh'
-          ? '在一个更整洁的视图里查看目标进度和剩余金额。'
-          : '목표 진행률과 남은 금액을 한 눈에 정리해서 볼 수 있게 다시 정돈했습니다.'
+  const modernSubtitle = t('pageDesc')
 
   if (theme === 'modern') {
     return (
@@ -66,7 +59,7 @@ export default function GoalsPage() {
           </div>
           <div>
             <h1 className="text-3xl font-black tracking-[-0.04em] text-slate-800">{t('title')}</h1>
-            <p className="text-slate-600 text-sm mt-1">{ui.goals.classicSubtitle}</p>
+            <p className="text-slate-600 text-sm mt-1">{t('pageDesc')}</p>
           </div>
         </div>
         <Link

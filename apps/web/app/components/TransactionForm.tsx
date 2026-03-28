@@ -132,16 +132,28 @@ const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: Tra
     const type = searchParams.get('type')
     const toAccountId = searchParams.get('toAccountId')
     const amount = searchParams.get('amount')
+    const description = searchParams.get('description')
+    const categoryKey = searchParams.get('categoryKey')
+    const notes = searchParams.get('notes')
+    const accountId = searchParams.get('accountId')
+    const fromAccountId = searchParams.get('fromAccountId')
+    const presetDate = searchParams.get('date')
 
-    if (type === 'transfer' && toAccountId) {
+    if (type && ['expense', 'income', 'transfer'].includes(type)) {
       setFormData(prev => ({
         ...prev,
-        type: 'transfer',
-        toAccountId,
+        type,
+        accountId: type === 'transfer' ? '' : accountId || prev.accountId,
+        fromAccountId: type === 'transfer' ? (fromAccountId || prev.fromAccountId) : '',
+        toAccountId: type === 'transfer' ? (toAccountId || prev.toAccountId) : '',
+        description: description || prev.description,
+        categoryKey: categoryKey || prev.categoryKey,
+        notes: notes || prev.notes,
+        date: presetDate || prev.date,
         amount: amount || prev.amount,
         applyBalanceAdjustment: true,
       }))
-      if (amount) setIsFullPayment(true)
+      if (type === 'transfer' && amount) setIsFullPayment(true)
     }
   }, [searchParams])
 
