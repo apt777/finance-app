@@ -8,6 +8,7 @@ type ParsedType = 'income' | 'expense' | 'transfer'
 interface ParseRequestBody {
   input?: string
   defaultAccountId?: string
+  defaultDate?: string
 }
 
 interface CategoryShape {
@@ -76,6 +77,10 @@ function normalizeWhitespace(value: string) {
   return value.replace(/\s+/g, ' ').trim()
 }
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 function parseDateToken(token: string) {
   const now = new Date()
   const normalized = token.replace(/[.]/g, '-').replace(/\//g, '-')
@@ -110,6 +115,14 @@ function inferType(rawAmount: number, description: string): ParsedType {
   return 'expense'
 }
 
+function detectCategoryGroups(description: string) {
+  const lower = description.toLowerCase()
+
+  return Object.entries(CATEGORY_GROUP_KEYWORDS)
+    .filter(([, keywords]) => keywords.some((keyword) => lower.includes(keyword.toLowerCase())))
+    .map(([group]) => group)
+}
+
 function tokenizeCategoryValue(value: string) {
   return value
     .toLowerCase()
@@ -131,6 +144,7 @@ function scoreCategory(description: string, category: CategoryShape) {
   const lower = description.toLowerCase()
   const nameLower = category.name.toLowerCase()
   const keyLower = category.key.toLowerCase()
+  const detectedGroups = detectCategoryGroups(description)
 
   if (lower.includes(nameLower) || lower.includes(keyLower.replace(/_/g, ' '))) {
     return 0.98
@@ -151,6 +165,11 @@ function scoreCategory(description: string, category: CategoryShape) {
     if (keywords.some((keyword) => lower.includes(keyword.toLowerCase()))) {
       return group === 'cafe' ? 0.97 : 0.92
     }
+  }
+
+  const categoryGroups = inferCategoryGroups(category)
+  if (detectedGroups.some((group) => categoryGroups.includes(group))) {
+    return detectedGroups.includes('cafe') ? 0.975 : 0.94
   }
 
   return 0
@@ -212,7 +231,38 @@ function inferAccount(description: string, accounts: AccountShape[], defaultAcco
   return defaultAccount
 }
 
-function parseLine(line: string, categories: CategoryShape[], accounts: AccountShape[], index: number, defaultAccountId?: string) {
+function stripAccountMentions(description: string, accounts: AccountShape[], selectedAccount?: AccountShape | null) {
+  let cleaned = description
+
+  const candidates = selectedAccount ? [selectedAccount] : accounts
+
+  for (const account of candidates) {
+    const name = normalizeWhitespace(account.name)
+    if (!name) continue
+
+    cleaned = cleaned.replace(new RegExp(escapeRegExp(name), 'ig'), ' ')
+
+    const compactName = name.replace(/\s+/g, '')
+    if (compactName && compactName !== name) {
+      cleaned = cleaned.replace(new RegExp(escapeRegExp(compactName), 'ig'), ' ')
+    }
+  }
+
+  cleaned = cleaned
+    .replace(/\b(card|account|현금|cash)\b/gi, ' ')
+    .replace(/카드결제|카드사용|통장|계좌/gi, ' ')
+
+  return normalizeWhitespace(cleaned)
+}
+
+function parseLine(
+  line: string,
+  categories: CategoryShape[],
+  accounts: AccountShape[],
+  index: number,
+  defaultAccountId?: string,
+  defaultDate?: string
+) {
   const trimmed = normalizeWhitespace(line)
   if (!trimmed) return null
 
@@ -243,8 +293,8 @@ function parseLine(line: string, categories: CategoryShape[], accounts: AccountS
     }
   }
 
-  const description = normalizeWhitespace(working.slice(0, working.length - amountMatch[0].length))
-  if (!description) {
+  const rawDescription = normalizeWhitespace(working.slice(0, working.length - amountMatch[0].length))
+  if (!rawDescription) {
     return {
       id: `parsed-${index}`,
       source: trimmed,
@@ -252,20 +302,22 @@ function parseLine(line: string, categories: CategoryShape[], accounts: AccountS
     }
   }
 
-  const type = inferType(numericAmount, description)
-  const category = recommendCategory(description, type, categories)
-  const account = inferAccount(description, accounts, defaultAccountId)
+  const inferredAccount = inferAccount(rawDescription, accounts, defaultAccountId)
+  const description = stripAccountMentions(rawDescription, accounts, inferredAccount)
+  const finalDescription = description || rawDescription
+  const type = inferType(numericAmount, finalDescription)
+  const category = recommendCategory(finalDescription, type, categories)
   const today = new Date().toISOString().split('T')[0] || ''
 
   return {
     id: `parsed-${index}`,
     source: trimmed,
-    date: parsedDate || today,
-    description,
+    date: parsedDate || defaultDate || today,
+    description: finalDescription,
     amount: Math.abs(numericAmount),
     type,
-    accountId: account?.id || null,
-    accountName: account?.name || null,
+    accountId: inferredAccount?.id || null,
+    accountName: inferredAccount?.name || null,
     categoryKey: category.categoryKey,
     categoryName: category.categoryName,
     confidence: category.confidence,
@@ -280,7 +332,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { input, defaultAccountId }: ParseRequestBody = await request.json()
+    const { input, defaultAccountId, defaultDate }: ParseRequestBody = await request.json()
 
     if (!input?.trim()) {
       return NextResponse.json({ error: '입력 내용이 비어 있습니다.' }, { status: 400 })
@@ -299,7 +351,7 @@ export async function POST(request: Request) {
       .filter(Boolean)
 
     const rows = lines
-      .map((line, index) => parseLine(line, categories, accounts, index, defaultAccountId))
+      .map((line, index) => parseLine(line, categories, accounts, index, defaultAccountId, defaultDate))
       .filter(Boolean)
 
     return NextResponse.json({
