@@ -127,6 +127,20 @@ function parseDateDirectiveToken(line: string) {
   return null
 }
 
+function extractLeadingDate(line: string) {
+  const trimmed = normalizeWhitespace(line)
+  const match = trimmed.match(/^(\d{4}[./-]\d{1,2}[./-]\d{1,2}|\d{1,2}[./-]\d{1,2})\s+(.+)$/)
+  if (!match?.[1] || !match?.[2]) return null
+
+  const date = parseDateToken(match[1])
+  if (!date) return null
+
+  return {
+    date,
+    rest: normalizeWhitespace(match[2]),
+  }
+}
+
 function inferType(rawAmount: number, description: string): ParsedType {
   const lower = description.toLowerCase()
 
@@ -239,10 +253,38 @@ function recommendCategory(description: string, type: ParsedType, categories: Ca
 
 function inferAccount(description: string, accounts: AccountShape[], defaultAccountId?: string) {
   const lower = description.toLowerCase()
+  const compactLower = lower.replace(/\s+/g, '')
   const defaultAccount = accounts.find((account) => account.id === defaultAccountId) || null
 
-  const exactMatch = accounts.find((account) => lower.includes(account.name.toLowerCase()))
-  if (exactMatch) return exactMatch
+  const scoredMatches = accounts
+    .map((account) => {
+      const normalizedName = normalizeWhitespace(account.name).toLowerCase()
+      const compactName = normalizedName.replace(/\s+/g, '')
+
+      let score = 0
+
+      if (normalizedName && lower.includes(normalizedName)) {
+        score = Math.max(score, 100 + normalizedName.length)
+      }
+
+      if (compactName && compactLower.includes(compactName)) {
+        score = Math.max(score, 90 + compactName.length)
+      }
+
+      if (normalizedName && normalizedName.includes(lower) && lower.length >= 3) {
+        score = Math.max(score, 70 + lower.length)
+      }
+
+      if (compactName && compactName.includes(compactLower) && compactLower.length >= 3) {
+        score = Math.max(score, 65 + compactLower.length)
+      }
+
+      return { account, score }
+    })
+    .filter((entry) => entry.score > 0)
+    .sort((left, right) => right.score - left.score)
+
+  if (scoredMatches[0]) return scoredMatches[0].account
 
   if (/(엔|jpy|yen|¥)/i.test(description)) {
     return accounts.find((account) => account.currency === 'JPY') || defaultAccount
@@ -406,13 +448,16 @@ export async function POST(request: Request) {
 
     let currentDate: string | undefined
     const rows = lines.reduce<Array<ReturnType<typeof parseLine>>>((list, line, index) => {
-      const dateDirective = parseDateDirectiveToken(line)
-      if (dateDirective) {
-        currentDate = dateDirective
-        return list
-      }
+    const dateDirective = parseDateDirectiveToken(line)
+    if (dateDirective) {
+      currentDate = dateDirective
+      return list
+    }
 
-      const segments = splitCompoundSegments(line)
+      const leadingDate = extractLeadingDate(line)
+      const lineDate = leadingDate?.date || currentDate
+      const baseLine = leadingDate?.rest || line
+      const segments = splitCompoundSegments(baseLine)
 
       for (const [segmentOffset, segment] of segments.entries()) {
         const parsed = parseLine(
@@ -421,7 +466,7 @@ export async function POST(request: Request) {
           accounts,
           index * 100 + segmentOffset,
           defaultAccountId,
-          currentDate
+          lineDate
         )
 
         if (parsed) {
