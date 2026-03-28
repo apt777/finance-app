@@ -9,6 +9,10 @@ export const PLAN_FEATURES: Record<SubscriptionPlan, string[]> = {
 
 const PLAN_KEY = 'subscription_plan'
 
+export function isSubscriptionPlan(value: unknown): value is SubscriptionPlan {
+  return value === 'free' || value === 'plus'
+}
+
 export async function getUserPlan(userId: string): Promise<SubscriptionPlan> {
   const setting = await prisma.userSetting.findUnique({
     where: {
