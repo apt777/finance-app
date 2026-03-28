@@ -147,7 +147,7 @@ async function findCategoryForUser(userId: string, categoryKey: string) {
     return await prisma.transactionCategory.findFirst({
       where: {
         key: categoryKey,
-        OR: [{ userId }, { isDefault: true, userId: null }],
+        OR: [{ userId }, { userId: null }],
       },
     })
   } catch {

@@ -25,13 +25,13 @@ interface ParsedRow {
   error?: string | null
 }
 
-const parseTransactions = async ({ input, defaultAccountId, defaultDate }: { input: string; defaultAccountId?: string; defaultDate?: string }) => {
+const parseTransactions = async ({ input, defaultAccountId }: { input: string; defaultAccountId?: string }) => {
   const response = await fetch('/api/beta/transaction-bulk-parse', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ input, defaultAccountId, defaultDate }),
+    body: JSON.stringify({ input, defaultAccountId }),
   })
 
   if (!response.ok) {
@@ -113,7 +113,6 @@ export default function AIBulkImportBeta() {
   const [input, setInput] = useState('')
   const [rows, setRows] = useState<ParsedRow[]>([])
   const [selectedAccountId, setSelectedAccountId] = useState('')
-  const [globalDate, setGlobalDate] = useState('')
   const [feedback, setFeedback] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -258,14 +257,6 @@ export default function AIBulkImportBeta() {
     setRows((prev) => prev.map((row) => (row.id === id ? { ...row, ...patch, error: null } : row)))
   }
 
-  const applyDateToAllRows = (date: string) => {
-    setGlobalDate(date)
-    if (!date) {
-      return
-    }
-    setRows((prev) => prev.map((row) => ({ ...row, date, error: row.error || null })))
-  }
-
   const removeRow = (id: string) => {
     setRows((prev) => prev.filter((row) => row.id !== id))
   }
@@ -305,27 +296,6 @@ export default function AIBulkImportBeta() {
 
           <div className="space-y-4">
             <div>
-              <label className="mb-2 block text-sm font-semibold text-slate-800">
-                {locale === 'en' ? 'Common date' : locale === 'ja' ? '共通の日付' : locale === 'zh' ? '统一日期' : '공통 날짜'}
-              </label>
-              <input
-                type="date"
-                value={globalDate}
-                onChange={(event) => applyDateToAllRows(event.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition-all focus:border-blue-300 focus:ring-2 focus:ring-blue-500"
-              />
-              <p className="mt-2 text-xs text-slate-500">
-                {locale === 'en'
-                  ? 'If most rows are from the same day, set it once and apply it to every draft row.'
-                  : locale === 'ja'
-                    ? '同じ日の明細が多い場合は、一度設定すると全ての下書き行にまとめて適用できます。'
-                    : locale === 'zh'
-                      ? '如果大部分记录来自同一天，可以在这里设置一次并应用到所有草稿行。'
-                      : '대부분 같은 날짜라면 여기서 한 번 설정해서 모든 미리보기 행에 같이 적용할 수 있습니다.'}
-              </p>
-            </div>
-
-            <div>
               <label className="mb-2 block text-sm font-semibold text-slate-800">{tSettings('betaAccountLabel')}</label>
               <select
                 value={selectedAccountId}
@@ -342,9 +312,19 @@ export default function AIBulkImportBeta() {
               <p className="mt-2 text-xs text-slate-500">{tSettings('betaAccountHelp')}</p>
             </div>
 
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs leading-6 text-slate-500">
+              {locale === 'en'
+                ? 'Tip: type a date line like "date 3/1" or just "3/1", and the rows below will use that date until a new date line appears.'
+                : locale === 'ja'
+                  ? 'ヒント: 「date 3/1」や「3/1」のように日付だけの行を書くと、その下の行は次の日付行が出るまで同じ日付で処理されます。'
+                  : locale === 'zh'
+                    ? '提示：输入一行“date 3/1”或仅输入“3/1”，下面的记录会一直使用这个日期，直到出现新的日期行。'
+                    : '팁: "date 3/1" 또는 "3/1"처럼 날짜만 적은 줄을 넣으면, 다음 날짜 줄이 나오기 전까지 아래 행들이 그 날짜로 처리됩니다.'}
+            </div>
+
             <button
               type="button"
-              onClick={() => parseMutation.mutate({ input, defaultAccountId: selectedAccountId || undefined, defaultDate: globalDate || undefined })}
+              onClick={() => parseMutation.mutate({ input, defaultAccountId: selectedAccountId || undefined })}
               disabled={!input.trim() || parseMutation.isPending}
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
             >

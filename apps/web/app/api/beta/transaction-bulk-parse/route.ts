@@ -8,7 +8,6 @@ type ParsedType = 'income' | 'expense' | 'transfer'
 interface ParseRequestBody {
   input?: string
   defaultAccountId?: string
-  defaultDate?: string
 }
 
 interface CategoryShape {
@@ -28,6 +27,18 @@ const INCOME_HINTS = [
   '급여',
   'salary',
   'payroll',
+  'income',
+  '給料',
+  '給与',
+  '賞与',
+  'ボーナス',
+  '給付',
+  '返金',
+  '工资',
+  '薪资',
+  '奖金',
+  '收入',
+  '退款',
   '보너스',
   '상여',
   'bonus',
@@ -42,14 +53,14 @@ const INCOME_HINTS = [
 ]
 
 const CATEGORY_GROUP_KEYWORDS: Record<string, string[]> = {
-  cafe: ['스타벅스', '투썸', '메가커피', '이디야', '커피', '카페', 'coffee', 'cafe'],
-  food: ['점심', '저녁', '아침', '식비', '배달', '쿠팡이츠', '배민', '맥도날드', '버거', 'food', 'meal', 'restaurant'],
-  transport: ['지하철', '버스', '택시', '전철', '교통', '주유', '주차', 'transport', 'uber', 'train', 'subway'],
-  shopping: ['쿠팡', '쇼핑', '네이버', '무신사', '올리브영', '다이소', 'shopping', 'mart'],
-  entertainment: ['영화', '넷플릭스', '게임', '콘서트', '유튜브', 'entertainment'],
-  housing: ['월세', '관리비', '전기', '가스', '수도', 'house', 'rent'],
-  healthcare: ['병원', '약국', '의원', 'health', 'medical'],
-  education: ['학원', '책', '강의', '수업', 'education'],
+  cafe: ['스타벅스', '투썸', '메가커피', '이디야', '커피', '카페', 'coffee', 'cafe', 'starbucks', 'コーヒー', 'カフェ', 'スタバ', '咖啡', '星巴克'],
+  food: ['점심', '저녁', '아침', '식비', '배달', '쿠팡이츠', '배민', '맥도날드', '버거', 'food', 'meal', 'restaurant', 'lunch', 'dinner', 'breakfast', '食事', '食費', 'ランチ', 'ディナー', '早餐', '午饭', '晚饭', '餐饮', '外卖'],
+  transport: ['지하철', '버스', '택시', '전철', '교통', '주유', '주차', 'transport', 'uber', 'train', 'subway', 'metro', '交通', '電車', '地下鉄', 'バス', 'タクシー', '地铁', '公交', '出租车'],
+  shopping: ['쿠팡', '쇼핑', '네이버', '무신사', '올리브영', '다이소', 'shopping', 'mart', 'amazon', 'rakuten', 'taobao', '買い物', '购物', '网购'],
+  entertainment: ['영화', '넷플릭스', '게임', '콘서트', '유튜브', 'entertainment', 'movie', 'netflix', '映画', '娯楽', '游戏', '娱乐'],
+  housing: ['월세', '관리비', '전기', '가스', '수도', 'house', 'rent', 'housing', '家賃', '住居', '電気', 'ガス', '水道', '房租', '住房', '电费', '燃气'],
+  healthcare: ['병원', '약국', '의원', 'health', 'medical', 'hospital', 'clinic', '病院', '薬局', '医療', '医院', '药店', '医疗'],
+  education: ['학원', '책', '강의', '수업', 'education', 'book', 'course', 'school', '教育', '授業', '講座', '书', '课程'],
   salary: ['월급', '급여', 'salary', 'payroll'],
   bonus: ['보너스', '상여', 'bonus'],
   allowance: ['용돈', 'allowance'],
@@ -58,19 +69,19 @@ const CATEGORY_GROUP_KEYWORDS: Record<string, string[]> = {
 }
 
 const CATEGORY_GROUP_ALIASES: Record<string, string[]> = {
-  cafe: ['카페', '커피', 'cafe', 'coffee'],
-  food: ['식비', 'food', 'meal', 'dining'],
-  transport: ['교통', 'transport', 'transit', 'train', 'subway', 'bus'],
-  shopping: ['쇼핑', 'shopping', '구매'],
-  entertainment: ['문화', 'entertainment', '여가'],
-  housing: ['주거', 'housing', 'rent', '월세'],
-  healthcare: ['의료', 'health', 'medical'],
-  education: ['교육', 'education'],
-  salary: ['급여', 'salary'],
-  bonus: ['보너스', 'bonus'],
-  allowance: ['용돈', 'allowance'],
-  freelance: ['프리랜서', 'freelance'],
-  investment: ['투자', 'investment'],
+  cafe: ['카페', '커피', 'cafe', 'coffee', 'カフェ', 'コーヒー', '咖啡'],
+  food: ['식비', 'food', 'meal', 'dining', '食費', '餐饮'],
+  transport: ['교통', 'transport', 'transit', 'train', 'subway', 'bus', '交通'],
+  shopping: ['쇼핑', 'shopping', '구매', '買い物', '购物'],
+  entertainment: ['문화', 'entertainment', '여가', '娯楽', '娱乐'],
+  housing: ['주거', 'housing', 'rent', '월세', '住居', '住房'],
+  healthcare: ['의료', 'health', 'medical', '医療', '医疗'],
+  education: ['교육', 'education', '教育'],
+  salary: ['급여', 'salary', '給与', '工资'],
+  bonus: ['보너스', 'bonus', 'ボーナス', '奖金'],
+  allowance: ['용돈', 'allowance', '零花钱'],
+  freelance: ['프리랜서', 'freelance', '外注', '自由职业'],
+  investment: ['투자', 'investment', '投資', '投资'],
 }
 
 function normalizeWhitespace(value: string) {
@@ -96,6 +107,21 @@ function parseDateToken(token: string) {
     const [month, day] = parts
     if (!month || !day) return null
     return `${now.getFullYear()}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+  }
+
+  return null
+}
+
+function parseDateDirectiveToken(line: string) {
+  const trimmed = normalizeWhitespace(line)
+  const directDateMatch = trimmed.match(/^(\d{4}[./-]\d{1,2}[./-]\d{1,2}|\d{1,2}[./-]\d{1,2})$/)
+  if (directDateMatch?.[1]) {
+    return parseDateToken(directDateMatch[1])
+  }
+
+  const directiveMatch = trimmed.match(/^(date|날짜|日付|日期)\s*[:：]?\s*(\d{4}[./-]\d{1,2}[./-]\d{1,2}|\d{1,2}[./-]\d{1,2})$/i)
+  if (directiveMatch?.[2]) {
+    return parseDateToken(directiveMatch[2])
   }
 
   return null
@@ -332,7 +358,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { input, defaultAccountId, defaultDate }: ParseRequestBody = await request.json()
+    const { input, defaultAccountId }: ParseRequestBody = await request.json()
 
     if (!input?.trim()) {
       return NextResponse.json({ error: '입력 내용이 비어 있습니다.' }, { status: 400 })
@@ -350,9 +376,20 @@ export async function POST(request: Request) {
       .map((line) => line.trim())
       .filter(Boolean)
 
-    const rows = lines
-      .map((line, index) => parseLine(line, categories, accounts, index, defaultAccountId, defaultDate))
-      .filter(Boolean)
+    let currentDate: string | undefined
+    const rows = lines.reduce<Array<ReturnType<typeof parseLine>>>((list, line, index) => {
+      const dateDirective = parseDateDirectiveToken(line)
+      if (dateDirective) {
+        currentDate = dateDirective
+        return list
+      }
+
+      const parsed = parseLine(line, categories, accounts, index, defaultAccountId, currentDate)
+      if (parsed) {
+        list.push(parsed)
+      }
+      return list
+    }, []).filter(Boolean)
 
     return NextResponse.json({
       rows,
