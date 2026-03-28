@@ -42,7 +42,8 @@
     "registerFailed": "登録失敗",
     "registerSuccess": "登録が完了しました!メールを確認してください。",
     "signingIn": "ログイン中...",
-    "signingUp": "登録中..."
+    "signingUp": "登録中...",
+    "continueWithGoogle": "Googleで続ける"
   },
   "dashboard": {
     "title": "ダッシュボード",
@@ -208,6 +209,16 @@
     "mirrorCurrencyDesc": "ダッシュボード資産概要の比較用通貨です。",
     "theme": "テーマ",
     "general": "一般",
+    "planSettings": "プランと権限",
+    "planDesc": "今は無料プランの構造だけ先に整えてあり、あとで Plus サブスクを接続できるようにしています。",
+    "freePlan": "Free",
+    "plusPlan": "Plus",
+    "featureManualTracking": "手動管理",
+    "featureExchangeRates": "為替管理",
+    "featureBasicAnalysis": "基本分析",
+    "featureAiImport": "AI一括入力",
+    "featureAiAdvice": "AIアドバイス",
+    "featureAdvancedAnalysis": "高度な分析",
     "quickActions": "クイック行動",
     "quickActionsSettings": "クイック行動設定",
     "quickActionsDesc": "よく使う取引の下書きを保存し、ダッシュボードから金額だけ入れてすぐ登録できます。",

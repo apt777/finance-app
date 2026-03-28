@@ -46,7 +46,8 @@
     "registerFailed": "Registration Failed",
     "registerSuccess": "Registration successful! Please check your email to confirm your account.",
     "signingIn": "Signing in...",
-    "signingUp": "Signing up..."
+    "signingUp": "Signing up...",
+    "continueWithGoogle": "Continue with Google"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -223,6 +224,16 @@
     "mirrorCurrencyDesc": "Used for the secondary reference card in the dashboard asset overview.",
     "theme": "Theme",
     "general": "General",
+    "planSettings": "Plan & Access",
+    "planDesc": "The app is currently set up with a free plan structure so a Plus subscription can be connected later.",
+    "freePlan": "Free",
+    "plusPlan": "Plus",
+    "featureManualTracking": "Manual tracking",
+    "featureExchangeRates": "Exchange rates",
+    "featureBasicAnalysis": "Basic analysis",
+    "featureAiImport": "AI bulk import",
+    "featureAiAdvice": "AI advice",
+    "featureAdvancedAnalysis": "Advanced analysis",
     "quickActions": "Quick Actions",
     "quickActionsSettings": "Quick Action Settings",
     "quickActionsDesc": "Save your frequent transaction drafts and launch them from the dashboard with only the amount left to enter.",

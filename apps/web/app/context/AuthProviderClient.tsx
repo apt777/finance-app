@@ -9,6 +9,7 @@ interface AuthContextType {
   loading: boolean
   signIn: (email: string, password: string) => Promise<{ error: any | null }>
   signUp: (email: string, password: string) => Promise<{ error: any | null }>
+  signInWithGoogle: (nextPath?: string) => Promise<{ error: any | null }>
   signOut: () => Promise<{ error: any | null }>
 }
 
@@ -67,12 +68,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error }
   }
 
+  const signInWithGoogle = async (nextPath = '/') => {
+    const redirectTo =
+      typeof window !== 'undefined'
+        ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`
+        : undefined
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo,
+      },
+    })
+
+    return { error }
+  }
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut()
     return { error }
   }
 
-  const contextValue = useMemo(() => ({ user, loading, signIn, signUp, signOut }), [user, loading, signIn, signUp, signOut]);
+  const contextValue = useMemo(() => ({ user, loading, signIn, signUp, signInWithGoogle, signOut }), [user, loading, signIn, signUp, signInWithGoogle, signOut]);
 
   return (
     <AuthContext.Provider value={contextValue}>

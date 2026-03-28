@@ -42,7 +42,8 @@
     "registerFailed": "注册失败",
     "registerSuccess": "注册成功!请检查您的电子邮件以确认您的账户。",
     "signingIn": "登录中...",
-    "signingUp": "注册中..."
+    "signingUp": "注册中...",
+    "continueWithGoogle": "使用 Google 继续"
   },
   "dashboard": {
     "title": "仪表板",
@@ -208,6 +209,16 @@
     "mirrorCurrencyDesc": "用于仪表盘资产摘要中的辅助参考卡片。",
     "theme": "主题",
     "general": "常规",
+    "planSettings": "计划与权限",
+    "planDesc": "目前先把免费版的权限结构准备好，之后可以再接入 Plus 订阅。",
+    "freePlan": "Free",
+    "plusPlan": "Plus",
+    "featureManualTracking": "手动管理",
+    "featureExchangeRates": "汇率管理",
+    "featureBasicAnalysis": "基础分析",
+    "featureAiImport": "AI 批量录入",
+    "featureAiAdvice": "AI 建议",
+    "featureAdvancedAnalysis": "高级分析",
     "quickActions": "快捷操作",
     "quickActionsSettings": "快捷操作设置",
     "quickActionsDesc": "把常用交易草稿保存下来，在仪表盘里只填金额就能快速登记。",

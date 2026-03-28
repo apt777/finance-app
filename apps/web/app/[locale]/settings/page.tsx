@@ -15,6 +15,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { useSearchParams } from 'next/navigation'
 import { SUPPORTED_CURRENCIES } from '@/lib/currency'
 import { useTrackedCurrencies } from '@/hooks/useTrackedCurrencies'
+import { useEntitlements } from '@/hooks/useEntitlements'
 
 export default function SettingsPage() {
   const tSettings = useTranslations('settings')
@@ -23,6 +24,7 @@ export default function SettingsPage() {
   const { colorMode, setColorMode } = useColorMode()
   const { baseCurrency, mirrorCurrency, setBaseCurrency, setMirrorCurrency } = useCurrencyPreferences()
   const { trackedCurrencies, updateTrackedCurrencies, isSaving: isSavingTrackedCurrencies } = useTrackedCurrencies()
+  const { data: entitlements } = useEntitlements()
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState('general')
   const languageNames =
@@ -33,6 +35,14 @@ export default function SettingsPage() {
         : locale === 'zh'
           ? { ko: '韩语', ja: '日语', en: '英语', zh: '中文' }
           : { ko: '한국어', ja: '일본어', en: '영어', zh: '중국어' }
+  const featureLabels: Record<string, string> = {
+    manual_tracking: tSettings('featureManualTracking'),
+    exchange_rates: tSettings('featureExchangeRates'),
+    basic_analysis: tSettings('featureBasicAnalysis'),
+    ai_bulk_import: tSettings('featureAiImport'),
+    ai_advice: tSettings('featureAiAdvice'),
+    advanced_analysis: tSettings('featureAdvancedAnalysis'),
+  }
 
   useEffect(() => {
     const requestedTab = searchParams.get('tab')
@@ -110,6 +120,25 @@ export default function SettingsPage() {
           {activeTab === 'general' && (
             <div className="space-y-6">
               <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-6">
+                <div className="mb-8 rounded-[24px] border border-slate-200 bg-white p-5">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <h4 className="text-base font-black tracking-[-0.02em] text-slate-950">{tSettings('planSettings')}</h4>
+                      <p className="mt-2 text-sm text-slate-500">{tSettings('planDesc')}</p>
+                    </div>
+                    <span className={`rounded-full px-3 py-1.5 text-xs font-bold ${entitlements?.plan === 'plus' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
+                      {entitlements?.plan === 'plus' ? tSettings('plusPlan') : tSettings('freePlan')}
+                    </span>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {(entitlements?.features || ['manual_tracking', 'exchange_rates', 'basic_analysis']).map((feature) => (
+                      <span key={feature} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+                        {featureLabels[feature] || feature}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
                 <h3 className="text-xl font-black tracking-[-0.03em] text-slate-950">{tSettings('themeSettings')}</h3>
                 <p className="mt-2 text-sm text-slate-500">{tSettings('themeDesc')}</p>
                 <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">

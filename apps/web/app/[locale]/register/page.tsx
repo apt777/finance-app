@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { useRouter } from '@/navigation'
 import { Link } from '@/navigation'
 import { useAuth } from '@/context/AuthProviderClient'
@@ -19,8 +20,9 @@ export default function Register() {
   const [isLoading, setIsLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
   const router = useRouter()
-  const { user, signUp } = useAuth()
+  const { user, signUp, signInWithGoogle } = useAuth()
   const locale = useLocale()
+  const tAuth = useTranslations('auth')
   const ui = getUiCopy(locale)
 
   useEffect(() => {
@@ -73,6 +75,16 @@ export default function Register() {
       setTimeout(() => {
         router.push('/login')
       }, 2000)
+    }
+  }
+
+  const handleGoogleLogin = async () => {
+    setErrorMessage('')
+    setIsLoading(true)
+    const { error } = await signInWithGoogle(`/${locale}`)
+    if (error) {
+      setErrorMessage(error.message)
+      setIsLoading(false)
     }
   }
 
@@ -270,6 +282,17 @@ export default function Register() {
           </div>
 
           {/* Links Section */}
+          <div className="mb-4">
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              disabled={isLoading}
+              className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <span className="text-base">G</span>
+              <span>{tAuth('continueWithGoogle')}</span>
+            </button>
+          </div>
           <div className="text-center">
             <p className="text-slate-600 text-sm">
               {ui.register.alreadyHaveAccount}{' '}

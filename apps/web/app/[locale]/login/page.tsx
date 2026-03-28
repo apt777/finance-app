@@ -21,7 +21,7 @@ export default function Login() {
   const [errorMessage, setErrorMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
-  const { user, signIn } = useAuth()
+  const { user, signIn, signInWithGoogle } = useAuth()
 
   useEffect(() => {
     if (user) {
@@ -36,6 +36,16 @@ export default function Login() {
 
     const { error } = await signIn(email, password)
 
+    if (error) {
+      setErrorMessage(error.message)
+      setIsLoading(false)
+    }
+  }
+
+  const handleGoogleLogin = async () => {
+    setErrorMessage('')
+    setIsLoading(true)
+    const { error } = await signInWithGoogle(`/${locale}`)
     if (error) {
       setErrorMessage(error.message)
       setIsLoading(false)
@@ -244,6 +254,15 @@ export default function Login() {
             </div>
 
             <div className="space-y-3">
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={isLoading}
+                className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <span className="text-base">G</span>
+                <span>{t('continueWithGoogle')}</span>
+              </button>
               <div className="text-center">
                 <p className="text-slate-600 text-sm">
                   {t('dontHaveAccount')}{' '}
