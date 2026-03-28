@@ -29,10 +29,11 @@ export const metadata: Metadata = {
   description: "Personal Finance Application",
   icons: {
     icon: [
-      { url: '/icon.svg?v=2', type: 'image/svg+xml' },
+      { url: '/icon.png?v=3', type: 'image/png' },
+      { url: '/icon.svg?v=3', type: 'image/svg+xml' },
     ],
-    shortcut: ['/icon.svg?v=2'],
-    apple: ['/icon.svg?v=2'],
+    shortcut: ['/icon.png?v=3'],
+    apple: ['/apple-icon.png?v=3'],
   },
 };
 
