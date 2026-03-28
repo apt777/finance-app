@@ -281,6 +281,34 @@ function stripAccountMentions(description: string, accounts: AccountShape[], sel
   return normalizeWhitespace(cleaned)
 }
 
+function isAmountToken(token: string) {
+  return /^[+-]?\d[\d,]*(?:\.\d+)?$/.test(token)
+}
+
+function splitCompoundSegments(value: string) {
+  const tokens = normalizeWhitespace(value).split(' ').filter(Boolean)
+  const amountIndexes = tokens
+    .map((token, index) => (isAmountToken(token) ? index : -1))
+    .filter((index) => index >= 0)
+
+  if (amountIndexes.length <= 1) {
+    return [value]
+  }
+
+  const segments: string[] = []
+  let segmentStart = 0
+
+  for (const amountIndex of amountIndexes) {
+    const segmentTokens = tokens.slice(segmentStart, amountIndex + 1)
+    if (segmentTokens.length > 1) {
+      segments.push(segmentTokens.join(' '))
+    }
+    segmentStart = amountIndex + 1
+  }
+
+  return segments.length > 0 ? segments : [value]
+}
+
 function parseLine(
   line: string,
   categories: CategoryShape[],
@@ -384,9 +412,21 @@ export async function POST(request: Request) {
         return list
       }
 
-      const parsed = parseLine(line, categories, accounts, index, defaultAccountId, currentDate)
-      if (parsed) {
-        list.push(parsed)
+      const segments = splitCompoundSegments(line)
+
+      for (const [segmentOffset, segment] of segments.entries()) {
+        const parsed = parseLine(
+          segment,
+          categories,
+          accounts,
+          index * 100 + segmentOffset,
+          defaultAccountId,
+          currentDate
+        )
+
+        if (parsed) {
+          list.push(parsed)
+        }
       }
       return list
     }, []).filter(Boolean)
