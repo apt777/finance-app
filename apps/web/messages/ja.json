@@ -211,6 +211,7 @@
     "general": "一般",
     "planSettings": "プランと権限",
     "planDesc": "今は無料プランの構造だけ先に整えてあり、あとで Plus サブスクを接続できるようにしています。",
+    "planManagedByBilling": "プラン変更は、課金連携の準備ができたあとにここへ自動反映されます。",
     "freePlan": "Free",
     "plusPlan": "Plus",
     "featureManualTracking": "手動管理",

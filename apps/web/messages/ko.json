@@ -227,6 +227,7 @@
     "general": "일반",
     "planSettings": "플랜 및 권한",
     "planDesc": "지금은 무료 플랜 구조만 먼저 준비되어 있고, 나중에 Plus 구독 기능을 연결할 수 있습니다.",
+    "planManagedByBilling": "플랜 변경은 추후 결제 연동이 준비되면 이곳에서 자동으로 반영됩니다.",
     "freePlan": "Free",
     "plusPlan": "Plus",
     "featureManualTracking": "수동 자산 관리",

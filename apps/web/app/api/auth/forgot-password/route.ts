@@ -11,10 +11,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Email is required' }, { status: 400 })
   }
 
-  // IMPORTANT: This URL must be added to your Supabase project's "Redirect URLs" allowlist.
-  // Go to Authentication -> URL Configuration in your Supabase dashboard.
+  const origin =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.APP_URL ||
+    new URL(request.url).origin
+
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: 'http://localhost:3000/reset-password',
+    redirectTo: `${origin}/reset-password`,
   })
 
   if (error) {

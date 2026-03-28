@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireRouteSession } from '@/lib/server-auth'
 import { getUserEntitlements, isSubscriptionPlan } from '@/lib/entitlements'
-import prisma from '@lib/prisma'
 
 export async function GET() {
   try {
@@ -26,31 +25,19 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await request.json()
+    const payload = await request.json().catch(() => null)
     const plan = payload?.plan
 
-    if (!isSubscriptionPlan(plan)) {
+    if (plan && !isSubscriptionPlan(plan)) {
       return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
     }
 
-    await prisma.userSetting.upsert({
-      where: {
-        userId_key: {
-          userId,
-          key: 'subscription_plan',
-        },
+    return NextResponse.json(
+      {
+        error: 'Subscription changes are managed by billing only.',
       },
-      update: {
-        value: plan,
-      },
-      create: {
-        userId,
-        key: 'subscription_plan',
-        value: plan,
-      },
-    })
-
-    return NextResponse.json(await getUserEntitlements(userId))
+      { status: 403 }
+    )
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed to update entitlements' }, { status: 500 })
   }

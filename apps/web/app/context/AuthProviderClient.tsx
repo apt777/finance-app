@@ -35,9 +35,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              id: session.user.id,
               email: session.user.email,
-              name: session.user.email, // Or a default name
+              name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email,
             }),
           });
         } catch (e) {

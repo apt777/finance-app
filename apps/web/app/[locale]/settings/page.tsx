@@ -24,7 +24,7 @@ export default function SettingsPage() {
   const { colorMode, setColorMode } = useColorMode()
   const { baseCurrency, mirrorCurrency, setBaseCurrency, setMirrorCurrency } = useCurrencyPreferences()
   const { trackedCurrencies, updateTrackedCurrencies, isSaving: isSavingTrackedCurrencies } = useTrackedCurrencies()
-  const { data: entitlements, setPlan, isSaving: isSavingPlan } = useEntitlements()
+  const { data: entitlements } = useEntitlements()
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState('general')
   const languageNames =
@@ -137,24 +137,9 @@ export default function SettingsPage() {
                       </span>
                     ))}
                   </div>
-                  <div className="mt-5 flex flex-wrap gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setPlan('free')}
-                      disabled={isSavingPlan}
-                      className={`rounded-2xl px-4 py-2 text-sm font-semibold transition-all ${entitlements?.plan === 'free' ? 'bg-slate-950 text-white' : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}
-                    >
-                      {tSettings('freePlan')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPlan('plus')}
-                      disabled={isSavingPlan}
-                      className={`rounded-2xl px-4 py-2 text-sm font-semibold transition-all ${entitlements?.plan === 'plus' ? 'bg-slate-950 text-white' : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}
-                    >
-                      {tSettings('plusPlan')}
-                    </button>
-                  </div>
+                  <p className="mt-5 text-sm text-slate-500">
+                    {tSettings('planManagedByBilling')}
+                  </p>
                 </div>
 
                 <h3 className="text-xl font-black tracking-[-0.03em] text-slate-950">{tSettings('themeSettings')}</h3>

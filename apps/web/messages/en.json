@@ -226,6 +226,7 @@
     "general": "General",
     "planSettings": "Plan & Access",
     "planDesc": "The app is currently set up with a free plan structure so a Plus subscription can be connected later.",
+    "planManagedByBilling": "Plan changes will be handled automatically here once billing is connected.",
     "freePlan": "Free",
     "plusPlan": "Plus",
     "featureManualTracking": "Manual tracking",

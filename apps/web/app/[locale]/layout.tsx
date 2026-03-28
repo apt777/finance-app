@@ -15,6 +15,7 @@ const appSans = localFont({
   variable: '--font-app-sans',
   weight: '600',
   display: 'swap',
+  preload: false,
 });
 
 const mono = localFont({
@@ -22,6 +23,7 @@ const mono = localFont({
   variable: '--font-app-mono',
   weight: '100 900',
   display: 'swap',
+  preload: false,
 });
 
 export const metadata: Metadata = {
