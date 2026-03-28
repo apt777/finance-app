@@ -164,6 +164,28 @@ async function getCategoryMapSafely(userId: string) {
   }
 }
 
+async function resolveCategorySelection(userId: string, categoryValue?: string | null) {
+  if (!categoryValue) {
+    return null
+  }
+
+  const categoryMap = await getCategoryMapSafely(userId)
+  const directMatch = categoryMap.get(categoryValue)
+  if (directMatch) {
+    return directMatch
+  }
+
+  const normalizedValue = categoryValue.trim().toLowerCase()
+  return (
+    Array.from(categoryMap.values()).find((category) => {
+      return (
+        category.name.trim().toLowerCase() === normalizedValue ||
+        category.key.trim().toLowerCase() === normalizedValue
+      )
+    }) ?? null
+  )
+}
+
 export async function GET() {
   const { userId } = await requireRouteSession()
 
@@ -210,6 +232,8 @@ export async function POST(request: Request) {
     const transactionAmount = Number(rawAmount)
     const applyBalance = shouldApplyBalanceAdjustment(date, applyBalanceAdjustment)
     const storedNotes = serializeNotes(notes, applyBalance)
+    const resolvedCategory = await resolveCategorySelection(userId, categoryKey)
+    const normalizedCategoryKey = resolvedCategory?.key || categoryKey
 
     if (!date || !description || !type || !currency || Number.isNaN(transactionAmount) || transactionAmount <= 0) {
       return NextResponse.json({ error: 'Invalid transaction payload' }, { status: 400 })
@@ -222,18 +246,17 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: type === 'exchange' ? 'Invalid exchange accounts' : 'Invalid transfer accounts' }, { status: 400 })
       }
 
-    const [fromAccount, toAccount, duplicateTransaction, category] = await Promise.all([
+      const [fromAccount, toAccount, duplicateTransaction] = await Promise.all([
         prisma.account.findFirst({ where: { id: fromAccountId, userId } }),
         prisma.account.findFirst({ where: { id: toAccountId, userId } }),
         findExistingDuplicate(userId, body, transactionAmount),
-        categoryKey ? getCategoryMapSafely(userId).then((map) => map.get(categoryKey) ?? null) : Promise.resolve(null),
       ])
 
       if (!fromAccount || !toAccount) {
         return NextResponse.json({ error: 'Account not found' }, { status: 404 })
       }
 
-      if (categoryKey && !category) {
+      if (categoryKey && !resolvedCategory) {
         return NextResponse.json({ error: 'Category not found' }, { status: 400 })
       }
 
@@ -287,7 +310,7 @@ export async function POST(request: Request) {
             type,
             amount: transactionAmount,
             currency,
-            categoryKey: categoryKey || 'transfer',
+            categoryKey: normalizedCategoryKey || 'transfer',
             exchangeToAmount: type === 'exchange' ? exchangeToAmount : null,
             exchangeToCurrency: type === 'exchange' ? exchangeToCurrency : null,
             exchangeRateApplied: type === 'exchange' ? exchangeRateApplied : null,
@@ -308,19 +331,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Account is required' }, { status: 400 })
     }
 
-    const [account, duplicateTransaction, category] = await Promise.all([
+    const [account, duplicateTransaction] = await Promise.all([
       prisma.account.findFirst({
         where: { id: accountId, userId },
       }),
       findExistingDuplicate(userId, body, transactionAmount),
-      categoryKey ? getCategoryMapSafely(userId).then((map) => map.get(categoryKey) ?? null) : Promise.resolve(null),
     ])
 
     if (!account) {
       return NextResponse.json({ error: 'Account not found' }, { status: 404 })
     }
 
-    if (categoryKey && !category) {
+    if (categoryKey && !resolvedCategory) {
       return NextResponse.json({ error: 'Category not found' }, { status: 400 })
     }
 
@@ -361,7 +383,7 @@ export async function POST(request: Request) {
           type,
           amount: type === 'expense' ? -transactionAmount : transactionAmount,
           currency,
-          categoryKey,
+          categoryKey: normalizedCategoryKey,
           notes: storedNotes,
         },
       }),
