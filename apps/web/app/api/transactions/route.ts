@@ -142,34 +142,6 @@ async function findExistingDuplicate(userId: string, body: TransactionData, tran
     )
 }
 
-async function findCategoryForUser(userId: string, categoryKey: string) {
-  try {
-    return await prisma.transactionCategory.findFirst({
-      where: {
-        key: categoryKey,
-        OR: [{ userId }, { userId: null }],
-      },
-    })
-  } catch {
-    const legacyRows = await prisma.$queryRawUnsafe<Array<{
-      id: string
-      name: string
-      key: string
-      icon: string | null
-      createdAt: Date
-    }>>(
-      'SELECT "id", "name", "key", "icon", "createdAt" FROM "TransactionCategory" WHERE "key" = $1 LIMIT 1',
-      categoryKey
-    )
-
-    const category = legacyRows[0]
-    if (category) {
-      return category
-    }
-    return DEFAULT_TRANSACTION_CATEGORIES.find((item) => item.key === categoryKey) ?? null
-  }
-}
-
 async function getCategoryMapSafely(userId: string) {
   try {
     const categories = await ensureDefaultCategories(userId)
@@ -250,11 +222,11 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: type === 'exchange' ? 'Invalid exchange accounts' : 'Invalid transfer accounts' }, { status: 400 })
       }
 
-      const [fromAccount, toAccount, duplicateTransaction, category] = await Promise.all([
+    const [fromAccount, toAccount, duplicateTransaction, category] = await Promise.all([
         prisma.account.findFirst({ where: { id: fromAccountId, userId } }),
         prisma.account.findFirst({ where: { id: toAccountId, userId } }),
         findExistingDuplicate(userId, body, transactionAmount),
-        categoryKey ? findCategoryForUser(userId, categoryKey) : Promise.resolve(null),
+        categoryKey ? getCategoryMapSafely(userId).then((map) => map.get(categoryKey) ?? null) : Promise.resolve(null),
       ])
 
       if (!fromAccount || !toAccount) {
@@ -341,7 +313,7 @@ export async function POST(request: Request) {
         where: { id: accountId, userId },
       }),
       findExistingDuplicate(userId, body, transactionAmount),
-      categoryKey ? findCategoryForUser(userId, categoryKey) : Promise.resolve(null),
+      categoryKey ? getCategoryMapSafely(userId).then((map) => map.get(categoryKey) ?? null) : Promise.resolve(null),
     ])
 
     if (!account) {
