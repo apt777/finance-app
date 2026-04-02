@@ -265,6 +265,12 @@ export default function OverviewModern() {
       href: `/transactions/add?${params.toString()}`,
     }
   })
+  const savedQuickActionsGridClass =
+    savedQuickActions.length <= 1
+      ? 'grid-cols-1'
+      : savedQuickActions.length === 2
+        ? 'grid-cols-1 md:grid-cols-2'
+        : 'grid-cols-1 md:grid-cols-3'
 
   return (
     <div className="space-y-8">
@@ -544,7 +550,7 @@ export default function OverviewModern() {
                       {ui.overview.jumpNow}
                     </Link>
                   </div>
-                  <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                  <div className={`grid gap-3 ${savedQuickActionsGridClass}`}>
                     {savedQuickActions.map((action) => (
                       <Link
                         key={action.id}
@@ -560,7 +566,7 @@ export default function OverviewModern() {
                             <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.quickAdd}</p>
                             <p className={`mt-2 text-base font-bold ${isDark ? 'text-white' : 'text-slate-950'}`}>{action.label}</p>
                           </div>
-                          <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${isDark ? 'bg-white/10 text-slate-200' : 'bg-slate-100 text-slate-700'}`}>
+                          <span className={`shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold ${isDark ? 'bg-white/10 text-slate-200' : 'bg-slate-100 text-slate-700'}`}>
                             {action.type === 'expense'
                               ? tTransactions('expense')
                               : action.type === 'income'

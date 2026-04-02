@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Plus, Sparkles, Trash2 } from 'lucide-react'
+import { GripVertical, Plus, Sparkles, Trash2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useAccounts } from '@/hooks/useAccounts'
 import { useCategories } from '@/hooks/useCategories'
@@ -30,6 +30,7 @@ export default function QuickActionManager() {
   const [drafts, setDrafts] = React.useState<QuickActionItem[]>([])
   const [saveState, setSaveState] = React.useState<'idle' | 'done' | 'error'>('idle')
   const [expandedId, setExpandedId] = React.useState<string | null>(null)
+  const [draggingId, setDraggingId] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     setDrafts(quickActions)
@@ -67,6 +68,24 @@ export default function QuickActionManager() {
   const handleDelete = (id: string) => {
     setDrafts((current) => current.filter((item) => item.id !== id))
     setExpandedId((current) => (current === id ? null : current))
+    setSaveState('idle')
+  }
+
+  const reorderDrafts = (fromId: string, toId: string) => {
+    if (fromId === toId) return
+
+    setDrafts((current) => {
+      const fromIndex = current.findIndex((item) => item.id === fromId)
+      const toIndex = current.findIndex((item) => item.id === toId)
+
+      if (fromIndex === -1 || toIndex === -1) return current
+
+      const next = [...current]
+      const [moved] = next.splice(fromIndex, 1)
+      if (!moved) return current
+      next.splice(toIndex, 0, moved)
+      return next
+    })
     setSaveState('idle')
   }
 
@@ -129,6 +148,26 @@ export default function QuickActionManager() {
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
+                        draggable
+                        onDragStart={() => setDraggingId(action.id)}
+                        onDragEnd={() => setDraggingId(null)}
+                        onDragOver={(event) => event.preventDefault()}
+                        onDrop={() => {
+                          if (draggingId) {
+                            reorderDrafts(draggingId, action.id)
+                            setDraggingId(null)
+                          }
+                        }}
+                        className={`inline-flex h-10 w-10 cursor-grab items-center justify-center rounded-2xl border transition-all active:cursor-grabbing ${
+                          draggingId === action.id
+                            ? 'border-slate-300 bg-slate-100 text-slate-700'
+                            : 'border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100'
+                        }`}
+                      >
+                        <GripVertical className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => setExpandedId((current) => (current === action.id ? null : action.id))}
                         className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-600 transition-all hover:bg-slate-100"
                       >
@@ -161,7 +200,7 @@ export default function QuickActionManager() {
                           <select
                             value={action.type}
                             onChange={(event) => setAction(action.id, { type: event.target.value as QuickActionItem['type'] })}
-                            className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition-all focus:ring-2 focus:ring-blue-500"
+                            className="mt-2 w-full min-w-0 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition-all focus:ring-2 focus:ring-blue-500"
                           >
                             <option value="expense">{tTransactions('expense')}</option>
                             <option value="income">{tTransactions('income')}</option>
