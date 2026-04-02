@@ -157,6 +157,27 @@ const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: Tra
     }
   }, [searchParams])
 
+  useEffect(() => {
+    if (!accounts || accounts.length === 0) return
+
+    if (formData.type === 'transfer' || formData.type === 'exchange') {
+      const selectedFrom = accounts.find((account) => account.id === formData.fromAccountId)
+      const nextCurrency = selectedFrom?.currency || ''
+
+      if (nextCurrency && formData.currency !== nextCurrency) {
+        setFormData((prev) => ({ ...prev, currency: nextCurrency }))
+      }
+      return
+    }
+
+    const selected = accounts.find((account) => account.id === formData.accountId)
+    const nextCurrency = selected?.currency || ''
+
+    if (nextCurrency && formData.currency !== nextCurrency) {
+      setFormData((prev) => ({ ...prev, currency: nextCurrency }))
+    }
+  }, [accounts, formData.accountId, formData.currency, formData.fromAccountId, formData.type])
+
   const mutation = useMutation<any, Error, TransactionFormData>({
     mutationFn: (nextData) => (isEditMode && transactionId ? updateTransaction(transactionId, nextData) : createTransaction(nextData)),
     onSuccess: () => {
