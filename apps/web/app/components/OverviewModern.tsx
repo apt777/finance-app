@@ -4,7 +4,7 @@ import React from 'react'
 import { Link } from '@/navigation'
 import { useOverviewData } from '../hooks/useOverviewData'
 import { useExchangeRates, ExchangeRate } from '../hooks/useExchangeRates'
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import {
   PlusCircle,
   Sparkles,
@@ -36,6 +36,12 @@ interface Transaction {
   description: string
   amount: number
   currency: string
+  categoryKey?: string | null
+  category?: {
+    key: string
+    name: string
+    color?: string | null
+  } | null
 }
 
 interface Holding {
@@ -76,6 +82,8 @@ const tooltipStyle = {
   border: '1px solid #1e293b',
   borderRadius: '16px',
   color: '#f8fafc',
+  padding: '12px 14px',
+  minWidth: '148px',
   boxShadow: '0 20px 50px rgba(15, 23, 42, 0.18)',
 }
 
@@ -100,11 +108,67 @@ function ExpenseTooltip({
 
   return (
     <div style={tooltipStyle as React.CSSProperties}>
-      <p style={{ fontSize: 12, opacity: 0.8 }}>{label}</p>
+      <p style={{ fontSize: 12, opacity: 0.82 }}>{label}</p>
       <p style={{ marginTop: 6, fontSize: 13, fontWeight: 700 }}>{title}</p>
-      <p style={{ marginTop: 6, fontSize: 15, fontWeight: 800 }}>
+      <p style={{ marginTop: 8, fontSize: 15, fontWeight: 800 }}>
         {value.toLocaleString()} {currency}
       </p>
+    </div>
+  )
+}
+
+function ExpenseStackTooltip({
+  active,
+  label,
+  payload,
+  currency,
+}: {
+  active?: boolean
+  label?: string
+  payload?: Array<{ dataKey?: string; value?: number | string; color?: string }>
+  currency: string
+}) {
+  if (!active || !payload?.length) {
+    return null
+  }
+
+  const entries = payload
+    .map((item) => ({
+      name: item.dataKey || '',
+      value: Math.round(Number(item.value || 0)),
+      color: item.color || '#94a3b8',
+    }))
+    .filter((item) => item.value > 0)
+    .sort((a, b) => b.value - a.value)
+
+  if (!entries.length) {
+    return null
+  }
+
+  return (
+    <div style={tooltipStyle as React.CSSProperties}>
+      <p style={{ fontSize: 12, opacity: 0.82 }}>{label}</p>
+      <div style={{ marginTop: 8, display: 'grid', gap: 7 }}>
+        {entries.map((entry) => (
+          <div key={entry.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+            <div style={{ display: 'flex', minWidth: 0, alignItems: 'center', gap: 8 }}>
+              <span
+                style={{
+                  height: 8,
+                  width: 8,
+                  flexShrink: 0,
+                  borderRadius: 9999,
+                  backgroundColor: entry.color,
+                }}
+              />
+              <span style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>{entry.name}</span>
+            </div>
+            <span style={{ fontSize: 13, fontWeight: 800, whiteSpace: 'nowrap' }}>
+              {entry.value.toLocaleString()} {currency}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -113,7 +177,6 @@ export default function OverviewModern() {
   const { colorMode } = useColorMode()
   const tDashboard = useTranslations('dashboard')
   const tAccounts = useTranslations('accounts')
-  const tHoldings = useTranslations('holdings')
   const tGoals = useTranslations('goals')
   const tTransactions = useTranslations('transactions')
   const tCommon = useTranslations('common')
@@ -259,7 +322,6 @@ export default function OverviewModern() {
       return sum + convertToBaseCurrency(amount, currency)
     }, 0)
   )
-  const totalAssetsBaseCurrency = Math.round(totalPositiveAssetsBaseCurrency + holdingsValueBaseCurrency)
   const averageGoalProgress = goalsWithProgress.length > 0
     ? Math.round(goalsWithProgress.reduce((sum, goal) => sum + goal.progress, 0) / goalsWithProgress.length)
     : 0
@@ -322,6 +384,70 @@ export default function OverviewModern() {
       : savedQuickActions.length === 2
         ? 'grid-cols-1 md:grid-cols-2'
         : 'grid-cols-1 md:grid-cols-3'
+  const expenseFlowDays = 7
+  const expenseFlowStart = new Date()
+  expenseFlowStart.setDate(expenseFlowStart.getDate() - (expenseFlowDays - 1))
+  expenseFlowStart.setHours(0, 0, 0, 0)
+  const expenseFlowLabels = Array.from({ length: expenseFlowDays }).map((_, index) => {
+    const current = new Date(expenseFlowStart)
+    current.setDate(expenseFlowStart.getDate() + index)
+    return current.toISOString().split('T')[0] ?? ''
+  })
+  const expenseCategoryTotals = new Map<string, number>()
+  const expenseFlowByDate = new Map<string, Map<string, number>>()
+
+  transactions.forEach((transaction) => {
+    if (transaction.amount >= 0) return
+
+    const normalizedDate = new Date(transaction.date)
+    normalizedDate.setHours(0, 0, 0, 0)
+    if (normalizedDate < expenseFlowStart) return
+
+    const dateKey = normalizedDate.toISOString().split('T')[0] ?? ''
+    const categoryName = transaction.category?.name || ui.overview.otherExpenseCategory
+    const normalizedAmount = Math.round(convertToBaseCurrency(Math.abs(transaction.amount), transaction.currency))
+    expenseCategoryTotals.set(categoryName, (expenseCategoryTotals.get(categoryName) || 0) + normalizedAmount)
+
+    const dateMap = expenseFlowByDate.get(dateKey) || new Map<string, number>()
+    dateMap.set(categoryName, (dateMap.get(categoryName) || 0) + normalizedAmount)
+    expenseFlowByDate.set(dateKey, dateMap)
+  })
+
+  const expenseFlowCategoryNames = Array.from(expenseCategoryTotals.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
+    .map(([name]) => name)
+  const expenseFlowPalette = ['#0f172a', '#334155', '#64748b', '#94a3b8']
+  const expenseFlowColorMap = expenseFlowCategoryNames.reduce<Record<string, string>>((acc, name, index) => {
+    acc[name] = expenseFlowPalette[index] || '#cbd5e1'
+    return acc
+  }, {})
+  const hasOtherExpenseFlowCategory = Array.from(expenseCategoryTotals.keys()).some((name) => !expenseFlowCategoryNames.includes(name))
+  const expenseFlowChartData = expenseFlowLabels.map((dateKey) => {
+    const dateMap = expenseFlowByDate.get(dateKey) || new Map<string, number>()
+    const row: Record<string, string | number> = {
+      date: dateKey,
+    }
+
+    let otherTotal = 0
+    dateMap.forEach((value, categoryName) => {
+      if (expenseFlowCategoryNames.includes(categoryName)) {
+        row[categoryName] = value
+      } else {
+        otherTotal += value
+      }
+    })
+
+    if (hasOtherExpenseFlowCategory) {
+      row[ui.overview.otherExpenseCategory] = otherTotal
+      expenseFlowColorMap[ui.overview.otherExpenseCategory] = '#cbd5e1'
+    }
+
+    return row
+  })
+  const expenseFlowKeys = hasOtherExpenseFlowCategory
+    ? [...expenseFlowCategoryNames, ui.overview.otherExpenseCategory]
+    : expenseFlowCategoryNames
 
   return (
     <div className="space-y-8">
@@ -439,30 +565,6 @@ export default function OverviewModern() {
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                <div className={`flex min-h-[122px] flex-col justify-between rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/80'}`}>
-                  <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.plannedExpenses}</p>
-                  <p className={`mt-3 text-[clamp(1.08rem,1.8vw,1.55rem)] font-bold leading-tight tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
-                    {plannedExpensesBaseCurrency.toLocaleString()}
-                  </p>
-                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    {ui.overview.plannedExpensesMeta(dashboardSummary?.totalUpcomingCount || 0, dashboardSummary?.totalCreditCardCount || 0)} · {BASE_CURRENCY}
-                  </p>
-                </div>
-                <div className={`flex min-h-[122px] flex-col justify-between rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/80'}`}>
-                  <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.totalAssetsInCurrency(BASE_CURRENCY)}</p>
-                  <p className={`mt-3 text-[clamp(1.08rem,1.8vw,1.55rem)] font-bold leading-tight tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
-                    {totalAssetsBaseCurrency.toLocaleString()}
-                  </p>
-                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{BASE_CURRENCY}</p>
-                </div>
-                <div className={`flex min-h-[122px] flex-col justify-between rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/80'}`}>
-                  <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.expenseChangeInCurrency(BASE_CURRENCY)}</p>
-                  <p className={`mt-3 text-[clamp(1.08rem,1.8vw,1.55rem)] font-bold leading-tight tabular-nums ${expenseMomentum > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
-                    {expenseMomentum > 0 ? '+' : ''}
-                    {Math.round(expenseMomentum).toLocaleString()}
-                  </p>
-                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{BASE_CURRENCY}</p>
-                </div>
                 <div className={`flex min-h-[122px] flex-col justify-between rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/80'}`}>
                   <div>
                     <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.mirrorCardLabel(mirrorCurrency)}</p>
@@ -720,14 +822,22 @@ export default function OverviewModern() {
               <TrendingDown className="h-6 w-6 text-slate-400" />
             </div>
             <div className="h-[280px]">
-              {chartData.length > 0 ? (
+              {expenseFlowChartData.some((item) => expenseFlowKeys.some((key) => Number(item[key] || 0) > 0)) ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData.slice(-8)}>
+                  <BarChart data={expenseFlowChartData}>
                     <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="date" stroke="#94a3b8" tickLine={false} />
                     <YAxis stroke="#94a3b8" tickLine={false} />
-                    <Tooltip content={<ExpenseTooltip currency={BASE_CURRENCY} title={ui.overview.expenseSplit} />} />
-                    <Bar dataKey="expenses" fill="#0f172a" radius={[16, 16, 0, 0]} />
+                    <Tooltip content={<ExpenseStackTooltip currency={BASE_CURRENCY} />} />
+                    {expenseFlowKeys.map((key, index) => (
+                      <Bar
+                        key={key}
+                        dataKey={key}
+                        stackId="expense-flow"
+                        fill={expenseFlowColorMap[key]}
+                        radius={index === expenseFlowKeys.length - 1 ? [12, 12, 0, 0] : [0, 0, 0, 0]}
+                      />
+                    ))}
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
