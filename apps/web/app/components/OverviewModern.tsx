@@ -822,7 +822,7 @@ export default function OverviewModern() {
                         dataKey={key}
                         stackId="expense-flow"
                         fill={expenseFlowColorMap[key]}
-                        radius={[10, 10, 0, 0]}
+                        radius={index === expenseFlowKeys.length - 1 ? [10, 10, 0, 0] : [0, 0, 0, 0]}
                       />
                     ))}
                   </BarChart>
