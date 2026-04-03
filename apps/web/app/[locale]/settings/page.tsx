@@ -16,6 +16,8 @@ import { useSearchParams } from 'next/navigation'
 import { SUPPORTED_CURRENCIES } from '@/lib/currency'
 import { useTrackedCurrencies } from '@/hooks/useTrackedCurrencies'
 import { useEntitlements } from '@/hooks/useEntitlements'
+import { useAuth } from '@/context/AuthProviderClient'
+import { useRouter } from '@/navigation'
 
 export default function SettingsPage() {
   const tSettings = useTranslations('settings')
@@ -25,8 +27,12 @@ export default function SettingsPage() {
   const { baseCurrency, mirrorCurrency, setBaseCurrency, setMirrorCurrency } = useCurrencyPreferences()
   const { trackedCurrencies, updateTrackedCurrencies, isSaving: isSavingTrackedCurrencies } = useTrackedCurrencies()
   const { data: entitlements } = useEntitlements()
+  const { signOut } = useAuth()
+  const router = useRouter()
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState('general')
+  const [isDeletingMembership, setIsDeletingMembership] = useState(false)
+  const [deleteMembershipError, setDeleteMembershipError] = useState<string | null>(null)
   const languageNames =
     locale === 'en'
       ? { ko: 'Korean', ja: 'Japanese', en: 'English', zh: 'Chinese' }
@@ -76,6 +82,30 @@ export default function SettingsPage() {
     }
 
     await updateTrackedCurrencies(next)
+  }
+
+  const handleDeleteMembership = async () => {
+    const confirmed = window.confirm(tSettings('deleteMembershipConfirm'))
+    if (!confirmed) return
+
+    setDeleteMembershipError(null)
+    setIsDeletingMembership(true)
+
+    try {
+      const response = await fetch('/api/me/account', { method: 'DELETE' })
+      const payload = await response.json().catch(() => null)
+
+      if (!response.ok) {
+        throw new Error(payload?.error || tSettings('deleteMembershipFailed'))
+      }
+
+      await signOut()
+      router.push('/login')
+    } catch (error: any) {
+      setDeleteMembershipError(error.message || tSettings('deleteMembershipFailed'))
+    } finally {
+      setIsDeletingMembership(false)
+    }
   }
 
   return (
@@ -269,6 +299,28 @@ export default function SettingsPage() {
                         </button>
                       )
                     })}
+                  </div>
+                </div>
+
+                <div className="mt-8 border-t border-slate-200 pt-6">
+                  <div className="rounded-[24px] border border-rose-200 bg-rose-50 p-5">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                      <div>
+                        <h4 className="text-base font-black tracking-[-0.02em] text-rose-800">{tSettings('deleteMembershipTitle')}</h4>
+                        <p className="mt-2 text-sm leading-6 text-rose-700">{tSettings('deleteMembershipDesc')}</p>
+                        {deleteMembershipError ? (
+                          <p className="mt-3 text-sm font-medium text-rose-700">{deleteMembershipError}</p>
+                        ) : null}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleDeleteMembership}
+                        disabled={isDeletingMembership}
+                        className="inline-flex items-center justify-center rounded-2xl bg-rose-600 px-5 py-3 text-sm font-semibold text-white transition-all hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {isDeletingMembership ? tSettings('deletingMembership') : tSettings('deleteMembership')}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

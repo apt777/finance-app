@@ -82,7 +82,7 @@ export default function RecurringManager() {
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <input value={name} onChange={(event) => setName(event.target.value)} placeholder={ui.managers.recurringNamePlaceholder} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900" />
           <input value={description} onChange={(event) => setDescription(event.target.value)} placeholder={ui.managers.recurringDescPlaceholder} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900" />
-          <input value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="0" type="number" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900" />
+          <input value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="0" type="number" step="1" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900" />
           <select value={accountId} onChange={(event) => setAccountId(event.target.value)} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900">
             <option value="">{ui.managers.selectAccount}</option>
             {accounts.map((account) => (

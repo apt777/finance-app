@@ -98,6 +98,7 @@ export default function BudgetManager() {
             onChange={(event) => setAmount(event.target.value)}
             placeholder="0"
             type="number"
+            step="1"
             className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
           />
           <button

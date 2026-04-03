@@ -54,6 +54,29 @@ const getTodayDateString = () => {
 
 const isTodayDate = (date: string) => date === getTodayDateString()
 
+const buildQuickActionPrefill = (searchParams: URLSearchParams): Partial<TransactionFormData> | null => {
+  const quickActionId = searchParams.get('quickActionId')
+  if (!quickActionId) return null
+
+  const type = searchParams.get('type')
+  if (!type || !['expense', 'income', 'transfer'].includes(type)) return null
+
+  return {
+    type,
+    accountId: type === 'transfer' ? '' : (searchParams.get('accountId') || ''),
+    fromAccountId: type === 'transfer' ? (searchParams.get('fromAccountId') || '') : '',
+    toAccountId: type === 'transfer' ? (searchParams.get('toAccountId') || '') : '',
+    date: searchParams.get('date') || getTodayDateString(),
+    description: searchParams.get('description') || '',
+    amount: '',
+    currency: '',
+    exchangeToAmount: '',
+    categoryKey: searchParams.get('categoryKey') || (type === 'transfer' ? 'transfer' : 'food'),
+    notes: searchParams.get('notes') || '',
+    applyBalanceAdjustment: true,
+  }
+}
+
 const createTransaction = async (transactionData: TransactionFormData) => {
   const res = await fetch('/api/transactions', {
     method: 'POST',
@@ -126,6 +149,7 @@ const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: Tra
   })
 
   const searchParams = useSearchParams()
+  const quickActionPrefill = useMemo(() => buildQuickActionPrefill(searchParams), [searchParams])
   const [isFullPayment, setIsFullPayment] = useState(false)
 
   useEffect(() => {
@@ -234,20 +258,37 @@ const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: Tra
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
       if (!isEditMode) {
-        setFormData({ 
-          accountId: '', 
-          fromAccountId: '', 
-          toAccountId: '', 
-          date: new Date().toISOString().split('T')[0] ?? '', 
-          description: '', 
-          type: 'expense', 
-          amount: '', 
-          currency: '',
-          exchangeToAmount: '',
-          categoryKey: 'food',
-          notes: '',
-          applyBalanceAdjustment: true,
-        })
+        if (quickActionPrefill) {
+          setFormData({
+            accountId: quickActionPrefill.accountId || '',
+            fromAccountId: quickActionPrefill.fromAccountId || '',
+            toAccountId: quickActionPrefill.toAccountId || '',
+            date: quickActionPrefill.date || getTodayDateString(),
+            description: quickActionPrefill.description || '',
+            type: quickActionPrefill.type || 'expense',
+            amount: '',
+            currency: '',
+            exchangeToAmount: '',
+            categoryKey: quickActionPrefill.categoryKey || 'food',
+            notes: quickActionPrefill.notes || '',
+            applyBalanceAdjustment: isTodayDate(quickActionPrefill.date || getTodayDateString()),
+          })
+        } else {
+          setFormData({ 
+            accountId: '', 
+            fromAccountId: '', 
+            toAccountId: '', 
+            date: new Date().toISOString().split('T')[0] ?? '', 
+            description: '', 
+            type: 'expense', 
+            amount: '', 
+            currency: '',
+            exchangeToAmount: '',
+            categoryKey: 'food',
+            notes: '',
+            applyBalanceAdjustment: true,
+          })
+        }
       }
       setFormError(null)
       onTransactionAdded?.();
@@ -651,7 +692,7 @@ const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: Tra
                   onChange={handleChange}
                   className={`w-full pl-8 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400 ${isFullPayment ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : ''}`}
                   placeholder="0"
-                  step="0.01"
+                  step="1"
                   required
                   readOnly={isFullPayment}
                 />
@@ -685,7 +726,7 @@ const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: Tra
                     onChange={handleChange}
                     className="w-full pl-8 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
                     placeholder="0"
-                    step="0.01"
+                    step="1"
                     required
                   />
                 </div>

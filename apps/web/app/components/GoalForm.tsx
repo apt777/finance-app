@@ -142,6 +142,7 @@ const GoalForm = () => {
                 <input
                   type="number"
                   min="0"
+                  step="1"
                   onKeyDown={(e) => (e.key === '-' || e.key === 'e') && e.preventDefault()}
                   name="targetAmount"
                   id="targetAmount"
@@ -182,6 +183,7 @@ const GoalForm = () => {
                 <input
                   type="number"
                   min="0"
+                  step="1"
                   onKeyDown={(e) => (e.key === '-' || e.key === 'e') && e.preventDefault()}
                   name="currentAmount"
                   id="currentAmount"

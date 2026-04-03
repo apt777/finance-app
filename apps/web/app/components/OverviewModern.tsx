@@ -252,6 +252,7 @@ export default function OverviewModern() {
     const params = new URLSearchParams({
       type: action.type,
       description: action.description,
+      quickActionId: action.id,
     })
 
     if (action.categoryKey) params.set('categoryKey', action.categoryKey)
@@ -469,8 +470,13 @@ export default function OverviewModern() {
                   <h3 className={`mt-2 text-[1.65rem] font-bold tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>{tDashboard('basicAnalysis')}</h3>
                 </div>
                 <div className={`rounded-2xl px-3 py-2 text-sm font-bold ${expenseMomentum > 0 ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                  {expenseMomentum > 0 ? '+' : ''}
-                  {Math.round(expenseMomentum).toLocaleString()}
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] opacity-75">
+                    {ui.overview.dayOverDayExpense}
+                  </p>
+                  <p className="mt-1">
+                    {expenseMomentum > 0 ? '+' : ''}
+                    {Math.round(expenseMomentum).toLocaleString()}
+                  </p>
                 </div>
               </div>
 
@@ -493,15 +499,24 @@ export default function OverviewModern() {
                     <AreaChart data={chartData}>
                       <defs>
                         <linearGradient id="expenseFill" x1="0" x2="0" y1="0" y2="1">
-                          <stop offset="0%" stopColor="#2563eb" stopOpacity={0.34} />
-                          <stop offset="100%" stopColor="#2563eb" stopOpacity={0.04} />
+                          <stop offset="0%" stopColor="#2563eb" stopOpacity={0.26} />
+                          <stop offset="100%" stopColor="#2563eb" stopOpacity={0.02} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
+                      <CartesianGrid stroke="#cbd5e1" strokeDasharray="2 8" vertical={false} opacity={0.7} />
                       <XAxis dataKey="date" stroke="#94a3b8" tickLine={false} />
                       <YAxis stroke="#94a3b8" tickLine={false} />
                       <Tooltip contentStyle={tooltipStyle} />
-                      <Area dataKey="expenses" fill="url(#expenseFill)" stroke="#2563eb" strokeWidth={3} type="monotone" />
+                      <Area
+                        dataKey="expenses"
+                        fill="url(#expenseFill)"
+                        stroke="#2563eb"
+                        strokeWidth={2.5}
+                        type="natural"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        activeDot={{ r: 4, strokeWidth: 0, fill: '#2563eb' }}
+                      />
                     </AreaChart>
                   </ResponsiveContainer>
                 ) : (
