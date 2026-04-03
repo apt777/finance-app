@@ -446,8 +446,8 @@ export default function OverviewModern() {
   return (
     <div className="space-y-8">
       <div className="mx-auto max-w-[1680px] space-y-6">
-        <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.18fr)_minmax(420px,0.82fr)]">
-          <div className={`overflow-hidden rounded-[40px] p-6 md:p-8 ${isDark ? 'border border-white/10 bg-[linear-gradient(180deg,rgba(24,27,31,0.98)_0%,rgba(31,35,40,0.98)_100%)] shadow-[0_24px_60px_rgba(0,0,0,0.28)]' : 'border border-white/70 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.96),_rgba(237,243,255,0.9)_36%,_rgba(211,226,255,0.88)_100%)] shadow-[0_24px_80px_rgba(59,130,246,0.16)]'}`}>
+        <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.18fr)_minmax(420px,0.82fr)] xl:items-stretch">
+          <div className={`h-full overflow-hidden rounded-[40px] p-6 md:p-8 ${isDark ? 'border border-white/10 bg-[linear-gradient(180deg,rgba(24,27,31,0.98)_0%,rgba(31,35,40,0.98)_100%)] shadow-[0_24px_60px_rgba(0,0,0,0.28)]' : 'border border-white/70 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.96),_rgba(237,243,255,0.9)_36%,_rgba(211,226,255,0.88)_100%)] shadow-[0_24px_80px_rgba(59,130,246,0.16)]'}`}>
             <div className="space-y-6">
               <div className="max-w-4xl space-y-6">
                 <div className="space-y-3">
@@ -635,7 +635,7 @@ export default function OverviewModern() {
 
           </div>
 
-          <div className="space-y-6">
+          <div className="grid gap-6 xl:grid-rows-[minmax(0,1fr)_minmax(0,1fr)_auto]">
             <div className={`rounded-[36px] p-6 backdrop-blur-xl ${isDark ? 'border border-white/10 bg-white/5 shadow-[0_18px_40px_rgba(0,0,0,0.24)]' : 'border border-white/80 bg-white/80 shadow-[0_18px_60px_rgba(148,163,184,0.12)]'}`}>
               <div className="mb-6 flex items-center justify-between">
                 <div>
@@ -709,7 +709,7 @@ export default function OverviewModern() {
             <div className={`rounded-[36px] p-6 shadow-[0_18px_60px_rgba(15,23,42,0.22)] ${isDark ? 'border border-white/10 bg-white/5 text-white' : 'border border-blue-100 bg-blue-50/80 text-slate-950'}`}>
               <div className="mb-5 flex items-center justify-between">
                 <div>
-                  <p className={`text-[11px] font-bold uppercase tracking-[0.24em] ${isDark ? 'text-slate-400' : 'text-blue-600/70'}`}>{tDashboard('goalSummary')}</p>
+                  <p className={`text-[11px] font-bold uppercase tracking-[0.24em] ${isDark ? 'text-slate-400' : 'text-blue-600/70'}`}>{ui.overview.currentGoalLabel}</p>
                 </div>
                 <Target className="h-6 w-6 text-slate-400" />
               </div>
@@ -735,45 +735,46 @@ export default function OverviewModern() {
                   </div>
                 )}
               </div>
-              {savedQuickActions.length > 0 ? (
-                <div className="mt-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{tDashboard('quickActions')}</p>
-                    <Link href="/settings?tab=quickActions" className={`text-[11px] font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                      {ui.overview.jumpNow}
-                    </Link>
-                  </div>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {savedQuickActions.map((action) => (
-                      <Link
-                        key={action.id}
-                        href={action.href}
-                        className={`flex min-h-[92px] flex-col justify-between rounded-[24px] p-4 transition-all ${
-                          isDark
-                            ? 'border border-white/10 bg-white/5 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.08]'
-                            : 'border border-slate-200 bg-white/90 hover:-translate-y-0.5 hover:bg-white hover:shadow-md'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.quickAdd}</p>
-                            <p className={`mt-2 text-base font-bold ${isDark ? 'text-white' : 'text-slate-950'}`}>{action.label}</p>
-                          </div>
-                          <span className={`shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold ${isDark ? 'bg-white/10 text-slate-200' : 'bg-slate-100 text-slate-700'}`}>
-                            {action.type === 'expense'
-                              ? tTransactions('expense')
-                              : action.type === 'income'
-                                ? tTransactions('income')
-                                : tTransactions('transfer')}
-                          </span>
-                        </div>
-                        <p className={`mt-3 text-xs leading-6 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{action.description}</p>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
             </div>
+
+            {savedQuickActions.length > 0 ? (
+              <div className={`rounded-[36px] p-6 backdrop-blur-xl ${isDark ? 'border border-white/10 bg-white/5 shadow-[0_18px_40px_rgba(0,0,0,0.24)]' : 'border border-white/80 bg-white/80 shadow-[0_18px_60px_rgba(148,163,184,0.12)]'}`}>
+                <div className="mb-5 flex items-center justify-between">
+                  <p className={`text-[11px] font-bold uppercase tracking-[0.24em] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{tDashboard('quickActions')}</p>
+                  <Link href="/settings?tab=quickActions" className={`text-[11px] font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                    {ui.overview.jumpNow}
+                  </Link>
+                </div>
+                <div className="grid gap-3">
+                  {savedQuickActions.map((action) => (
+                    <Link
+                      key={action.id}
+                      href={action.href}
+                      className={`flex min-h-[96px] flex-col justify-between rounded-[24px] p-4 transition-all ${
+                        isDark
+                          ? 'border border-white/10 bg-white/5 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.08]'
+                          : 'border border-slate-200 bg-white/90 hover:-translate-y-0.5 hover:bg-white hover:shadow-md'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.quickAdd}</p>
+                          <p className={`mt-2 truncate text-base font-bold ${isDark ? 'text-white' : 'text-slate-950'}`}>{action.label}</p>
+                        </div>
+                        <span className={`shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold ${isDark ? 'bg-white/10 text-slate-200' : 'bg-slate-100 text-slate-700'}`}>
+                          {action.type === 'expense'
+                            ? tTransactions('expense')
+                            : action.type === 'income'
+                              ? tTransactions('income')
+                              : tTransactions('transfer')}
+                        </span>
+                      </div>
+                      <p className={`mt-3 text-xs leading-6 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{action.description}</p>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
         </section>
 
