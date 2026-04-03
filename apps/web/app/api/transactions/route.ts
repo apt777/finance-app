@@ -4,6 +4,7 @@ import { requireRouteSession } from '@/lib/server-auth'
 import { ensureDefaultCategories } from '@/lib/categories'
 import { DEFAULT_TRANSACTION_CATEGORIES } from '@/lib/defaultCategories'
 import { findDuplicateTransaction } from '@/lib/transactionDuplicates'
+import { processDueRecurringTransactions } from '@/lib/recurring'
 
 interface TransactionData {
   accountId?: string
@@ -194,6 +195,8 @@ export async function GET() {
   }
 
   try {
+    await processDueRecurringTransactions(userId)
+
     const [transactions, categoryMap] = await Promise.all([
       prisma.transaction.findMany({
         where: { userId },

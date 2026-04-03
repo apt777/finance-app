@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 import { requireRouteSession } from '@/lib/server-auth'
 import { ensureDefaultCategories } from '@/lib/categories'
+import { processDueRecurringTransactions } from '@/lib/recurring'
 
 function stripInternalNotes(notes?: string | null) {
   if (!notes) return null
@@ -40,6 +41,8 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
   }
 
   try {
+    await processDueRecurringTransactions(userId)
+
     const { id } = await props.params
 
     const account = await prisma.account.findFirst({

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 import { requireRouteSession } from '@/lib/server-auth'
 import { ensureDefaultCategories } from '@/lib/categories'
+import { processDueRecurringTransactions } from '@/lib/recurring'
 
 function monthKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
@@ -63,6 +64,8 @@ export async function GET() {
   }
 
   try {
+    await processDueRecurringTransactions(userId)
+
     const transactions = await prisma.transaction.findMany({
       where: {
         userId,
@@ -177,11 +180,13 @@ export async function GET() {
       }))
 
     const latestMonth = Array.from(monthlyMap.values()).slice(-1)[0]
+    const today = new Date()
+    const [targetYear, targetMonth] = latestMonth
+      ? latestMonth.month.split('-').map(Number)
+      : [today.getFullYear(), today.getMonth() + 1]
     const activeBudgets = budgets.filter((budget) => {
       if (budget.period !== 'monthly' || !budget.month) return false
-      if (!latestMonth) return false
-      const [year, month] = latestMonth.month.split('-').map(Number)
-      return budget.year === year && budget.month === month
+      return budget.year === targetYear && budget.month === targetMonth
     })
 
     const budgetStatus = activeBudgets.map((budget) => {
@@ -203,10 +208,16 @@ export async function GET() {
         })
         .reduce((sum, transaction) => sum + Math.abs(convertAmount(transaction.amount, transaction.currency, budget.currency)), 0)
 
+      const isCurrentBudgetMonth = today.getFullYear() === budget.year && today.getMonth() + 1 === budget.month
+      const budgetEndDate = new Date(budget.year, budget.month || 1, 0, 23, 59, 59, 999)
+
       return {
         ...budget,
         actual,
         usagePercentage: budget.amount > 0 ? Math.round((actual / budget.amount) * 100) : 0,
+        daysRemaining: isCurrentBudgetMonth
+          ? Math.max(0, Math.ceil((budgetEndDate.getTime() - today.getTime()) / 86400000))
+          : 0,
       }
     })
 

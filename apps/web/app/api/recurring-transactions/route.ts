@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 import { requireRouteSession } from '@/lib/server-auth'
+import { calculateInitialRunDate } from '@/lib/recurring'
 
 function isMissingRecurringTable(error: unknown) {
   if (!error || typeof error !== 'object') {
@@ -11,28 +12,6 @@ function isMissingRecurringTable(error: unknown) {
   const message = 'message' in error ? String(error.message) : ''
 
   return code === 'P2021' || message.includes('RecurringTransaction') || message.includes('does not exist')
-}
-
-function calculateNextRunDate(startDate: Date, interval: string, dayOfMonth?: number | null, dayOfWeek?: number | null) {
-  const next = new Date(startDate)
-
-  if (interval === 'weekly') {
-    const targetDay = typeof dayOfWeek === 'number' ? dayOfWeek : startDate.getDay()
-    const diff = (targetDay - next.getDay() + 7) % 7 || 7
-    next.setDate(next.getDate() + diff)
-    return next
-  }
-
-  if (interval === 'yearly') {
-    next.setFullYear(next.getFullYear() + 1)
-    return next
-  }
-
-  next.setMonth(next.getMonth() + 1)
-  if (dayOfMonth) {
-    next.setDate(Math.min(dayOfMonth, 28))
-  }
-  return next
 }
 
 async function verifyOwnership(userId: string, accountIds: Array<string | undefined>) {
@@ -130,7 +109,7 @@ export async function POST(request: Request) {
         dayOfWeek: typeof dayOfWeek === 'number' ? dayOfWeek : null,
         startDate: normalizedStartDate,
         endDate: endDate ? new Date(endDate) : null,
-        nextRunDate: calculateNextRunDate(normalizedStartDate, interval || 'monthly', dayOfMonth, dayOfWeek),
+        nextRunDate: calculateInitialRunDate(normalizedStartDate, interval || 'monthly', dayOfMonth, dayOfWeek),
         isActive: Boolean(isActive ?? true),
       },
     })

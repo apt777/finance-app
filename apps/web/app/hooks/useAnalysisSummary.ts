@@ -17,9 +17,12 @@ export interface AnalysisSummary {
     categoryKey?: string | null
     amount: number
     currency: string
+    year: number
+    month?: number | null
     alertThreshold: number
     actual: number
     usagePercentage: number
+    daysRemaining: number
   }>
 }
 

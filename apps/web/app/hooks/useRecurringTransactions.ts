@@ -9,6 +9,8 @@ export interface RecurringTransaction {
   amount: number
   currency: string
   categoryKey?: string | null
+  accountId?: string | null
+  endDate?: string | null
   account?: { id: string; name: string } | null
   fromAccount?: { id: string; name: string } | null
   toAccount?: { id: string; name: string } | null

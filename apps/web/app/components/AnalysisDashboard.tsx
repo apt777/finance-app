@@ -296,6 +296,9 @@ export default function AnalysisDashboard() {
                     <p className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                       {Math.round(budget.actual).toLocaleString()} / {Math.round(budget.amount).toLocaleString()} {budget.currency}
                     </p>
+                    <p className={`mt-1 text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                      {budget.daysRemaining > 0 ? ui.analysis.daysRemaining(budget.daysRemaining) : `${budget.year}.${String(budget.month || 1).padStart(2, '0')}`}
+                    </p>
                   </div>
                   <span className={`text-sm font-bold ${budget.usagePercentage >= 100 ? 'text-rose-600' : budget.usagePercentage >= budget.alertThreshold ? 'text-amber-600' : 'text-emerald-600'}`}>
                     {budget.usagePercentage}%

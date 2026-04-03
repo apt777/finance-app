@@ -19,6 +19,7 @@ import { useCurrencyPreferences } from '@/context/CurrencyPreferenceContext'
 import AppLoadingState from '@/components/AppLoadingState'
 import { getUiCopy } from '@/lib/uiCopy'
 import { useQuickActions } from '@/hooks/useQuickActions'
+import { useDashboardSummary } from '@/hooks/useDashboardSummary'
 
 interface Account {
   id: string
@@ -88,6 +89,7 @@ export default function OverviewModern() {
   const ui = getUiCopy(locale)
   const { baseCurrency, mirrorCurrency, setMirrorCurrency } = useCurrencyPreferences()
   const { quickActions: storedQuickActions } = useQuickActions()
+  const { data: dashboardSummary } = useDashboardSummary()
 
   const { data, isLoading, isError } = useOverviewData()
   const { data: exchangeRates, isLoading: ratesLoading, isError: ratesError } = useExchangeRates()
@@ -208,6 +210,18 @@ export default function OverviewModern() {
   const totalExpensesLast30 = Math.round(chartData.reduce((sum, item) => sum + item.expenses, 0))
   const holdingsValueBaseCurrency = Math.round(
     holdings.reduce((sum, holding) => sum + convertToBaseCurrency(holding.shares * (holding.marketPrice || holding.costBasis), holding.currency), 0),
+  )
+  const plannedExpenseByCurrency = Object.entries(dashboardSummary?.recurringByCurrency || {}).reduce<Record<string, number>>((acc, [currency, amount]) => {
+    acc[currency] = (acc[currency] || 0) + amount
+    return acc
+  }, {})
+  Object.entries(dashboardSummary?.creditCardPaymentsByCurrency || {}).forEach(([currency, amount]) => {
+    plannedExpenseByCurrency[currency] = (plannedExpenseByCurrency[currency] || 0) + amount
+  })
+  const plannedExpensesBaseCurrency = Math.round(
+    Object.entries(plannedExpenseByCurrency).reduce((sum, [currency, amount]) => {
+      return sum + convertToBaseCurrency(amount, currency)
+    }, 0)
   )
   const totalAssetsBaseCurrency = Math.round(totalPositiveAssetsBaseCurrency + holdingsValueBaseCurrency)
   const averageGoalProgress = goalsWithProgress.length > 0
@@ -388,11 +402,13 @@ export default function OverviewModern() {
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 <div className={`flex min-h-[122px] flex-col justify-between rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/80'}`}>
-                  <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{tAccounts('totalAccounts')}</p>
+                  <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.plannedExpenses}</p>
                   <p className={`mt-3 text-[clamp(1.08rem,1.8vw,1.55rem)] font-bold leading-tight tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
-                    {accounts.length}
+                    {plannedExpensesBaseCurrency.toLocaleString()}
                   </p>
-                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.linkedAccounts}</p>
+                  <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    {ui.overview.plannedExpensesMeta(dashboardSummary?.totalUpcomingCount || 0, dashboardSummary?.totalCreditCardCount || 0)} · {BASE_CURRENCY}
+                  </p>
                 </div>
                 <div className={`flex min-h-[122px] flex-col justify-between rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/80'}`}>
                   <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.totalAssetsInCurrency(BASE_CURRENCY)}</p>
@@ -506,13 +522,17 @@ export default function OverviewModern() {
                       <CartesianGrid stroke="#cbd5e1" strokeDasharray="2 8" vertical={false} opacity={0.7} />
                       <XAxis dataKey="date" stroke="#94a3b8" tickLine={false} />
                       <YAxis stroke="#94a3b8" tickLine={false} />
-                      <Tooltip contentStyle={tooltipStyle} />
+                      <Tooltip
+                        contentStyle={tooltipStyle}
+                        labelFormatter={(value) => `${value}`}
+                        formatter={(value: number | string | undefined) => [`${Math.round(Number(value || 0)).toLocaleString()} ${BASE_CURRENCY}`, ui.overview.recent30DayExpense]}
+                      />
                       <Area
                         dataKey="expenses"
                         fill="url(#expenseFill)"
                         stroke="#2563eb"
                         strokeWidth={2.5}
-                        type="natural"
+                        type="monotone"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         activeDot={{ r: 4, strokeWidth: 0, fill: '#2563eb' }}
@@ -666,7 +686,11 @@ export default function OverviewModern() {
                     <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="date" stroke="#94a3b8" tickLine={false} />
                     <YAxis stroke="#94a3b8" tickLine={false} />
-                    <Tooltip contentStyle={tooltipStyle} />
+                    <Tooltip
+                      contentStyle={tooltipStyle}
+                      labelFormatter={(value) => `${value}`}
+                      formatter={(value: number | string | undefined) => [`${Math.round(Number(value || 0)).toLocaleString()} ${BASE_CURRENCY}`, ui.overview.expenseSplit]}
+                    />
                     <Bar dataKey="expenses" fill="#0f172a" radius={[16, 16, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
