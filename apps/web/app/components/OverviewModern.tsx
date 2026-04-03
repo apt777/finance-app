@@ -4,7 +4,7 @@ import React from 'react'
 import { Link } from '@/navigation'
 import { useOverviewData } from '../hooks/useOverviewData'
 import { useExchangeRates, ExchangeRate } from '../hooks/useExchangeRates'
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import {
   PlusCircle,
   Sparkles,
@@ -69,12 +69,44 @@ interface ChartData {
   expenses: number
 }
 
+type AnalysisGraphMode = 'bar' | 'dot'
+
 const tooltipStyle = {
   backgroundColor: '#0f172a',
   border: '1px solid #1e293b',
   borderRadius: '16px',
   color: '#f8fafc',
   boxShadow: '0 20px 50px rgba(15, 23, 42, 0.18)',
+}
+
+function ExpenseTooltip({
+  active,
+  label,
+  payload,
+  currency,
+  title,
+}: {
+  active?: boolean
+  label?: string
+  payload?: Array<{ value?: number | string }>
+  currency: string
+  title: string
+}) {
+  if (!active || !payload?.length) {
+    return null
+  }
+
+  const value = Math.round(Number(payload[0]?.value || 0))
+
+  return (
+    <div style={tooltipStyle as React.CSSProperties}>
+      <p style={{ fontSize: 12, opacity: 0.8 }}>{label}</p>
+      <p style={{ marginTop: 6, fontSize: 13, fontWeight: 700 }}>{title}</p>
+      <p style={{ marginTop: 6, fontSize: 15, fontWeight: 800 }}>
+        {value.toLocaleString()} {currency}
+      </p>
+    </div>
+  )
 }
 
 export default function OverviewModern() {
@@ -93,6 +125,7 @@ export default function OverviewModern() {
 
   const { data, isLoading, isError } = useOverviewData()
   const { data: exchangeRates, isLoading: ratesLoading, isError: ratesError } = useExchangeRates()
+  const [analysisGraphMode, setAnalysisGraphMode] = React.useState<AnalysisGraphMode>('bar')
 
   const isDark = colorMode === 'dark'
 
@@ -496,6 +529,17 @@ export default function OverviewModern() {
                 </div>
               </div>
 
+              <div className="mb-4 flex justify-end">
+                <select
+                  value={analysisGraphMode}
+                  onChange={(event) => setAnalysisGraphMode(event.target.value as AnalysisGraphMode)}
+                  className={`rounded-xl border px-3 py-2 text-xs font-semibold ${isDark ? 'border-white/10 bg-white/5 text-slate-200' : 'border-slate-200 bg-white text-slate-700'}`}
+                >
+                  <option value="bar">{ui.overview.analysisGraphBar}</option>
+                  <option value="dot">{ui.overview.analysisGraphDot}</option>
+                </select>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div className={`rounded-[24px] p-4 ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
                   <p className={`text-[11px] uppercase tracking-[0.18em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{ui.overview.recentExpenseInCurrency(BASE_CURRENCY)}</p>
@@ -512,32 +556,30 @@ export default function OverviewModern() {
               <div className="mt-5 h-[220px]">
                 {chartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData}>
-                      <defs>
-                        <linearGradient id="expenseFill" x1="0" x2="0" y1="0" y2="1">
-                          <stop offset="0%" stopColor="#2563eb" stopOpacity={0.26} />
-                          <stop offset="100%" stopColor="#2563eb" stopOpacity={0.02} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid stroke="#cbd5e1" strokeDasharray="2 8" vertical={false} opacity={0.7} />
-                      <XAxis dataKey="date" stroke="#94a3b8" tickLine={false} />
-                      <YAxis stroke="#94a3b8" tickLine={false} />
-                      <Tooltip
-                        contentStyle={tooltipStyle}
-                        labelFormatter={(value) => `${value}`}
-                        formatter={(value: number | string | undefined) => [`${Math.round(Number(value || 0)).toLocaleString()} ${BASE_CURRENCY}`, ui.overview.recent30DayExpense]}
-                      />
-                      <Area
-                        dataKey="expenses"
-                        fill="url(#expenseFill)"
-                        stroke="#2563eb"
-                        strokeWidth={2.5}
-                        type="monotone"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        activeDot={{ r: 4, strokeWidth: 0, fill: '#2563eb' }}
-                      />
-                    </AreaChart>
+                    {analysisGraphMode === 'bar' ? (
+                      <BarChart data={chartData}>
+                        <CartesianGrid stroke="#cbd5e1" strokeDasharray="2 8" vertical={false} opacity={0.7} />
+                        <XAxis dataKey="date" stroke="#94a3b8" tickLine={false} />
+                        <YAxis stroke="#94a3b8" tickLine={false} />
+                        <Tooltip content={<ExpenseTooltip currency={BASE_CURRENCY} title={ui.overview.recent30DayExpense} />} />
+                        <Bar dataKey="expenses" fill="#2563eb" radius={[14, 14, 0, 0]} />
+                      </BarChart>
+                    ) : (
+                      <LineChart data={chartData}>
+                        <CartesianGrid stroke="#cbd5e1" strokeDasharray="2 8" vertical={false} opacity={0.7} />
+                        <XAxis dataKey="date" stroke="#94a3b8" tickLine={false} />
+                        <YAxis stroke="#94a3b8" tickLine={false} />
+                        <Tooltip content={<ExpenseTooltip currency={BASE_CURRENCY} title={ui.overview.recent30DayExpense} />} />
+                        <Line
+                          dataKey="expenses"
+                          stroke="#2563eb"
+                          strokeWidth={2.5}
+                          type="monotone"
+                          dot={{ r: 3.5, fill: '#2563eb', strokeWidth: 0 }}
+                          activeDot={{ r: 5, fill: '#2563eb', strokeWidth: 0 }}
+                        />
+                      </LineChart>
+                    )}
                   </ResponsiveContainer>
                 ) : (
                   <div className="flex h-full items-center justify-center rounded-[24px] bg-slate-50 text-sm text-slate-500">
@@ -686,11 +728,7 @@ export default function OverviewModern() {
                     <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="date" stroke="#94a3b8" tickLine={false} />
                     <YAxis stroke="#94a3b8" tickLine={false} />
-                    <Tooltip
-                      contentStyle={tooltipStyle}
-                      labelFormatter={(value) => `${value}`}
-                      formatter={(value: number | string | undefined) => [`${Math.round(Number(value || 0)).toLocaleString()} ${BASE_CURRENCY}`, ui.overview.expenseSplit]}
-                    />
+                    <Tooltip content={<ExpenseTooltip currency={BASE_CURRENCY} title={ui.overview.expenseSplit} />} />
                     <Bar dataKey="expenses" fill="#0f172a" radius={[16, 16, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>

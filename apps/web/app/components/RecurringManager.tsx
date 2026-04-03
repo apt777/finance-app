@@ -201,7 +201,7 @@ export default function RecurringManager() {
           <input
             value={form.amount}
             onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))}
-            placeholder="0"
+            placeholder={`${ui.overview.amountLabel}: 8000`}
             type="number"
             step="1"
             className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
@@ -251,7 +251,7 @@ export default function RecurringManager() {
           <input
             value={form.dayOfMonth}
             onChange={(event) => setForm((current) => ({ ...current, dayOfMonth: event.target.value }))}
-            placeholder="25"
+            placeholder={`${ui.managers.dayOfMonthLabel}: 25`}
             type="number"
             min="1"
             max="31"
@@ -279,9 +279,10 @@ export default function RecurringManager() {
             ) : null}
           </div>
         </div>
-        <p className="mt-3 text-xs text-slate-500">
-          {ui.managers.dayOfMonthLabel}: {form.dayOfMonth || '-'}
-        </p>
+        <div className="mt-3 grid grid-cols-1 gap-2 text-xs text-slate-500 md:grid-cols-2">
+          <p>{ui.overview.amountLabel}: {form.amount || '-'} {form.currency}</p>
+          <p>{ui.managers.dayOfMonthLabel}: {ui.managers.dayOfMonthHint} ({form.dayOfMonth || '-'})</p>
+        </div>
         {feedback ? <p className="mt-3 text-sm text-rose-600">{feedback}</p> : null}
       </div>
 

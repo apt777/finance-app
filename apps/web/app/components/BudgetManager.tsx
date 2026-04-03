@@ -7,6 +7,7 @@ import { useBudgets } from '@/hooks/useBudgets'
 import { useCategories } from '@/hooks/useCategories'
 import { useLocale, useTranslations } from 'next-intl'
 import { getUiCopy } from '@/lib/uiCopy'
+import { SUPPORTED_CURRENCIES } from '@/lib/currency'
 
 type BudgetFormState = {
   name: string
@@ -159,17 +160,22 @@ export default function BudgetManager() {
           <input
             value={form.amount}
             onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))}
-            placeholder="0"
+            placeholder={`${ui.overview.amountLabel}: 40000`}
             type="number"
             step="1"
             className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
           />
-          <input
+          <select
             value={form.currency}
-            onChange={(event) => setForm((current) => ({ ...current, currency: event.target.value.toUpperCase() }))}
-            placeholder="JPY"
+            onChange={(event) => setForm((current) => ({ ...current, currency: event.target.value }))}
             className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
-          />
+          >
+            {SUPPORTED_CURRENCIES.map((currency) => (
+              <option key={currency} value={currency}>
+                {ui.overview.currencyLabel}: {currency}
+              </option>
+            ))}
+          </select>
           <select
             value={form.year}
             onChange={(event) => setForm((current) => ({ ...current, year: Number(event.target.value) }))}
@@ -221,9 +227,11 @@ export default function BudgetManager() {
             ) : null}
           </div>
         </div>
-        <p className="mt-3 text-xs text-slate-500">
-          {ui.managers.alertThresholdLabel}: {form.alertThreshold || '80'}%
-        </p>
+        <div className="mt-3 grid grid-cols-1 gap-2 text-xs text-slate-500 md:grid-cols-3">
+          <p>{ui.overview.amountLabel}: {ui.overview.amountHint}</p>
+          <p>{ui.overview.yearLabel}: {form.year} / {ui.overview.monthLabel}: {form.month}</p>
+          <p>{ui.managers.alertThresholdLabel}: {ui.managers.alertThresholdHint} ({form.alertThreshold || '80'}%)</p>
+        </div>
         {feedback ? <p className="mt-3 text-sm text-rose-600">{feedback}</p> : null}
       </div>
 
