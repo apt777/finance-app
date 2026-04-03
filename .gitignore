@@ -11,6 +11,7 @@ node_modules
 .env.development.local
 .env.test.local
 .env.production.local
+.env.*
 
 # Testing
 coverage
@@ -36,5 +37,16 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+*.key
+*.p12
+*.pfx
+*.cer
+*.crt
+*.der
+*.mobileprovision
+*.jks
+*.keystore
+$HOME/
+Library/
 
 /generated/prisma
