@@ -378,12 +378,6 @@ export default function OverviewModern() {
       href: `/transactions/add?${params.toString()}`,
     }
   })
-  const savedQuickActionsGridClass =
-    savedQuickActions.length <= 1
-      ? 'grid-cols-1'
-      : savedQuickActions.length === 2
-        ? 'grid-cols-1 md:grid-cols-2'
-        : 'grid-cols-1 md:grid-cols-3'
   const expenseFlowDays = 7
   const expenseFlowStart = new Date()
   expenseFlowStart.setDate(expenseFlowStart.getDate() - (expenseFlowDays - 1))
@@ -417,7 +411,7 @@ export default function OverviewModern() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 4)
     .map(([name]) => name)
-  const expenseFlowPalette = ['#0f172a', '#334155', '#64748b', '#94a3b8']
+  const expenseFlowPalette = ['#2563eb', '#0891b2', '#0f766e', '#7c3aed']
   const expenseFlowColorMap = expenseFlowCategoryNames.reduce<Record<string, string>>((acc, name, index) => {
     acc[name] = expenseFlowPalette[index] || '#cbd5e1'
     return acc
@@ -440,7 +434,7 @@ export default function OverviewModern() {
 
     if (hasOtherExpenseFlowCategory) {
       row[ui.overview.otherExpenseCategory] = otherTotal
-      expenseFlowColorMap[ui.overview.otherExpenseCategory] = '#cbd5e1'
+      expenseFlowColorMap[ui.overview.otherExpenseCategory] = '#94a3b8'
     }
 
     return row
@@ -478,9 +472,6 @@ export default function OverviewModern() {
                 <h2 className={`mt-5 max-w-4xl text-[clamp(2.05rem,4.3vw,3.45rem)] font-bold leading-[1.02] tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>
                   {Math.round(netWorth).toLocaleString()} <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>{BASE_CURRENCY}</span>
                 </h2>
-                <p className={`max-w-2xl text-sm leading-7 md:text-base ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                  {ui.overview.heroDesc}
-                </p>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <div className={`flex min-h-[112px] flex-col justify-between rounded-[24px] px-4 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
@@ -613,6 +604,32 @@ export default function OverviewModern() {
                   </div>
                   <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.cashByCurrency}</p>
                 </div>
+                <Link
+                  href="/settings?tab=beta"
+                  className={`sm:col-span-2 xl:col-span-3 flex min-h-[122px] flex-col justify-between rounded-[28px] px-5 py-4 shadow-sm transition-all ${
+                    isDark
+                      ? 'border border-white/10 bg-white/5 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.08]'
+                      : 'border border-slate-200 bg-slate-950 text-white hover:-translate-y-0.5 hover:bg-slate-900'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-300'}`}>{ui.overview.aiShortcutLabel}</p>
+                      <p className="mt-2 text-lg font-bold">{ui.overview.aiShortcutTitle}</p>
+                    </div>
+                    <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${isDark ? 'bg-cyan-500/15 text-cyan-300' : 'bg-white/10 text-cyan-200'}`}>
+                      <Sparkles className="h-5 w-5" />
+                    </span>
+                  </div>
+                  <div className="mt-3 flex items-end justify-between gap-4">
+                    <p className={`max-w-2xl text-sm leading-6 ${isDark ? 'text-slate-300' : 'text-slate-200'}`}>
+                      {ui.overview.aiShortcutDesc}
+                    </p>
+                    <span className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-semibold ${isDark ? 'bg-white/10 text-slate-100' : 'bg-white/10 text-white'}`}>
+                      {ui.overview.openBeta}
+                    </span>
+                  </div>
+                </Link>
               </div>
             </div>
 
@@ -727,7 +744,7 @@ export default function OverviewModern() {
                       {ui.overview.jumpNow}
                     </Link>
                   </div>
-                  <div className={`grid gap-3 ${savedQuickActionsGridClass}`}>
+                  <div className="grid gap-3 md:grid-cols-3">
                     {savedQuickActions.map((action) => (
                       <Link
                         key={action.id}
@@ -757,35 +774,6 @@ export default function OverviewModern() {
                   </div>
                 </div>
               ) : null}
-
-              <Link
-                href="/settings?tab=beta"
-                className={`mt-4 flex min-h-[112px] flex-col justify-between rounded-[24px] p-4 transition-all ${
-                  isDark
-                    ? 'border border-white/10 bg-white/5 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.08]'
-                    : 'border border-blue-100 bg-white/85 hover:-translate-y-0.5 hover:bg-white hover:shadow-md'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-blue-600/75'}`}>{ui.overview.aiShortcutLabel}</p>
-                    <p className={`mt-2 text-base font-bold ${isDark ? 'text-white' : 'text-slate-950'}`}>{ui.overview.aiShortcutTitle}</p>
-                  </div>
-                  <span className={`flex h-10 w-10 items-center justify-center rounded-2xl ${isDark ? 'bg-cyan-500/15 text-cyan-300' : 'bg-cyan-100 text-cyan-700'}`}>
-                    <Sparkles className="h-5 w-5" />
-                  </span>
-                </div>
-                <div>
-                  <p className={`text-xs leading-6 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                    {ui.overview.aiShortcutDesc}
-                  </p>
-                  <span className={`mt-3 inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                    isDark ? 'bg-white/10 text-slate-200' : 'bg-blue-100 text-blue-700'
-                  }`}>
-                    {ui.overview.openBeta}
-                  </span>
-                </div>
-              </Link>
             </div>
           </div>
         </section>
