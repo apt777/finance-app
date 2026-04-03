@@ -230,12 +230,15 @@ export default function OverviewModern() {
       return acc
     }, {})
 
-  const chartData: ChartData[] = Object.keys(expensesLast30Days)
-    .map((date) => ({
+  const chartData: ChartData[] = Array.from({ length: 31 }).map((_, index) => {
+    const current = new Date(thirtyDaysAgo)
+    current.setDate(thirtyDaysAgo.getDate() + index)
+    const date = current.toISOString().split('T')[0] ?? ''
+    return {
       date,
       expenses: Math.round(expensesLast30Days[date] || 0),
-    }))
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    }
+  })
 
   const latestExpenses = chartData.at(-1)?.expenses || 0
   const previousExpenses = chartData.at(-2)?.expenses || 0
@@ -355,11 +358,13 @@ export default function OverviewModern() {
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <div className={`flex min-h-[112px] flex-col justify-between rounded-[24px] px-4 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
-                    <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.recentExpenseInCurrency(BASE_CURRENCY)}</p>
-                    <p className={`mt-2 text-xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
-                      {totalExpensesLast30.toLocaleString()}
+                    <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.plannedExpenses}</p>
+                    <p className="mt-2 text-xl font-bold tabular-nums text-rose-600">
+                      {plannedExpensesBaseCurrency.toLocaleString()}
                     </p>
-                    <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{BASE_CURRENCY}</p>
+                    <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      {ui.overview.plannedExpensesMeta(dashboardSummary?.totalUpcomingCount || 0, dashboardSummary?.totalCreditCardCount || 0)} · {BASE_CURRENCY}
+                    </p>
                   </div>
                   <div className={`flex min-h-[112px] flex-col justify-between rounded-[24px] px-4 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
                     <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.investmentInCurrency(BASE_CURRENCY)}</p>
@@ -518,26 +523,6 @@ export default function OverviewModern() {
                   <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">{tDashboard('last30Days')}</p>
                   <h3 className={`mt-2 text-[1.65rem] font-bold tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>{tDashboard('basicAnalysis')}</h3>
                 </div>
-                <div className={`rounded-2xl px-3 py-2 text-sm font-bold ${expenseMomentum > 0 ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] opacity-75">
-                    {ui.overview.dayOverDayExpense}
-                  </p>
-                  <p className="mt-1">
-                    {expenseMomentum > 0 ? '+' : ''}
-                    {Math.round(expenseMomentum).toLocaleString()}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mb-4 flex justify-end">
-                <select
-                  value={analysisGraphMode}
-                  onChange={(event) => setAnalysisGraphMode(event.target.value as AnalysisGraphMode)}
-                  className={`rounded-xl border px-3 py-2 text-xs font-semibold ${isDark ? 'border-white/10 bg-white/5 text-slate-200' : 'border-slate-200 bg-white text-slate-700'}`}
-                >
-                  <option value="bar">{ui.overview.analysisGraphBar}</option>
-                  <option value="dot">{ui.overview.analysisGraphDot}</option>
-                </select>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -548,8 +533,11 @@ export default function OverviewModern() {
                   </p>
                 </div>
                 <div className={`rounded-[24px] p-4 ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
-                  <p className={`text-[11px] uppercase tracking-[0.18em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{tHoldings('totalHoldings')}</p>
-                  <p className={`mt-3 text-2xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>{holdings.length}</p>
+                  <p className={`text-[11px] uppercase tracking-[0.18em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{ui.overview.dayOverDayExpense}</p>
+                  <p className={`mt-3 text-2xl font-bold tabular-nums ${expenseMomentum > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                    {expenseMomentum > 0 ? '+' : ''}
+                    {Math.round(expenseMomentum).toLocaleString()} <span className="text-sm">{BASE_CURRENCY}</span>
+                  </p>
                 </div>
               </div>
 
@@ -586,6 +574,16 @@ export default function OverviewModern() {
                     {tTransactions('noTransactions')}
                   </div>
                 )}
+              </div>
+              <div className="mt-4 flex justify-end">
+                <select
+                  value={analysisGraphMode}
+                  onChange={(event) => setAnalysisGraphMode(event.target.value as AnalysisGraphMode)}
+                  className={`rounded-xl border px-3 py-2 text-xs font-semibold ${isDark ? 'border-white/10 bg-white/5 text-slate-200' : 'border-slate-200 bg-white text-slate-700'}`}
+                >
+                  <option value="bar">{ui.overview.analysisGraphBar}</option>
+                  <option value="dot">{ui.overview.analysisGraphDot}</option>
+                </select>
               </div>
             </div>
 

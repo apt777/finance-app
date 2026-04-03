@@ -186,78 +186,99 @@ export default function RecurringManager() {
 
       <div className="rounded-[28px] border border-slate-200 bg-white p-6">
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
-          <input
-            value={form.name}
-            onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-            placeholder={ui.managers.recurringNamePlaceholder}
-            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
-          />
-          <input
-            value={form.description}
-            onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
-            placeholder={ui.managers.recurringDescPlaceholder}
-            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
-          />
-          <input
-            value={form.amount}
-            onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))}
-            placeholder={`${ui.overview.amountLabel}: 8000`}
-            type="number"
-            step="1"
-            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
-          />
-          <select
-            value={form.accountId}
-            onChange={(event) => {
-              const nextAccount = accounts.find((account) => account.id === event.target.value)
-              setForm((current) => ({
-                ...current,
-                accountId: event.target.value,
-                currency: nextAccount?.currency || current.currency,
-              }))
-            }}
-            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
-          >
-            <option value="">{ui.managers.selectAccount}</option>
-            {accounts.map((account) => (
-              <option key={account.id} value={account.id}>{account.name}</option>
-            ))}
-          </select>
-          <select
-            value={form.type}
-            onChange={(event) => {
-              const nextType = event.target.value as 'income' | 'expense'
-              const nextCategory = (nextType === 'income' ? incomeCategories : expenseCategories)[0]?.key || ''
-              setForm((current) => ({
-                ...current,
-                type: nextType,
-                categoryKey: nextCategory,
-              }))
-            }}
-            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
-          >
-            <option value="expense">{tTransactions('expense')}</option>
-            <option value="income">{tTransactions('income')}</option>
-          </select>
-          <select
-            value={form.categoryKey}
-            onChange={(event) => setForm((current) => ({ ...current, categoryKey: event.target.value }))}
-            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
-          >
-            {categoryOptions.map((category) => (
-              <option key={category.key} value={category.key}>{category.name}</option>
-            ))}
-          </select>
-          <input
-            value={form.dayOfMonth}
-            onChange={(event) => setForm((current) => ({ ...current, dayOfMonth: event.target.value }))}
-            placeholder={`${ui.managers.dayOfMonthLabel}: 25`}
-            type="number"
-            min="1"
-            max="31"
-            step="1"
-            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
-          />
+          <label className="space-y-2">
+            <span className="text-xs font-semibold text-slate-500">{ui.managers.recurringTitle}</span>
+            <input
+              value={form.name}
+              onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+              placeholder={ui.managers.recurringNamePlaceholder}
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
+            />
+          </label>
+          <label className="space-y-2">
+            <span className="text-xs font-semibold text-slate-500">{tTransactions('description')}</span>
+            <input
+              value={form.description}
+              onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
+              placeholder={ui.managers.recurringDescPlaceholder}
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
+            />
+          </label>
+          <label className="space-y-2">
+            <span className="text-xs font-semibold text-slate-500">{ui.overview.amountLabel}</span>
+            <input
+              value={form.amount}
+              onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))}
+              placeholder="8000"
+              type="number"
+              step="1"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
+            />
+          </label>
+          <label className="space-y-2">
+            <span className="text-xs font-semibold text-slate-500">{ui.managers.selectAccount}</span>
+            <select
+              value={form.accountId}
+              onChange={(event) => {
+                const nextAccount = accounts.find((account) => account.id === event.target.value)
+                setForm((current) => ({
+                  ...current,
+                  accountId: event.target.value,
+                  currency: nextAccount?.currency || current.currency,
+                }))
+              }}
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
+            >
+              <option value="">{ui.managers.selectAccount}</option>
+              {accounts.map((account) => (
+                <option key={account.id} value={account.id}>{account.name}</option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-2">
+            <span className="text-xs font-semibold text-slate-500">{tTransactions('type')}</span>
+            <select
+              value={form.type}
+              onChange={(event) => {
+                const nextType = event.target.value as 'income' | 'expense'
+                const nextCategory = (nextType === 'income' ? incomeCategories : expenseCategories)[0]?.key || ''
+                setForm((current) => ({
+                  ...current,
+                  type: nextType,
+                  categoryKey: nextCategory,
+                }))
+              }}
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
+            >
+              <option value="expense">{tTransactions('expense')}</option>
+              <option value="income">{tTransactions('income')}</option>
+            </select>
+          </label>
+          <label className="space-y-2">
+            <span className="text-xs font-semibold text-slate-500">{tTransactions('category')}</span>
+            <select
+              value={form.categoryKey}
+              onChange={(event) => setForm((current) => ({ ...current, categoryKey: event.target.value }))}
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
+            >
+              {categoryOptions.map((category) => (
+                <option key={category.key} value={category.key}>{category.name}</option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-2">
+            <span className="text-xs font-semibold text-slate-500">{ui.managers.dayOfMonthLabel}</span>
+            <input
+              value={form.dayOfMonth}
+              onChange={(event) => setForm((current) => ({ ...current, dayOfMonth: event.target.value }))}
+              placeholder="5"
+              type="number"
+              min="1"
+              max="31"
+              step="1"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
+            />
+          </label>
           <div className="flex gap-3">
             <button
               type="button"
@@ -279,9 +300,9 @@ export default function RecurringManager() {
             ) : null}
           </div>
         </div>
-        <div className="mt-3 grid grid-cols-1 gap-2 text-xs text-slate-500 md:grid-cols-2">
-          <p>{ui.overview.amountLabel}: {form.amount || '-'} {form.currency}</p>
-          <p>{ui.managers.dayOfMonthLabel}: {ui.managers.dayOfMonthHint} ({form.dayOfMonth || '-'})</p>
+        <div className="mt-4 flex flex-wrap gap-2 text-[11px] text-slate-500">
+          <span className="rounded-full bg-slate-100 px-3 py-1.5">{ui.managers.dayOfMonthHint}</span>
+          <span className="rounded-full bg-slate-100 px-3 py-1.5">{ui.overview.amountLabel}: {form.amount || '-'} {form.currency}</span>
         </div>
         {feedback ? <p className="mt-3 text-sm text-rose-600">{feedback}</p> : null}
       </div>

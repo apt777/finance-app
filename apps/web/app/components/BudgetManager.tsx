@@ -140,72 +140,93 @@ export default function BudgetManager() {
 
       <div className="rounded-[28px] border border-slate-200 bg-white p-6">
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
-          <input
-            value={form.name}
-            onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-            placeholder={ui.managers.budgetPlaceholder}
-            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
-          />
-          <select
-            value={form.categoryKey}
-            onChange={(event) => setForm((current) => ({ ...current, categoryKey: event.target.value }))}
-            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
-          >
-            {expenseCategories.map((category) => (
-              <option key={category.key} value={category.key}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-          <input
-            value={form.amount}
-            onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))}
-            placeholder={`${ui.overview.amountLabel}: 40000`}
-            type="number"
-            step="1"
-            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
-          />
-          <select
-            value={form.currency}
-            onChange={(event) => setForm((current) => ({ ...current, currency: event.target.value }))}
-            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
-          >
-            {SUPPORTED_CURRENCIES.map((currency) => (
-              <option key={currency} value={currency}>
-                {ui.overview.currencyLabel}: {currency}
-              </option>
-            ))}
-          </select>
-          <select
-            value={form.year}
-            onChange={(event) => setForm((current) => ({ ...current, year: Number(event.target.value) }))}
-            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
-          >
-            {yearOptions.map((year) => (
-              <option key={year} value={year}>
-                {year}
-              </option>
-            ))}
-          </select>
-          <select
-            value={form.month}
-            onChange={(event) => setForm((current) => ({ ...current, month: Number(event.target.value) }))}
-            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
-          >
-            {monthOptions.map((month) => (
-              <option key={month} value={month}>
-                {month}
-              </option>
-            ))}
-          </select>
-          <input
-            value={form.alertThreshold}
-            onChange={(event) => setForm((current) => ({ ...current, alertThreshold: event.target.value }))}
-            placeholder="80"
-            type="number"
-            step="1"
-            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
-          />
+          <label className="space-y-2">
+            <span className="text-xs font-semibold text-slate-500">{ui.managers.budgetTitle}</span>
+            <input
+              value={form.name}
+              onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+              placeholder={ui.managers.budgetPlaceholder}
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
+            />
+          </label>
+          <label className="space-y-2">
+            <span className="text-xs font-semibold text-slate-500">{tTransactions('category')}</span>
+            <select
+              value={form.categoryKey}
+              onChange={(event) => setForm((current) => ({ ...current, categoryKey: event.target.value }))}
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
+            >
+              {expenseCategories.map((category) => (
+                <option key={category.key} value={category.key}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-2">
+            <span className="text-xs font-semibold text-slate-500">{ui.overview.amountLabel}</span>
+            <input
+              value={form.amount}
+              onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))}
+              placeholder="40000"
+              type="number"
+              step="1"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
+            />
+          </label>
+          <label className="space-y-2">
+            <span className="text-xs font-semibold text-slate-500">{ui.overview.currencyLabel}</span>
+            <select
+              value={form.currency}
+              onChange={(event) => setForm((current) => ({ ...current, currency: event.target.value }))}
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
+            >
+              {SUPPORTED_CURRENCIES.map((currency) => (
+                <option key={currency} value={currency}>
+                  {currency}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-2">
+            <span className="text-xs font-semibold text-slate-500">{ui.overview.yearLabel}</span>
+            <select
+              value={form.year}
+              onChange={(event) => setForm((current) => ({ ...current, year: Number(event.target.value) }))}
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
+            >
+              {yearOptions.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-2">
+            <span className="text-xs font-semibold text-slate-500">{ui.overview.monthLabel}</span>
+            <select
+              value={form.month}
+              onChange={(event) => setForm((current) => ({ ...current, month: Number(event.target.value) }))}
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
+            >
+              {monthOptions.map((month) => (
+                <option key={month} value={month}>
+                  {month}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-2">
+            <span className="text-xs font-semibold text-slate-500">{ui.managers.alertThresholdLabel}</span>
+            <input
+              value={form.alertThreshold}
+              onChange={(event) => setForm((current) => ({ ...current, alertThreshold: event.target.value }))}
+              placeholder="80"
+              type="number"
+              step="1"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900"
+            />
+          </label>
           <div className="flex gap-3">
             <button
               type="button"
@@ -227,10 +248,9 @@ export default function BudgetManager() {
             ) : null}
           </div>
         </div>
-        <div className="mt-3 grid grid-cols-1 gap-2 text-xs text-slate-500 md:grid-cols-3">
-          <p>{ui.overview.amountLabel}: {ui.overview.amountHint}</p>
-          <p>{ui.overview.yearLabel}: {form.year} / {ui.overview.monthLabel}: {form.month}</p>
-          <p>{ui.managers.alertThresholdLabel}: {ui.managers.alertThresholdHint} ({form.alertThreshold || '80'}%)</p>
+        <div className="mt-4 flex flex-wrap gap-2 text-[11px] text-slate-500">
+          <span className="rounded-full bg-slate-100 px-3 py-1.5">{ui.overview.amountHint}</span>
+          <span className="rounded-full bg-slate-100 px-3 py-1.5">{ui.managers.alertThresholdHint}</span>
         </div>
         {feedback ? <p className="mt-3 text-sm text-rose-600">{feedback}</p> : null}
       </div>
