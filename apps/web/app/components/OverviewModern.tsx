@@ -360,7 +360,7 @@ export default function OverviewModern() {
       darkAccent: 'bg-amber-500/15 text-amber-300',
     },
   ] as const
-  const savedQuickActions = storedQuickActions.slice(0, 3).map((action) => {
+  const savedQuickActions = storedQuickActions.slice(0, 2).map((action) => {
     const params = new URLSearchParams({
       type: action.type,
       description: action.description,
@@ -411,7 +411,7 @@ export default function OverviewModern() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 4)
     .map(([name]) => name)
-  const expenseFlowPalette = ['#2563eb', '#0891b2', '#0f766e', '#7c3aed']
+  const expenseFlowPalette = ['#1e3a8a', '#1d4ed8', '#2563eb', '#60a5fa']
   const expenseFlowColorMap = expenseFlowCategoryNames.reduce<Record<string, string>>((acc, name, index) => {
     acc[name] = expenseFlowPalette[index] || '#cbd5e1'
     return acc
@@ -434,7 +434,7 @@ export default function OverviewModern() {
 
     if (hasOtherExpenseFlowCategory) {
       row[ui.overview.otherExpenseCategory] = otherTotal
-      expenseFlowColorMap[ui.overview.otherExpenseCategory] = '#94a3b8'
+      expenseFlowColorMap[ui.overview.otherExpenseCategory] = '#64748b'
     }
 
     return row
@@ -608,24 +608,24 @@ export default function OverviewModern() {
                   href="/settings?tab=beta"
                   className={`sm:col-span-2 xl:col-span-3 flex min-h-[122px] flex-col justify-between rounded-[28px] px-5 py-4 shadow-sm transition-all ${
                     isDark
-                      ? 'border border-white/10 bg-white/5 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.08]'
-                      : 'border border-slate-200 bg-slate-950 text-white hover:-translate-y-0.5 hover:bg-slate-900'
+                      ? 'border border-sky-400/20 bg-sky-500/10 text-white hover:-translate-y-0.5 hover:border-sky-300/30 hover:bg-sky-500/15'
+                      : 'border border-sky-200 bg-sky-50 text-slate-950 hover:-translate-y-0.5 hover:bg-sky-100/80'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-300'}`}>{ui.overview.aiShortcutLabel}</p>
+                      <p className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-sky-700/80'}`}>{ui.overview.aiShortcutLabel}</p>
                       <p className="mt-2 text-lg font-bold">{ui.overview.aiShortcutTitle}</p>
                     </div>
-                    <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${isDark ? 'bg-cyan-500/15 text-cyan-300' : 'bg-white/10 text-cyan-200'}`}>
+                    <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${isDark ? 'bg-sky-400/15 text-sky-200' : 'bg-white text-sky-600 shadow-sm'}`}>
                       <Sparkles className="h-5 w-5" />
                     </span>
                   </div>
-                  <div className="mt-3 flex items-end justify-between gap-4">
-                    <p className={`max-w-2xl text-sm leading-6 ${isDark ? 'text-slate-300' : 'text-slate-200'}`}>
+                  <div className="mt-2 flex items-end justify-between gap-4">
+                    <p className={`max-w-2xl text-sm leading-6 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                       {ui.overview.aiShortcutDesc}
                     </p>
-                    <span className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-semibold ${isDark ? 'bg-white/10 text-slate-100' : 'bg-white/10 text-white'}`}>
+                    <span className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-semibold ${isDark ? 'bg-white/10 text-slate-100' : 'bg-white text-sky-700 shadow-sm'}`}>
                       {ui.overview.openBeta}
                     </span>
                   </div>
@@ -710,13 +710,12 @@ export default function OverviewModern() {
               <div className="mb-5 flex items-center justify-between">
                 <div>
                   <p className={`text-[11px] font-bold uppercase tracking-[0.24em] ${isDark ? 'text-slate-400' : 'text-blue-600/70'}`}>{tDashboard('goalSummary')}</p>
-                  <h3 className="mt-2 text-[1.65rem] font-bold tracking-[-0.015em]">{ui.overview.focusNow}</h3>
                 </div>
                 <Target className="h-6 w-6 text-slate-400" />
               </div>
               <div className="space-y-4">
                 {goalsWithProgress.length > 0 ? (
-                  goalsWithProgress.slice(0, 3).map((goal) => (
+                  goalsWithProgress.slice(0, 1).map((goal) => (
                     <div key={goal.id} className={`rounded-[24px] p-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-blue-100 bg-white/80'}`}>
                       <div className="flex items-center justify-between">
                         <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{goal.name}</span>
@@ -744,7 +743,7 @@ export default function OverviewModern() {
                       {ui.overview.jumpNow}
                     </Link>
                   </div>
-                  <div className="grid gap-3 md:grid-cols-3">
+                  <div className="grid gap-3 md:grid-cols-2">
                     {savedQuickActions.map((action) => (
                       <Link
                         key={action.id}
@@ -823,7 +822,7 @@ export default function OverviewModern() {
                         dataKey={key}
                         stackId="expense-flow"
                         fill={expenseFlowColorMap[key]}
-                        radius={index === expenseFlowKeys.length - 1 ? [12, 12, 0, 0] : [0, 0, 0, 0]}
+                        radius={[10, 10, 0, 0]}
                       />
                     ))}
                   </BarChart>
