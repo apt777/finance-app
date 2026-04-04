@@ -526,8 +526,8 @@ export default function OverviewModern() {
       <div className="mx-auto max-w-[1680px] space-y-6">
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.18fr)_minmax(420px,0.82fr)] xl:items-stretch">
           <div className={`h-full overflow-hidden rounded-[40px] p-6 ${isDark ? 'border border-white/10 bg-[linear-gradient(180deg,rgba(24,27,31,0.98)_0%,rgba(31,35,40,0.98)_100%)] shadow-[0_24px_60px_rgba(0,0,0,0.28)]' : 'border border-white/70 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.96),_rgba(237,243,255,0.9)_36%,_rgba(211,226,255,0.88)_100%)] shadow-[0_24px_80px_rgba(59,130,246,0.16)]'}`}>
-            <div className="flex h-full flex-col justify-between gap-5">
-              <div className="max-w-4xl space-y-5">
+            <div className="flex h-full flex-col gap-5">
+              <div className="flex max-w-4xl flex-1 flex-col gap-5">
                 <div className="space-y-3">
                   <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                     {ui.overview.assetOverview}
@@ -614,7 +614,7 @@ export default function OverviewModern() {
                   })}
                 </div>
 
-                <div className={`min-h-[122px] rounded-[28px] px-5 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
+                <div className={`min-h-[122px] flex-1 rounded-[28px] px-5 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
                   <div className="flex h-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.focusPoint}</p>
@@ -790,8 +790,8 @@ export default function OverviewModern() {
               </div>
             </div>
 
-            <div className={`rounded-[36px] p-5 shadow-[0_18px_60px_rgba(15,23,42,0.22)] ${isDark ? 'border border-white/10 bg-white/5 text-white' : 'border border-blue-100 bg-blue-50/80 text-slate-950'}`}>
-              <div className="mb-4 flex items-start justify-between">
+            <div className={`rounded-[36px] p-6 shadow-[0_18px_60px_rgba(15,23,42,0.22)] ${isDark ? 'border border-white/10 bg-white/5 text-white' : 'border border-blue-100 bg-blue-50/80 text-slate-950'}`}>
+              <div className="mb-5 flex items-start justify-between">
                 <div>
                   <p className={`text-[11px] font-bold uppercase tracking-[0.24em] ${isDark ? 'text-slate-400' : 'text-blue-600/70'}`}>{tDashboard('goalSummary')}</p>
                   <h3 className={`mt-2 text-[1.65rem] font-bold tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>{ui.overview.primaryGoalTitle}</h3>
