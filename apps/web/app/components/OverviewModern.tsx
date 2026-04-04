@@ -525,9 +525,9 @@ export default function OverviewModern() {
     <div className="space-y-8">
       <div className="mx-auto max-w-[1680px] space-y-6">
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.18fr)_minmax(420px,0.82fr)] xl:items-stretch">
-          <div className={`h-full overflow-hidden rounded-[40px] p-6 md:p-8 ${isDark ? 'border border-white/10 bg-[linear-gradient(180deg,rgba(24,27,31,0.98)_0%,rgba(31,35,40,0.98)_100%)] shadow-[0_24px_60px_rgba(0,0,0,0.28)]' : 'border border-white/70 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.96),_rgba(237,243,255,0.9)_36%,_rgba(211,226,255,0.88)_100%)] shadow-[0_24px_80px_rgba(59,130,246,0.16)]'}`}>
-            <div className="space-y-6">
-              <div className="max-w-4xl space-y-6">
+          <div className={`h-full overflow-hidden rounded-[40px] p-6 ${isDark ? 'border border-white/10 bg-[linear-gradient(180deg,rgba(24,27,31,0.98)_0%,rgba(31,35,40,0.98)_100%)] shadow-[0_24px_60px_rgba(0,0,0,0.28)]' : 'border border-white/70 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.96),_rgba(237,243,255,0.9)_36%,_rgba(211,226,255,0.88)_100%)] shadow-[0_24px_80px_rgba(59,130,246,0.16)]'}`}>
+            <div className="space-y-5">
+              <div className="max-w-4xl space-y-5">
                 <div className="space-y-3">
                   <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                     {ui.overview.assetOverview}
@@ -552,7 +552,7 @@ export default function OverviewModern() {
                 </h2>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  <div className={`flex min-h-[112px] flex-col justify-between rounded-[24px] px-4 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
+                  <div className={`flex min-h-[122px] flex-col justify-between rounded-[24px] px-5 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
                     <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.plannedExpenses}</p>
                     <p className="mt-2 text-xl font-bold tabular-nums text-rose-600">
                       {plannedExpensesBaseCurrency.toLocaleString()}
@@ -561,14 +561,14 @@ export default function OverviewModern() {
                       {ui.overview.plannedExpensesMeta(dashboardSummary?.totalUpcomingCount || 0, dashboardSummary?.totalCreditCardCount || 0)} · {BASE_CURRENCY}
                     </p>
                   </div>
-                  <div className={`flex min-h-[112px] flex-col justify-between rounded-[24px] px-4 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
+                  <div className={`flex min-h-[122px] flex-col justify-between rounded-[24px] px-5 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
                     <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.investmentInCurrency(BASE_CURRENCY)}</p>
                     <p className={`mt-2 text-xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
                       {holdingsValueBaseCurrency.toLocaleString()}
                     </p>
                     <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{BASE_CURRENCY}</p>
                   </div>
-                  <div className={`flex min-h-[112px] flex-col justify-between rounded-[24px] px-4 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
+                  <div className={`flex min-h-[122px] flex-col justify-between rounded-[24px] px-5 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
                     <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.averageGoalProgress}</p>
                     <p className={`mt-2 text-xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
                       {averageGoalProgress}%
@@ -584,7 +584,7 @@ export default function OverviewModern() {
                       <Link
                         key={action.href}
                         href={action.href}
-                        className={`group flex min-h-[124px] flex-col justify-between rounded-[24px] px-4 py-4 transition-all ${
+                        className={`group flex min-h-[122px] flex-col justify-between rounded-[24px] px-5 py-4 transition-all ${
                           isDark
                             ? 'border border-white/10 bg-white/5 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.08]'
                             : 'border border-white/80 bg-white/82 hover:-translate-y-0.5 hover:bg-white hover:shadow-lg'
@@ -614,11 +614,11 @@ export default function OverviewModern() {
                   })}
                 </div>
 
-                <div className={`rounded-[28px] px-5 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
+                <div className={`rounded-[28px] px-5 py-5 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.focusPoint}</p>
-                      <p className={`mt-2 text-sm leading-6 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                      <p className={`mt-3 text-sm leading-7 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                         {expenseMomentum > 0
                           ? ui.overview.focusDescUp
                           : ui.overview.focusDescStable}
@@ -715,17 +715,17 @@ export default function OverviewModern() {
 
           <div className="grid gap-6 xl:grid-rows-[minmax(0,1fr)_auto_auto]">
             <div className={`rounded-[36px] p-6 backdrop-blur-xl ${isDark ? 'border border-white/10 bg-white/5 shadow-[0_18px_40px_rgba(0,0,0,0.24)]' : 'border border-white/80 bg-white/80 shadow-[0_18px_60px_rgba(148,163,184,0.12)]'}`}>
-              <div className="mb-6 flex items-center justify-between">
+              <div className="mb-6 flex items-start justify-between">
                 <div>
-                  <div className="flex items-center gap-3">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">{tDashboard('last30Days')}</p>
-                    <Link href="/analysis" className={`text-[11px] font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                      {ui.overview.jumpNow}
-                    </Link>
-                  </div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">{tDashboard('last30Days')}</p>
                   <h3 className={`mt-2 text-[1.65rem] font-bold tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>{tDashboard('basicAnalysis')}</h3>
                 </div>
-                <TrendingDown className="h-6 w-6 text-slate-400" />
+                <div className="flex items-center gap-3">
+                  <Link href="/analysis" className={`text-[11px] font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                    {ui.overview.jumpNow}
+                  </Link>
+                  <TrendingDown className="h-6 w-6 text-slate-400" />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -750,16 +750,16 @@ export default function OverviewModern() {
                     {analysisGraphMode === 'bar' ? (
                       <BarChart data={chartData}>
                         <CartesianGrid stroke="#cbd5e1" strokeDasharray="2 8" vertical={false} opacity={0.7} />
-                        <XAxis dataKey="date" stroke="#94a3b8" tickLine={false} />
-                        <YAxis stroke="#94a3b8" tickLine={false} />
+                        <XAxis dataKey="date" stroke="#94a3b8" tickLine={false} tick={{ fontSize: 12, fontWeight: 600, fill: '#64748b' }} />
+                        <YAxis stroke="#94a3b8" tickLine={false} tick={{ fontSize: 12, fontWeight: 600, fill: '#64748b' }} />
                         <Tooltip content={<ExpenseTooltip currency={BASE_CURRENCY} title={ui.overview.recent30DayExpense} />} />
                         <Bar dataKey="expenses" fill="#2563eb" radius={[14, 14, 0, 0]} />
                       </BarChart>
                     ) : (
                       <LineChart data={chartData}>
                         <CartesianGrid stroke="#cbd5e1" strokeDasharray="2 8" vertical={false} opacity={0.7} />
-                        <XAxis dataKey="date" stroke="#94a3b8" tickLine={false} />
-                        <YAxis stroke="#94a3b8" tickLine={false} />
+                        <XAxis dataKey="date" stroke="#94a3b8" tickLine={false} tick={{ fontSize: 12, fontWeight: 600, fill: '#64748b' }} />
+                        <YAxis stroke="#94a3b8" tickLine={false} tick={{ fontSize: 12, fontWeight: 600, fill: '#64748b' }} />
                         <Tooltip content={<ExpenseTooltip currency={BASE_CURRENCY} title={ui.overview.recent30DayExpense} />} />
                         <Line
                           dataKey="expenses"
@@ -791,17 +791,17 @@ export default function OverviewModern() {
             </div>
 
             <div className={`rounded-[36px] p-5 shadow-[0_18px_60px_rgba(15,23,42,0.22)] ${isDark ? 'border border-white/10 bg-white/5 text-white' : 'border border-blue-100 bg-blue-50/80 text-slate-950'}`}>
-              <div className="mb-4 flex items-center justify-between">
+              <div className="mb-4 flex items-start justify-between">
                 <div>
-                  <div className="flex items-center gap-3">
-                    <p className={`text-[11px] font-bold uppercase tracking-[0.24em] ${isDark ? 'text-slate-400' : 'text-blue-600/70'}`}>{tDashboard('goalSummary')}</p>
-                    <Link href="/goals" className={`text-[11px] font-semibold ${isDark ? 'text-slate-300' : 'text-blue-700/80'}`}>
-                      {ui.overview.jumpNow}
-                    </Link>
-                  </div>
+                  <p className={`text-[11px] font-bold uppercase tracking-[0.24em] ${isDark ? 'text-slate-400' : 'text-blue-600/70'}`}>{tDashboard('goalSummary')}</p>
                   <h3 className={`mt-2 text-[1.65rem] font-bold tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>{ui.overview.primaryGoalTitle}</h3>
                 </div>
-                <Target className="h-6 w-6 text-slate-400" />
+                <div className="flex items-center gap-3">
+                  <Link href="/goals" className={`text-[11px] font-semibold ${isDark ? 'text-slate-300' : 'text-blue-700/80'}`}>
+                    {ui.overview.jumpNow}
+                  </Link>
+                  <Target className="h-6 w-6 text-slate-400" />
+                </div>
               </div>
               <div className="space-y-4">
                 {featuredGoal ? (
@@ -830,15 +830,15 @@ export default function OverviewModern() {
               <div className={`rounded-[36px] p-6 backdrop-blur-xl ${isDark ? 'border border-white/10 bg-white/5 shadow-[0_18px_40px_rgba(0,0,0,0.24)]' : 'border border-white/80 bg-white/80 shadow-[0_18px_60px_rgba(148,163,184,0.12)]'}`}>
                 <div className="mb-5 flex items-start justify-between">
                   <div>
-                    <div className="flex items-center gap-3">
-                      <p className={`text-[11px] font-bold uppercase tracking-[0.24em] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.quickAdd}</p>
-                      <Link href="/settings?tab=quickActions" className={`text-[11px] font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                        {ui.overview.jumpNow}
-                      </Link>
-                    </div>
+                    <p className={`text-[11px] font-bold uppercase tracking-[0.24em] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.quickAdd}</p>
                     <h3 className={`mt-2 text-[1.65rem] font-bold tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>{tDashboard('quickActions')}</h3>
                   </div>
-                  <PlusCircle className="h-6 w-6 text-slate-400" />
+                  <div className="flex items-center gap-3">
+                    <Link href="/settings?tab=quickActions" className={`text-[11px] font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                      {ui.overview.jumpNow}
+                    </Link>
+                    <PlusCircle className="h-6 w-6 text-slate-400" />
+                  </div>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
                   {savedQuickActions.map((action) => (
@@ -908,8 +908,8 @@ export default function OverviewModern() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={expenseFlowChartData}>
                     <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="date" stroke="#94a3b8" tickLine={false} />
-                    <YAxis stroke="#94a3b8" tickLine={false} />
+                    <XAxis dataKey="date" stroke="#94a3b8" tickLine={false} tick={{ fontSize: 12, fontWeight: 600, fill: '#64748b' }} />
+                    <YAxis stroke="#94a3b8" tickLine={false} tick={{ fontSize: 12, fontWeight: 600, fill: '#64748b' }} />
                     <Tooltip content={<ExpenseStackTooltip currency={BASE_CURRENCY} />} />
                     {expenseFlowKeys.map((key) => (
                       <Bar
