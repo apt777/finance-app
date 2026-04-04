@@ -527,7 +527,7 @@ export default function OverviewModern() {
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.18fr)_minmax(420px,0.82fr)] xl:items-stretch">
           <div className={`h-full overflow-hidden rounded-[40px] p-6 ${isDark ? 'border border-white/10 bg-[linear-gradient(180deg,rgba(24,27,31,0.98)_0%,rgba(31,35,40,0.98)_100%)] shadow-[0_24px_60px_rgba(0,0,0,0.28)]' : 'border border-white/70 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.96),_rgba(237,243,255,0.9)_36%,_rgba(211,226,255,0.88)_100%)] shadow-[0_24px_80px_rgba(59,130,246,0.16)]'}`}>
             <div className="flex h-full flex-col gap-5">
-              <div className="flex max-w-4xl flex-1 flex-col gap-5">
+              <div className="flex flex-1 flex-col gap-5 xl:max-w-4xl">
                 <div className="space-y-3">
                   <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                     {ui.overview.assetOverview}
