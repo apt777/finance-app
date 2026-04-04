@@ -706,9 +706,15 @@ export default function OverviewModern() {
             <div className={`rounded-[36px] p-6 backdrop-blur-xl ${isDark ? 'border border-white/10 bg-white/5 shadow-[0_18px_40px_rgba(0,0,0,0.24)]' : 'border border-white/80 bg-white/80 shadow-[0_18px_60px_rgba(148,163,184,0.12)]'}`}>
               <div className="mb-6 flex items-center justify-between">
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">{tDashboard('last30Days')}</p>
+                  <div className="flex items-center gap-3">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">{tDashboard('last30Days')}</p>
+                    <Link href="/analysis" className={`text-[11px] font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                      {ui.overview.jumpNow}
+                    </Link>
+                  </div>
                   <h3 className={`mt-2 text-[1.65rem] font-bold tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>{tDashboard('basicAnalysis')}</h3>
                 </div>
+                <TrendingDown className="h-6 w-6 text-slate-400" />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -776,15 +782,15 @@ export default function OverviewModern() {
             <div className={`rounded-[36px] p-6 shadow-[0_18px_60px_rgba(15,23,42,0.22)] ${isDark ? 'border border-white/10 bg-white/5 text-white' : 'border border-blue-100 bg-blue-50/80 text-slate-950'}`}>
               <div className="mb-5 flex items-center justify-between">
                 <div>
-                  <p className={`text-[11px] font-bold uppercase tracking-[0.24em] ${isDark ? 'text-slate-400' : 'text-blue-600/70'}`}>{tDashboard('goalSummary')}</p>
+                  <div className="flex items-center gap-3">
+                    <p className={`text-[11px] font-bold uppercase tracking-[0.24em] ${isDark ? 'text-slate-400' : 'text-blue-600/70'}`}>{tDashboard('goalSummary')}</p>
+                    <Link href="/goals" className={`text-[11px] font-semibold ${isDark ? 'text-slate-300' : 'text-blue-700/80'}`}>
+                      {ui.overview.jumpNow}
+                    </Link>
+                  </div>
                   <h3 className={`mt-2 text-[1.65rem] font-bold tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>{ui.overview.primaryGoalTitle}</h3>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Link href="/goals" className={`text-[11px] font-semibold ${isDark ? 'text-slate-300' : 'text-blue-700/80'}`}>
-                    {ui.overview.jumpNow}
-                  </Link>
-                  <Target className="h-6 w-6 text-slate-400" />
-                </div>
+                <Target className="h-6 w-6 text-slate-400" />
               </div>
               <div className="space-y-4">
                 {featuredGoal ? (
@@ -813,14 +819,17 @@ export default function OverviewModern() {
               <div className={`rounded-[36px] p-6 backdrop-blur-xl ${isDark ? 'border border-white/10 bg-white/5 shadow-[0_18px_40px_rgba(0,0,0,0.24)]' : 'border border-white/80 bg-white/80 shadow-[0_18px_60px_rgba(148,163,184,0.12)]'}`}>
                 <div className="mb-5 flex items-start justify-between">
                   <div>
-                    <p className={`text-[11px] font-bold uppercase tracking-[0.24em] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.quickAdd}</p>
+                    <div className="flex items-center gap-3">
+                      <p className={`text-[11px] font-bold uppercase tracking-[0.24em] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.quickAdd}</p>
+                      <Link href="/settings?tab=quickActions" className={`text-[11px] font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                        {ui.overview.jumpNow}
+                      </Link>
+                    </div>
                     <h3 className={`mt-2 text-[1.65rem] font-bold tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>{tDashboard('quickActions')}</h3>
                   </div>
-                  <Link href="/settings?tab=quickActions" className={`text-[11px] font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                    {ui.overview.jumpNow}
-                  </Link>
+                  <PlusCircle className="h-6 w-6 text-slate-400" />
                 </div>
-                <div className="grid gap-3">
+                <div className="grid gap-3 md:grid-cols-2">
                   {savedQuickActions.map((action) => (
                     <Link
                       key={action.id}
@@ -833,8 +842,7 @@ export default function OverviewModern() {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.quickAdd}</p>
-                          <p className={`mt-2 truncate text-base font-bold ${isDark ? 'text-white' : 'text-slate-950'}`}>{action.label}</p>
+                          <p className={`truncate text-base font-bold ${isDark ? 'text-white' : 'text-slate-950'}`}>{action.label}</p>
                         </div>
                         <span className={`shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold ${isDark ? 'bg-white/10 text-slate-200' : 'bg-slate-100 text-slate-700'}`}>
                           {action.type === 'expense'
