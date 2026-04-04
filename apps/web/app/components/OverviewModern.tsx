@@ -614,11 +614,11 @@ export default function OverviewModern() {
                   })}
                 </div>
 
-                <div className={`rounded-[28px] px-5 py-5 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className={`min-h-[122px] rounded-[28px] px-5 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
+                  <div className="flex h-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.focusPoint}</p>
-                      <p className={`mt-3 text-sm leading-7 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                      <p className={`mt-2 text-sm leading-6 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                         {expenseMomentum > 0
                           ? ui.overview.focusDescUp
                           : ui.overview.focusDescStable}
