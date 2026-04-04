@@ -524,8 +524,8 @@ export default function OverviewModern() {
   return (
     <div className="space-y-8">
       <div className="mx-auto max-w-[1680px] space-y-6">
-        <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.18fr)_minmax(420px,0.82fr)] xl:items-stretch">
-          <div className={`h-full overflow-hidden rounded-[40px] p-6 ${isDark ? 'border border-white/10 bg-[linear-gradient(180deg,rgba(24,27,31,0.98)_0%,rgba(31,35,40,0.98)_100%)] shadow-[0_24px_60px_rgba(0,0,0,0.28)]' : 'border border-white/70 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.96),_rgba(237,243,255,0.9)_36%,_rgba(211,226,255,0.88)_100%)] shadow-[0_24px_80px_rgba(59,130,246,0.16)]'}`}>
+        <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.18fr)_minmax(420px,0.82fr)] xl:items-start">
+          <div className={`overflow-hidden rounded-[40px] p-6 ${isDark ? 'border border-white/10 bg-[linear-gradient(180deg,rgba(24,27,31,0.98)_0%,rgba(31,35,40,0.98)_100%)] shadow-[0_24px_60px_rgba(0,0,0,0.28)]' : 'border border-white/70 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.96),_rgba(237,243,255,0.9)_36%,_rgba(211,226,255,0.88)_100%)] shadow-[0_24px_80px_rgba(59,130,246,0.16)]'}`}>
             <div className="space-y-5">
               <div className="max-w-4xl space-y-5">
                 <div className="space-y-3">
@@ -551,7 +551,7 @@ export default function OverviewModern() {
                   {Math.round(netWorth).toLocaleString()} <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>{BASE_CURRENCY}</span>
                 </h2>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="grid grid-cols-1 gap-3 sm:auto-rows-fr sm:grid-cols-3">
                   <div className={`flex min-h-[122px] flex-col justify-between rounded-[24px] px-5 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
                     <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.plannedExpenses}</p>
                     <p className="mt-2 text-xl font-bold tabular-nums text-rose-600">
@@ -576,7 +576,7 @@ export default function OverviewModern() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="grid grid-cols-1 gap-3 sm:auto-rows-fr sm:grid-cols-3">
                   {defaultQuickActions.map((action) => {
                     const ActionIcon = action.icon
 
@@ -633,7 +633,7 @@ export default function OverviewModern() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 pt-1 sm:auto-rows-fr sm:grid-cols-2 xl:grid-cols-3">
                 <div className={`flex min-h-[122px] flex-col justify-between rounded-[28px] px-5 py-4 shadow-sm ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/80'}`}>
                   <div>
                     <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.mirrorCardLabel(mirrorCurrency)}</p>
@@ -805,13 +805,13 @@ export default function OverviewModern() {
               </div>
               <div className="space-y-4">
                 {featuredGoal ? (
-                    <div key={featuredGoal.id} className={`rounded-[24px] p-3 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-blue-100 bg-white/80'}`}>
+                    <div key={featuredGoal.id} className={`rounded-[24px] p-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-blue-100 bg-white/80'}`}>
                       <div className="flex items-center justify-between">
                         <span className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.currentGoalLabel}</span>
                         <span className={`text-sm font-bold ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>{featuredGoal.progress}%</span>
                       </div>
-                      <p className={`mt-1.5 text-base font-bold tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>{featuredGoal.name}</p>
-                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
+                      <p className={`mt-2 text-[1.02rem] font-bold tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>{featuredGoal.name}</p>
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
                         <div
                           className="h-full rounded-full bg-gradient-to-r from-blue-400 to-cyan-300"
                           style={{ width: `${Math.min(featuredGoal.progress, 100)}%` }}
