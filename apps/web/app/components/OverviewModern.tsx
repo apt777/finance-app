@@ -211,9 +211,8 @@ function StackedBarShape({
     return null
   }
 
-  const currentIndex = allKeys.indexOf(dataKey)
-  const hasHigherVisibleBar = allKeys.slice(currentIndex + 1).some((key) => Number(payload[key] || 0) > 0)
-  const radius = hasHigherVisibleBar ? 0 : 10
+  const isTopVisibleBar = payload.__topKey === dataKey
+  const radius = isTopVisibleBar ? 10 : 0
 
   if (radius === 0) {
     return <rect x={x} y={y} width={width} height={height} fill={fill} />
@@ -492,6 +491,8 @@ export default function OverviewModern() {
 
     let otherTotal = 0
     dateMap.forEach((value, categoryName) => {
+      if (value <= 0) return
+
       if (expenseFlowCategoryNames.includes(categoryName)) {
         row[categoryName] = value
       } else {
@@ -499,9 +500,19 @@ export default function OverviewModern() {
       }
     })
 
-    if (hasOtherExpenseFlowCategory) {
+    if (hasOtherExpenseFlowCategory && otherTotal > 0) {
       row[ui.overview.otherExpenseCategory] = otherTotal
       expenseFlowColorMap[ui.overview.otherExpenseCategory] = '#64748b'
+    }
+
+    const topKey = [...(hasOtherExpenseFlowCategory
+      ? [...expenseFlowCategoryNames, ui.overview.otherExpenseCategory]
+      : expenseFlowCategoryNames)]
+      .reverse()
+      .find((key) => Number(row[key] || 0) > 0)
+
+    if (topKey) {
+      row.__topKey = topKey
     }
 
     return row
@@ -779,8 +790,8 @@ export default function OverviewModern() {
               </div>
             </div>
 
-            <div className={`rounded-[36px] p-6 shadow-[0_18px_60px_rgba(15,23,42,0.22)] ${isDark ? 'border border-white/10 bg-white/5 text-white' : 'border border-blue-100 bg-blue-50/80 text-slate-950'}`}>
-              <div className="mb-5 flex items-center justify-between">
+            <div className={`rounded-[36px] p-5 shadow-[0_18px_60px_rgba(15,23,42,0.22)] ${isDark ? 'border border-white/10 bg-white/5 text-white' : 'border border-blue-100 bg-blue-50/80 text-slate-950'}`}>
+              <div className="mb-4 flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-3">
                     <p className={`text-[11px] font-bold uppercase tracking-[0.24em] ${isDark ? 'text-slate-400' : 'text-blue-600/70'}`}>{tDashboard('goalSummary')}</p>
@@ -794,13 +805,13 @@ export default function OverviewModern() {
               </div>
               <div className="space-y-4">
                 {featuredGoal ? (
-                    <div key={featuredGoal.id} className={`rounded-[24px] p-3.5 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-blue-100 bg-white/80'}`}>
+                    <div key={featuredGoal.id} className={`rounded-[24px] p-3 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-blue-100 bg-white/80'}`}>
                       <div className="flex items-center justify-between">
                         <span className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.currentGoalLabel}</span>
                         <span className={`text-sm font-bold ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>{featuredGoal.progress}%</span>
                       </div>
-                      <p className={`mt-2 text-[1.02rem] font-bold tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>{featuredGoal.name}</p>
-                      <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-white/10">
+                      <p className={`mt-1.5 text-base font-bold tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>{featuredGoal.name}</p>
+                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
                         <div
                           className="h-full rounded-full bg-gradient-to-r from-blue-400 to-cyan-300"
                           style={{ width: `${Math.min(featuredGoal.progress, 100)}%` }}
