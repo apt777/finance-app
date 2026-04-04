@@ -170,7 +170,10 @@
     "goalAdded": "目標が正常に追加されました！",
     "pageDesc": "目標の進捗、残り金額、達成の流れを整理して確認できます。",
     "deleteGoal": "目標を削除",
-    "noGoals": "目標がありません。"
+    "noGoals": "目標がありません。",
+    "dashboardGoal": "ダッシュボード目標",
+    "setDashboardGoal": "ダッシュボードに固定",
+    "dashboardGoalSelected": "ダッシュボード表示中"
   },
   "settings": {
     "title": "設定",

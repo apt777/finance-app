@@ -185,7 +185,10 @@
     "optional": "(Optional)",
     "remaining": "Remaining",
     "goalAdded": "Goal added successfully!",
-    "pageDesc": "See progress, remaining amount, and the pace of each goal in one tidy view."
+    "pageDesc": "See progress, remaining amount, and the pace of each goal in one tidy view.",
+    "dashboardGoal": "Dashboard goal",
+    "setDashboardGoal": "Pin to dashboard",
+    "dashboardGoalSelected": "Shown on dashboard"
   },
   "settings": {
     "title": "Settings",

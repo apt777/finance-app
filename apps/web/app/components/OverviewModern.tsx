@@ -199,8 +199,15 @@ function StackedBarShape({
     typeof width !== 'number' ||
     typeof height !== 'number' ||
     !payload ||
-    !dataKey
+    !dataKey ||
+    height <= 0
   ) {
+    return null
+  }
+
+  const currentValue = Number(payload[dataKey] || 0)
+
+  if (currentValue <= 0) {
     return null
   }
 
@@ -695,7 +702,7 @@ export default function OverviewModern() {
 
           </div>
 
-          <div className="grid gap-6 xl:grid-rows-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+          <div className="grid gap-6 xl:grid-rows-[minmax(0,1fr)_auto_auto]">
             <div className={`rounded-[36px] p-6 backdrop-blur-xl ${isDark ? 'border border-white/10 bg-white/5 shadow-[0_18px_40px_rgba(0,0,0,0.24)]' : 'border border-white/80 bg-white/80 shadow-[0_18px_60px_rgba(148,163,184,0.12)]'}`}>
               <div className="mb-6 flex items-center justify-between">
                 <div>
@@ -772,17 +779,22 @@ export default function OverviewModern() {
                   <p className={`text-[11px] font-bold uppercase tracking-[0.24em] ${isDark ? 'text-slate-400' : 'text-blue-600/70'}`}>{tDashboard('goalSummary')}</p>
                   <h3 className={`mt-2 text-[1.65rem] font-bold tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>{ui.overview.primaryGoalTitle}</h3>
                 </div>
-                <Target className="h-6 w-6 text-slate-400" />
+                <div className="flex items-center gap-3">
+                  <Link href="/goals" className={`text-[11px] font-semibold ${isDark ? 'text-slate-300' : 'text-blue-700/80'}`}>
+                    {ui.overview.jumpNow}
+                  </Link>
+                  <Target className="h-6 w-6 text-slate-400" />
+                </div>
               </div>
               <div className="space-y-4">
                 {featuredGoal ? (
-                    <div key={featuredGoal.id} className={`rounded-[24px] p-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-blue-100 bg-white/80'}`}>
+                    <div key={featuredGoal.id} className={`rounded-[24px] p-3.5 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-blue-100 bg-white/80'}`}>
                       <div className="flex items-center justify-between">
                         <span className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.currentGoalLabel}</span>
                         <span className={`text-sm font-bold ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>{featuredGoal.progress}%</span>
                       </div>
-                      <p className={`mt-2 text-[1.15rem] font-bold tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>{featuredGoal.name}</p>
-                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+                      <p className={`mt-2 text-[1.02rem] font-bold tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>{featuredGoal.name}</p>
+                      <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-white/10">
                         <div
                           className="h-full rounded-full bg-gradient-to-r from-blue-400 to-cyan-300"
                           style={{ width: `${Math.min(featuredGoal.progress, 100)}%` }}
@@ -799,7 +811,7 @@ export default function OverviewModern() {
 
             {savedQuickActions.length > 0 ? (
               <div className={`rounded-[36px] p-6 backdrop-blur-xl ${isDark ? 'border border-white/10 bg-white/5 shadow-[0_18px_40px_rgba(0,0,0,0.24)]' : 'border border-white/80 bg-white/80 shadow-[0_18px_60px_rgba(148,163,184,0.12)]'}`}>
-                <div className="mb-5 flex items-center justify-between">
+                <div className="mb-5 flex items-start justify-between">
                   <div>
                     <p className={`text-[11px] font-bold uppercase tracking-[0.24em] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.quickAdd}</p>
                     <h3 className={`mt-2 text-[1.65rem] font-bold tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>{tDashboard('quickActions')}</h3>

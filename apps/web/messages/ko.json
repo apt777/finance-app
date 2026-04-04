@@ -186,7 +186,10 @@
     "remaining": "남음",
     "goalAdded": "목표가 성공적으로 추가되었습니다!"
     ,
-    "pageDesc": "목표 진행률과 남은 금액, 달성 흐름을 한 화면에서 정리해서 확인할 수 있습니다."
+    "pageDesc": "목표 진행률과 남은 금액, 달성 흐름을 한 화면에서 정리해서 확인할 수 있습니다.",
+    "dashboardGoal": "대시보드 목표",
+    "setDashboardGoal": "대시보드에 고정",
+    "dashboardGoalSelected": "대시보드 표시 중"
   },
   "settings": {
     "title": "설정",

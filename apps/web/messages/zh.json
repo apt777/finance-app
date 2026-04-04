@@ -170,7 +170,10 @@
     "goalAdded": "目标已成功添加！",
     "pageDesc": "在一个整洁视图中查看目标进度、剩余金额和达成节奏。",
     "deleteGoal": "删除目标",
-    "noGoals": "未找到目标。"
+    "noGoals": "未找到目标。",
+    "dashboardGoal": "仪表盘目标",
+    "setDashboardGoal": "固定到仪表盘",
+    "dashboardGoalSelected": "正在仪表盘显示"
   },
   "settings": {
     "title": "设置",
