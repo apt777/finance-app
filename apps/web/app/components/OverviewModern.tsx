@@ -20,6 +20,7 @@ import AppLoadingState from '@/components/AppLoadingState'
 import { getUiCopy } from '@/lib/uiCopy'
 import { useQuickActions } from '@/hooks/useQuickActions'
 import { useDashboardSummary } from '@/hooks/useDashboardSummary'
+import { useFeaturedGoal } from '@/hooks/useFeaturedGoal'
 
 interface Account {
   id: string
@@ -173,6 +174,63 @@ function ExpenseStackTooltip({
   )
 }
 
+function StackedBarShape({
+  fill,
+  x,
+  y,
+  width,
+  height,
+  payload,
+  dataKey,
+  allKeys,
+}: {
+  fill?: string
+  x?: number
+  y?: number
+  width?: number
+  height?: number
+  payload?: Record<string, string | number>
+  dataKey?: string
+  allKeys: string[]
+}) {
+  if (
+    typeof x !== 'number' ||
+    typeof y !== 'number' ||
+    typeof width !== 'number' ||
+    typeof height !== 'number' ||
+    !payload ||
+    !dataKey
+  ) {
+    return null
+  }
+
+  const currentIndex = allKeys.indexOf(dataKey)
+  const hasHigherVisibleBar = allKeys.slice(currentIndex + 1).some((key) => Number(payload[key] || 0) > 0)
+  const radius = hasHigherVisibleBar ? 0 : 10
+
+  if (radius === 0) {
+    return <rect x={x} y={y} width={width} height={height} fill={fill} />
+  }
+
+  const bottom = y + height
+  const right = x + width
+
+  return (
+    <path
+      d={`
+        M ${x} ${bottom}
+        L ${x} ${y + radius}
+        Q ${x} ${y} ${x + radius} ${y}
+        L ${right - radius} ${y}
+        Q ${right} ${y} ${right} ${y + radius}
+        L ${right} ${bottom}
+        Z
+      `}
+      fill={fill}
+    />
+  )
+}
+
 export default function OverviewModern() {
   const { colorMode } = useColorMode()
   const tDashboard = useTranslations('dashboard')
@@ -185,6 +243,7 @@ export default function OverviewModern() {
   const { baseCurrency, mirrorCurrency, setMirrorCurrency } = useCurrencyPreferences()
   const { quickActions: storedQuickActions } = useQuickActions()
   const { data: dashboardSummary } = useDashboardSummary()
+  const { goalId: featuredGoalId } = useFeaturedGoal()
 
   const { data, isLoading, isError } = useOverviewData()
   const { data: exchangeRates, isLoading: ratesLoading, isError: ratesError } = useExchangeRates()
@@ -281,6 +340,7 @@ export default function OverviewModern() {
     ...goal,
     progress: goal.targetAmount > 0 ? Math.round((goal.currentAmount / goal.targetAmount) * 100) : 0,
   }))
+  const featuredGoal = goalsWithProgress.find((goal) => goal.id === featuredGoalId) || goalsWithProgress[0] || null
 
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
@@ -709,26 +769,26 @@ export default function OverviewModern() {
             <div className={`rounded-[36px] p-6 shadow-[0_18px_60px_rgba(15,23,42,0.22)] ${isDark ? 'border border-white/10 bg-white/5 text-white' : 'border border-blue-100 bg-blue-50/80 text-slate-950'}`}>
               <div className="mb-5 flex items-center justify-between">
                 <div>
-                  <p className={`text-[11px] font-bold uppercase tracking-[0.24em] ${isDark ? 'text-slate-400' : 'text-blue-600/70'}`}>{ui.overview.currentGoalLabel}</p>
+                  <p className={`text-[11px] font-bold uppercase tracking-[0.24em] ${isDark ? 'text-slate-400' : 'text-blue-600/70'}`}>{tDashboard('goalSummary')}</p>
+                  <h3 className={`mt-2 text-[1.65rem] font-bold tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>{ui.overview.primaryGoalTitle}</h3>
                 </div>
                 <Target className="h-6 w-6 text-slate-400" />
               </div>
               <div className="space-y-4">
-                {goalsWithProgress.length > 0 ? (
-                  goalsWithProgress.slice(0, 1).map((goal) => (
-                    <div key={goal.id} className={`rounded-[24px] p-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-blue-100 bg-white/80'}`}>
+                {featuredGoal ? (
+                    <div key={featuredGoal.id} className={`rounded-[24px] p-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-blue-100 bg-white/80'}`}>
                       <div className="flex items-center justify-between">
-                        <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{goal.name}</span>
-                        <span className={`text-sm font-bold ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>{goal.progress}%</span>
+                        <span className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.currentGoalLabel}</span>
+                        <span className={`text-sm font-bold ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>{featuredGoal.progress}%</span>
                       </div>
+                      <p className={`mt-2 text-[1.15rem] font-bold tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>{featuredGoal.name}</p>
                       <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
                         <div
                           className="h-full rounded-full bg-gradient-to-r from-blue-400 to-cyan-300"
-                          style={{ width: `${Math.min(goal.progress, 100)}%` }}
+                          style={{ width: `${Math.min(featuredGoal.progress, 100)}%` }}
                         />
                       </div>
                     </div>
-                  ))
                 ) : (
                   <div className={`rounded-[24px] p-5 text-sm ${isDark ? 'border border-white/10 bg-white/5 text-slate-400' : 'border border-blue-100 bg-white/80 text-slate-500'}`}>
                     {tGoals('noGoals')}
@@ -740,7 +800,10 @@ export default function OverviewModern() {
             {savedQuickActions.length > 0 ? (
               <div className={`rounded-[36px] p-6 backdrop-blur-xl ${isDark ? 'border border-white/10 bg-white/5 shadow-[0_18px_40px_rgba(0,0,0,0.24)]' : 'border border-white/80 bg-white/80 shadow-[0_18px_60px_rgba(148,163,184,0.12)]'}`}>
                 <div className="mb-5 flex items-center justify-between">
-                  <p className={`text-[11px] font-bold uppercase tracking-[0.24em] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{tDashboard('quickActions')}</p>
+                  <div>
+                    <p className={`text-[11px] font-bold uppercase tracking-[0.24em] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.quickAdd}</p>
+                    <h3 className={`mt-2 text-[1.65rem] font-bold tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>{tDashboard('quickActions')}</h3>
+                  </div>
                   <Link href="/settings?tab=quickActions" className={`text-[11px] font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                     {ui.overview.jumpNow}
                   </Link>
@@ -817,13 +880,13 @@ export default function OverviewModern() {
                     <XAxis dataKey="date" stroke="#94a3b8" tickLine={false} />
                     <YAxis stroke="#94a3b8" tickLine={false} />
                     <Tooltip content={<ExpenseStackTooltip currency={BASE_CURRENCY} />} />
-                    {expenseFlowKeys.map((key, index) => (
+                    {expenseFlowKeys.map((key) => (
                       <Bar
                         key={key}
                         dataKey={key}
                         stackId="expense-flow"
                         fill={expenseFlowColorMap[key]}
-                        radius={index === expenseFlowKeys.length - 1 ? [10, 10, 0, 0] : [0, 0, 0, 0]}
+                        shape={<StackedBarShape dataKey={key} allKeys={expenseFlowKeys} />}
                       />
                     ))}
                   </BarChart>

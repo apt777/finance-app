@@ -2,8 +2,9 @@
 
 import React from 'react'
 import { useGoals } from '@/hooks/useGoals'
+import { useFeaturedGoal } from '@/hooks/useFeaturedGoal'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Trash2, Target, Calendar } from 'lucide-react'
+import { Trash2, Target, Calendar, Pin } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useColorMode } from '@/context/ColorModeContext'
 import { useUiTheme } from '@/context/UiThemeContext'
@@ -26,6 +27,7 @@ const GoalList = () => {
   const tCommon = useTranslations('common')
   const queryClient = useQueryClient()
   const { data, error, isLoading } = useGoals()
+  const { goalId: featuredGoalId, setFeaturedGoal, isSaving: isSavingFeaturedGoal } = useFeaturedGoal()
 
   const deleteGoalMutation = useMutation<any, Error, string>({
     mutationFn: async (goalId: string) => {
@@ -46,6 +48,12 @@ const GoalList = () => {
     if (confirm(`${goalName}: ${tGoals('deleteGoal')}?`)) {
       deleteGoalMutation.mutate(goalId)
     }
+  }
+
+  const handleSetFeaturedGoal = async (e: React.MouseEvent, goalId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    await setFeaturedGoal(goalId)
   }
 
   if (isLoading) {
@@ -104,6 +112,32 @@ const GoalList = () => {
                 </div>
 
                 <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className={`text-[11px] font-semibold ${theme === 'modern' ? isDark ? 'text-slate-400' : 'text-slate-500' : 'text-slate-500'}`}>
+                      {tGoals('dashboardGoal')}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => handleSetFeaturedGoal(e, goal.id)}
+                      disabled={isSavingFeaturedGoal}
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                        featuredGoalId === goal.id
+                          ? theme === 'modern'
+                            ? isDark
+                              ? 'bg-white/10 text-white'
+                              : 'bg-slate-950 text-white'
+                            : 'bg-slate-900 text-white'
+                          : theme === 'modern'
+                            ? isDark
+                              ? 'bg-white/5 text-slate-300 hover:bg-white/10'
+                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      }`}
+                    >
+                      <Pin className="h-3 w-3" />
+                      {featuredGoalId === goal.id ? tGoals('dashboardGoalSelected') : tGoals('setDashboardGoal')}
+                    </button>
+                  </div>
                   <div className={`rounded-[24px] p-4 ${theme === 'modern' ? isDark ? 'bg-white/5' : 'bg-slate-50/80' : ''}`}>
                     <div className="flex justify-between text-xs font-semibold">
                       <span className={theme === 'modern' ? isDark ? 'text-white' : 'text-slate-900' : 'text-blue-600'}>{goal.progress}%</span>
