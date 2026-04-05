@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 import { requireRouteSession } from '@/lib/server-auth'
 
+const DIAGNOSTIC_USER_ID = '9d2a6dd8-60a1-478a-af54-605d05cc2256'
+
 function unauthorized() {
   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 }
@@ -11,6 +13,10 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
 
   if (!userId) {
     return unauthorized()
+  }
+
+  if (userId !== DIAGNOSTIC_USER_ID) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
   try {

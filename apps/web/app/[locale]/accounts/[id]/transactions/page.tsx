@@ -3,15 +3,19 @@
 import { useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useAccounts } from '@/hooks/useAccounts'
+import { useAuth } from '@/context/AuthProviderClient'
 import AppLoadingState from '@/components/AppLoadingState'
 import TransactionList from '@/components/TransactionList'
 import CreditCardPaymentPlan from '@/components/CreditCardPaymentPlan'
 import AccountTransactionDiagnostics from '@/components/AccountTransactionDiagnostics'
 
+const DIAGNOSTIC_USER_ID = '9d2a6dd8-60a1-478a-af54-605d05cc2256'
+
 export default function AccountTransactionsPage() {
   const params = useParams()
   const tAccounts = useTranslations('accounts')
   const tCommon = useTranslations('common')
+  const { user } = useAuth()
   const id = params.id as string
   const { data: accounts = [], isLoading } = useAccounts()
 
@@ -36,7 +40,7 @@ export default function AccountTransactionsPage() {
       {account?.type === 'credit_card' ? (
         <CreditCardPaymentPlan accountId={id} currency={account.currency} />
       ) : null}
-      <AccountTransactionDiagnostics accountId={id} />
+      {user?.id === DIAGNOSTIC_USER_ID ? <AccountTransactionDiagnostics accountId={id} /> : null}
       <TransactionList accountId={id} />
     </div>
   )
