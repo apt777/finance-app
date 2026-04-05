@@ -43,6 +43,7 @@ const parseTransactions = async ({ input, defaultAccountId }: { input: string; d
 }
 
 const createTransactionsBulk = async (rows: Array<{
+  clientId: string
   accountId: string
   date: string
   description: string
@@ -64,8 +65,15 @@ const createTransactionsBulk = async (rows: Array<{
     throw new Error(error.error || 'Failed to create transactions')
   }
 
-  return response.json()
+  return response.json() as Promise<{
+    importedCount: number
+    skippedDuplicateCount: number
+    importedClientIds: string[]
+    skippedDuplicateClientIds: string[]
+  }>
 }
+
+type RowValidationErrors = Partial<Record<'date' | 'description' | 'amount' | 'accountId', string>>
 
 export default function AIBulkImportBeta() {
   const locale = useLocale()
@@ -115,6 +123,7 @@ export default function AIBulkImportBeta() {
   const [selectedAccountId, setSelectedAccountId] = useState('')
   const [feedback, setFeedback] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [rowValidationErrors, setRowValidationErrors] = useState<Record<string, RowValidationErrors>>({})
 
   const getEffectiveAccountId = (row: ParsedRow) => row.accountId || selectedAccountId
   const getEffectiveAccount = (row: ParsedRow) => accounts.find((account) => account.id === getEffectiveAccountId(row))
@@ -183,7 +192,35 @@ export default function AIBulkImportBeta() {
 
     return result
   }, [accounts, existingTransactions, rows, selectedAccountId])
-  const validRows = rows.filter((row) => !row.error && row.type !== 'transfer' && !duplicateState.has(row.id) && Boolean(getEffectiveAccountId(row)))
+  const getRowValidationErrors = (row: ParsedRow): RowValidationErrors => {
+    const errors: RowValidationErrors = {}
+
+    if (!row.date) {
+      errors.date = ui.bulkImport.dateRequired
+    }
+
+    if (!row.description?.trim()) {
+      errors.description = ui.bulkImport.descriptionRequired
+    }
+
+    if (!row.amount || !Number.isFinite(Number(row.amount)) || Number(row.amount) <= 0) {
+      errors.amount = ui.bulkImport.amountRequired
+    }
+
+    if (!getEffectiveAccountId(row)) {
+      errors.accountId = ui.bulkImport.accountRequired
+    }
+
+    return errors
+  }
+
+  const validRows = rows.filter((row) => {
+    if (row.error || row.type === 'transfer' || duplicateState.has(row.id)) {
+      return false
+    }
+
+    return Object.keys(getRowValidationErrors(row)).length === 0
+  })
 
   const parseMutation = useMutation({
     mutationFn: parseTransactions,
@@ -191,6 +228,7 @@ export default function AIBulkImportBeta() {
       setRows(result.rows)
       setFeedback(tSettings('betaParseDone', { count: result.rows.length }))
       setErrorMessage(null)
+      setRowValidationErrors({})
     },
     onError: (error: Error) => {
       setErrorMessage(error.message)
@@ -200,6 +238,16 @@ export default function AIBulkImportBeta() {
 
   const importMutation = useMutation({
     mutationFn: async () => {
+      const nextValidationErrors = rows.reduce<Record<string, RowValidationErrors>>((acc, row) => {
+        const errors = getRowValidationErrors(row)
+        if (Object.keys(errors).length > 0) {
+          acc[row.id] = errors
+        }
+        return acc
+      }, {})
+
+      setRowValidationErrors(nextValidationErrors)
+
       const payload = validRows
         .map((row) => {
           if (!row.date || !row.description || !row.amount || !row.type || row.type === 'transfer') {
@@ -212,6 +260,7 @@ export default function AIBulkImportBeta() {
           }
 
           return {
+            clientId: row.id,
             accountId: targetAccount.id,
             date: row.date,
             description: row.description,
@@ -223,27 +272,54 @@ export default function AIBulkImportBeta() {
         })
         .filter((row): row is NonNullable<typeof row> => Boolean(row))
 
+      if (payload.length === 0) {
+        throw new Error(ui.bulkImport.fixErrors)
+      }
+
       return createTransactionsBulk(payload)
     },
-    onSuccess: ({ importedCount, skippedDuplicateCount }) => {
+    onSuccess: ({ importedCount, skippedDuplicateCount, importedClientIds, skippedDuplicateClientIds }) => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
       queryClient.invalidateQueries({ queryKey: ['analysis-summary'] })
       queryClient.invalidateQueries({ queryKey: ['overview'] })
+      const validationCount = Object.keys(rowValidationErrors).length
+      const remainingRows = rows.filter((row) => !importedClientIds.includes(row.id))
+      const nextValidationErrors = remainingRows.reduce<Record<string, RowValidationErrors>>((acc, row) => {
+        const currentErrors = rowValidationErrors[row.id]
+        if (currentErrors && Object.keys(currentErrors).length > 0) {
+          acc[row.id] = currentErrors
+        }
+        return acc
+      }, {})
+
+      setRows(remainingRows)
+      setRowValidationErrors(nextValidationErrors)
+
+      const unresolvedCount = validationCount + skippedDuplicateClientIds.length
       setFeedback(
-        skippedDuplicateCount > 0
+        unresolvedCount > 0
           ? (locale === 'en'
-              ? `${importedCount} imported, ${skippedDuplicateCount} skipped as duplicates`
+              ? `${importedCount} imported, ${unresolvedCount} rows still need attention`
               : locale === 'ja'
-                ? `${importedCount}件登録、${skippedDuplicateCount}件は重複のためスキップ`
+                ? `${importedCount}件登録、${unresolvedCount}件は確認が必要です`
                 : locale === 'zh'
-                  ? `已导入 ${importedCount} 条，${skippedDuplicateCount} 条因重复被跳过`
-                  : `${importedCount}건 등록, ${skippedDuplicateCount}건 중복으로 건너뜀`)
-          : tSettings('betaImportDone', { count: importedCount })
+                  ? `已导入 ${importedCount} 条，仍有 ${unresolvedCount} 条需要处理`
+                  : `${importedCount}건 등록, ${unresolvedCount}건은 확인이 필요합니다`)
+          : skippedDuplicateCount > 0
+            ? (locale === 'en'
+                ? `${importedCount} imported, ${skippedDuplicateCount} skipped as duplicates`
+                : locale === 'ja'
+                  ? `${importedCount}件登録、${skippedDuplicateCount}件は重複のためスキップ`
+                  : locale === 'zh'
+                    ? `已导入 ${importedCount} 条，${skippedDuplicateCount} 条因重复被跳过`
+                    : `${importedCount}건 등록, ${skippedDuplicateCount}건 중복으로 건너뜀`)
+            : tSettings('betaImportDone', { count: importedCount })
       )
       setErrorMessage(null)
-      setRows([])
-      setInput('')
+      if (remainingRows.length === 0) {
+        setInput('')
+      }
     },
     onError: (error: Error) => {
       setErrorMessage(error.message)
@@ -255,10 +331,22 @@ export default function AIBulkImportBeta() {
 
   const updateRow = (id: string, patch: Partial<ParsedRow>) => {
     setRows((prev) => prev.map((row) => (row.id === id ? { ...row, ...patch, error: null } : row)))
+    setRowValidationErrors((prev) => {
+      if (!prev[id]) return prev
+      const next = { ...prev }
+      delete next[id]
+      return next
+    })
   }
 
   const removeRow = (id: string) => {
     setRows((prev) => prev.filter((row) => row.id !== id))
+    setRowValidationErrors((prev) => {
+      if (!prev[id]) return prev
+      const next = { ...prev }
+      delete next[id]
+      return next
+    })
   }
 
   return (
@@ -335,7 +423,7 @@ export default function AIBulkImportBeta() {
             <button
               type="button"
               onClick={() => importMutation.mutate()}
-              disabled={validRows.length === 0 || importMutation.isPending}
+              disabled={rows.length === 0 || importMutation.isPending}
               className="flex w-full items-center justify-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 transition-all hover:border-blue-300 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <CheckCircle2 className="h-4 w-4" />
@@ -397,25 +485,31 @@ export default function AIBulkImportBeta() {
 
               return (
                 <div key={row.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  {(() => {
+                    const validationErrors = rowValidationErrors[row.id] || {}
+                    const hasValidationErrors = Object.keys(validationErrors).length > 0
+
+                    return (
+                      <>
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-[150px_minmax(0,1fr)_140px_140px_180px_180px_auto] md:items-center">
                     <input
                       type="date"
                       value={row.date || ''}
                       onChange={(event) => updateRow(row.id, { date: event.target.value })}
-                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-500"
+                      className={`rounded-xl border bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 ${validationErrors.date ? 'border-rose-300 focus:border-rose-300 focus:ring-rose-200' : 'border-slate-200 focus:border-blue-300 focus:ring-blue-500'}`}
                     />
                     <input
                       type="text"
                       value={row.description || ''}
                       onChange={(event) => updateRow(row.id, { description: event.target.value })}
-                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-500"
+                      className={`rounded-xl border bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 ${validationErrors.description ? 'border-rose-300 focus:border-rose-300 focus:ring-rose-200' : 'border-slate-200 focus:border-blue-300 focus:ring-blue-500'}`}
                     />
                     <input
                       type="number"
                       min="0"
                       value={row.amount || 0}
                       onChange={(event) => updateRow(row.id, { amount: Number(event.target.value) })}
-                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-500"
+                      className={`rounded-xl border bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 ${validationErrors.amount ? 'border-rose-300 focus:border-rose-300 focus:ring-rose-200' : 'border-slate-200 focus:border-blue-300 focus:ring-blue-500'}`}
                     />
                     <select
                       value={row.type}
@@ -446,7 +540,7 @@ export default function AIBulkImportBeta() {
                     <select
                       value={getEffectiveAccountId(row) || ''}
                       onChange={(event) => updateRow(row.id, { accountId: event.target.value || null })}
-                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-500"
+                      className={`rounded-xl border bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 ${validationErrors.accountId ? 'border-rose-300 focus:border-rose-300 focus:ring-rose-200' : 'border-slate-200 focus:border-blue-300 focus:ring-blue-500'}`}
                     >
                       <option value="">{tSettings('betaSelectAccount')}</option>
                       {accounts.map((account) => (
@@ -473,6 +567,14 @@ export default function AIBulkImportBeta() {
                       </button>
                     </div>
                   </div>
+                  {hasValidationErrors ? (
+                    <div className="mt-3 flex flex-wrap gap-2 text-xs text-rose-700">
+                      {validationErrors.date ? <span className="rounded-full bg-rose-100 px-2.5 py-1">{validationErrors.date}</span> : null}
+                      {validationErrors.description ? <span className="rounded-full bg-rose-100 px-2.5 py-1">{validationErrors.description}</span> : null}
+                      {validationErrors.amount ? <span className="rounded-full bg-rose-100 px-2.5 py-1">{validationErrors.amount}</span> : null}
+                      {validationErrors.accountId ? <span className="rounded-full bg-rose-100 px-2.5 py-1">{validationErrors.accountId}</span> : null}
+                    </div>
+                  ) : null}
                   <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
                     <span>{tSettings('betaSourceLabel')}</span>
                     <span className="rounded-full bg-white px-2.5 py-1 text-slate-600 shadow-sm">{row.source}</span>
@@ -492,6 +594,9 @@ export default function AIBulkImportBeta() {
                       </span>
                     ) : null}
                   </div>
+                      </>
+                    )
+                  })()}
                 </div>
               )
             })}

@@ -4,6 +4,7 @@ import { requireRouteSession } from '@/lib/server-auth'
 import { findDuplicateTransaction } from '@/lib/transactionDuplicates'
 
 interface BulkRow {
+  clientId?: string
   accountId: string
   date: string
   description: string
@@ -126,6 +127,7 @@ export async function POST(request: Request) {
     const duplicatePool = [...existingTransactions]
     const accountBalanceMap = new Map(accounts.map((account) => [account.id, account.balance]))
     const createPayloads: Array<{
+      clientId: string
       userId: string
       accountId: string
       date: Date
@@ -138,6 +140,8 @@ export async function POST(request: Request) {
 
     let skippedDuplicateCount = 0
     let importedCount = 0
+    const importedClientIds: string[] = []
+    const skippedDuplicateClientIds: string[] = []
 
     for (const row of validRows) {
       const account = accountMap.get(row.accountId)
@@ -162,12 +166,16 @@ export async function POST(request: Request) {
 
       if (duplicate) {
         skippedDuplicateCount += 1
+        if (row.clientId) {
+          skippedDuplicateClientIds.push(row.clientId)
+        }
         continue
       }
 
       const signedAmount = row.type === 'expense' ? -normalizedAmount : normalizedAmount
 
       createPayloads.push({
+        clientId: row.clientId || `row-${createPayloads.length + 1}`,
         userId,
         accountId: row.accountId,
         date: new Date(row.date),
@@ -203,6 +211,9 @@ export async function POST(request: Request) {
       }
 
       importedCount += 1
+      if (row.clientId) {
+        importedClientIds.push(row.clientId)
+      }
     }
 
     await prisma.$transaction(async (tx) => {
@@ -226,6 +237,8 @@ export async function POST(request: Request) {
     return NextResponse.json({
       importedCount,
       skippedDuplicateCount,
+      importedClientIds,
+      skippedDuplicateClientIds,
     })
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed to import transactions' }, { status: 500 })
