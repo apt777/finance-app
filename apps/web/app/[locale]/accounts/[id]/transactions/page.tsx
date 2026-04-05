@@ -6,6 +6,7 @@ import { useAccounts } from '@/hooks/useAccounts'
 import AppLoadingState from '@/components/AppLoadingState'
 import TransactionList from '@/components/TransactionList'
 import CreditCardPaymentPlan from '@/components/CreditCardPaymentPlan'
+import AccountTransactionDiagnostics from '@/components/AccountTransactionDiagnostics'
 
 export default function AccountTransactionsPage() {
   const params = useParams()
@@ -35,6 +36,7 @@ export default function AccountTransactionsPage() {
       {account?.type === 'credit_card' ? (
         <CreditCardPaymentPlan accountId={id} currency={account.currency} />
       ) : null}
+      <AccountTransactionDiagnostics accountId={id} />
       <TransactionList accountId={id} />
     </div>
   )
