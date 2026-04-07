@@ -127,7 +127,6 @@ export async function POST(request: Request) {
     const duplicatePool = [...existingTransactions]
     const accountBalanceMap = new Map(accounts.map((account) => [account.id, account.balance]))
     const createPayloads: Array<{
-      clientId: string
       userId: string
       accountId: string
       date: Date
@@ -175,7 +174,6 @@ export async function POST(request: Request) {
       const signedAmount = row.type === 'expense' ? -normalizedAmount : normalizedAmount
 
       createPayloads.push({
-        clientId: row.clientId || `row-${createPayloads.length + 1}`,
         userId,
         accountId: row.accountId,
         date: new Date(row.date),
