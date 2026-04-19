@@ -57,8 +57,12 @@ export default function CreditCardPaymentPlan({ accountId, currency }: { account
     mutationFn: (paymentPlan: Record<string, string>) => savePaymentPlan(accountId, paymentPlan),
     onSuccess: (data) => {
       queryClient.setQueryData(['creditCardPaymentPlan', accountId], data.paymentPlan || {})
+      queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] })
     },
   })
+
+  const currentMonthKey = months[0]?.key || ''
+  const currentMonthPlannedAmount = Number(draft[currentMonthKey] || query.data?.[currentMonthKey] || 0)
 
   return (
     <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
@@ -91,8 +95,13 @@ export default function CreditCardPaymentPlan({ accountId, currency }: { account
         ))}
       </div>
 
-      <div className="mt-5 flex items-center justify-between">
+      <div className="mt-5 flex items-center justify-between gap-4">
         <div className="text-sm">
+          {currentMonthKey ? (
+            <p className="mb-1 text-slate-500">
+              {months[0]?.label} · {currentMonthPlannedAmount > 0 ? `${Math.round(currentMonthPlannedAmount).toLocaleString()} ${currency}` : '-'}
+            </p>
+          ) : null}
           {mutation.isSuccess ? <span className="text-emerald-600">{tAccounts('paymentPlanSaved')}</span> : null}
           {mutation.isError ? <span className="text-rose-600">{tCommon('error')}</span> : null}
         </div>

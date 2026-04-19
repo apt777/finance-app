@@ -555,7 +555,12 @@ export default function OverviewModern() {
 
                 <div className="grid grid-cols-1 gap-3 sm:auto-rows-fr sm:grid-cols-3">
                   <div className={`flex min-h-[122px] flex-col justify-between rounded-[24px] px-5 py-4 ${isDark ? 'border border-white/10 bg-white/5' : 'border border-white/80 bg-white/75'}`}>
-                    <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.plannedExpenses}</p>
+                    <div className="flex items-start justify-between gap-3">
+                      <p className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui.overview.plannedExpenses}</p>
+                      <Link href="/analysis/planned" className={`text-[11px] font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                        {ui.overview.jumpNow}
+                      </Link>
+                    </div>
                     <p className="mt-2 text-xl font-bold tabular-nums text-rose-600">
                       {plannedExpensesBaseCurrency.toLocaleString()}
                     </p>
