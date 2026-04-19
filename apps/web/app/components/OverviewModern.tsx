@@ -328,6 +328,11 @@ export default function OverviewModern() {
     totalPositiveAssetsBaseCurrency += convertToBaseCurrency(amount, currency)
   })
 
+  const holdingsValueBaseCurrency = Math.round(
+    holdings.reduce((sum, holding) => sum + convertToBaseCurrency(holding.shares * (holding.marketPrice || holding.costBasis), holding.currency), 0),
+  )
+  const totalAssetsBaseCurrency = Math.round(totalPositiveAssetsBaseCurrency + holdingsValueBaseCurrency)
+
   const totalPositiveAssetsMirrorCurrency = Math.round(
     Object.entries(totalNonCreditBalancesByCurrency).reduce((sum, [currency, amount]) => {
       return sum + convertAmount(amount, currency, mirrorCurrency)
@@ -373,9 +378,6 @@ export default function OverviewModern() {
   const previousExpenses = chartData.at(-2)?.expenses || 0
   const expenseMomentum = latestExpenses - previousExpenses
   const totalExpensesLast30 = Math.round(chartData.reduce((sum, item) => sum + item.expenses, 0))
-  const holdingsValueBaseCurrency = Math.round(
-    holdings.reduce((sum, holding) => sum + convertToBaseCurrency(holding.shares * (holding.marketPrice || holding.costBasis), holding.currency), 0),
-  )
   const plannedExpenseByCurrency = Object.entries(dashboardSummary?.recurringByCurrency || {}).reduce<Record<string, number>>((acc, [currency, amount]) => {
     acc[currency] = (acc[currency] || 0) + amount
     return acc
@@ -548,7 +550,7 @@ export default function OverviewModern() {
                   </div>
                 </div>
                 <h2 className={`mt-5 text-[clamp(2.05rem,4.3vw,3.45rem)] font-bold leading-[1.02] tracking-[-0.015em] ${isDark ? 'text-white' : 'text-slate-950'}`}>
-                  {Math.round(netWorth).toLocaleString()} <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>{BASE_CURRENCY}</span>
+                  {totalAssetsBaseCurrency.toLocaleString()} <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>{BASE_CURRENCY}</span>
                 </h2>
 
                 <div className="grid grid-cols-1 gap-3 sm:auto-rows-fr sm:grid-cols-3">

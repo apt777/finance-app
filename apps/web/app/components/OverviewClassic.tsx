@@ -117,12 +117,18 @@ export default function OverviewClassic() {
   })
 
   let netWorth = 0
+  let totalAssets = 0
   accounts.forEach((account) => {
     const convertedBalance = convertToBaseCurrency(account.balance, account.currency)
     netWorth += account.type === 'credit_card' ? -convertedBalance : convertedBalance
+    if (account.type !== 'credit_card') {
+      totalAssets += convertedBalance
+    }
   })
   holdings.forEach((holding) => {
-    netWorth += convertToBaseCurrency(holding.shares * (holding.marketPrice || holding.costBasis), holding.currency)
+    const holdingValue = convertToBaseCurrency(holding.shares * (holding.marketPrice || holding.costBasis), holding.currency)
+    netWorth += holdingValue
+    totalAssets += holdingValue
   })
 
   let totalPositiveAssetsBaseCurrency = 0
@@ -167,7 +173,7 @@ export default function OverviewClassic() {
             <TrendingUp className="h-5 w-5 text-white/70" />
           </div>
           <p className="mb-1 text-sm text-white/80">{tDashboard('totalAssets')} (JPY)</p>
-          <p className="text-3xl font-bold tabular-nums">{Math.round(totalPositiveAssetsBaseCurrency).toLocaleString()}</p>
+          <p className="text-3xl font-bold tabular-nums">{Math.round(totalAssets).toLocaleString()}</p>
           <p className="mt-2 text-xs text-white/70">≈ {Math.round(totalPositiveAssetsKRW).toLocaleString()} KRW</p>
         </div>
 

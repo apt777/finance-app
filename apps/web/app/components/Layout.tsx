@@ -112,13 +112,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }
 
   let netWorth = 0
+  let totalAssets = 0
   if (!isLoading && !isError && !ratesLoading && !ratesError) {
     accounts.forEach((account) => {
       const convertedBalance = convertToBaseCurrency(account.balance, account.currency)
       netWorth += account.type === 'credit_card' ? -convertedBalance : convertedBalance
+      if (account.type !== 'credit_card') {
+        totalAssets += convertedBalance
+      }
     })
     holdings.forEach((holding) => {
-      netWorth += convertToBaseCurrency(holding.shares * (holding.marketPrice || holding.costBasis), holding.currency)
+      const holdingValue = convertToBaseCurrency(holding.shares * (holding.marketPrice || holding.costBasis), holding.currency)
+      netWorth += holdingValue
+      totalAssets += holdingValue
     })
   }
 
@@ -297,7 +303,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       <div>
                         <p className={`mb-0.5 text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{tDashboard('totalAssets')}</p>
                         <p className={`text-sm font-bold md:text-lg ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>
-                          {Math.round(netWorth).toLocaleString()} <span className="text-[10px] md:text-xs">{BASE_CURRENCY}</span>
+                          {Math.round(totalAssets).toLocaleString()} <span className="text-[10px] md:text-xs">{BASE_CURRENCY}</span>
                         </p>
                       </div>
                     </div>
@@ -404,7 +410,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <div className={`inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold shadow-sm transition-all ${isDark ? 'border border-white/10 bg-white/5 text-slate-200' : 'border border-slate-200 bg-white text-slate-700'}`}>
               <p className={`text-[10px] font-bold uppercase tracking-[0.22em] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{tDashboard('totalAssets')}</p>
               <p className={`text-base font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-950'}`}>
-                {Math.round(netWorth).toLocaleString()} <span className="text-xs text-slate-400">{BASE_CURRENCY}</span>
+                {Math.round(totalAssets).toLocaleString()} <span className="text-xs text-slate-400">{BASE_CURRENCY}</span>
               </p>
             </div>
             <button
