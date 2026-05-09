@@ -32,6 +32,9 @@ interface DiagnosticsResponse {
     from: number
     to: number
     total: number
+    directExpenseAmount: number
+    directIncomeAmount: number
+    transferInAmount: number
   }>
   linkedTransactions: Array<{
     id: string
@@ -60,6 +63,10 @@ const copy = {
     none: '없음',
     recent: '최근 연결 거래',
     monthly: '월별 연결 요약',
+    monthlyAmount: '월별 금액 요약',
+    directExpense: '직접지출',
+    directIncome: '직접수입',
+    inbound: '실제 유입',
     helper: '여기 숫자가 적게 나오면, 문제 거래가 다른 account id에 연결돼 있을 가능성이 큽니다.',
   },
   en: {
@@ -75,6 +82,10 @@ const copy = {
     none: 'None',
     recent: 'Recent linked transactions',
     monthly: 'Monthly link summary',
+    monthlyAmount: 'Monthly amount summary',
+    directExpense: 'Direct expense',
+    directIncome: 'Direct income',
+    inbound: 'Inbound funding',
     helper: 'If these counts are lower than expected, some transfers may be linked to a different account id.',
   },
   ja: {
@@ -90,6 +101,10 @@ const copy = {
     none: 'なし',
     recent: '最近のリンク取引',
     monthly: '月別リンク集計',
+    monthlyAmount: '月別金額集計',
+    directExpense: '直接支出',
+    directIncome: '直接収入',
+    inbound: '実際の入金',
     helper: 'ここが想定より少ない場合、問題の取引が別の口座 id に紐づいている可能性があります。',
   },
   zh: {
@@ -105,6 +120,10 @@ const copy = {
     none: '无',
     recent: '最近关联交易',
     monthly: '按月汇总',
+    monthlyAmount: '按月金额汇总',
+    directExpense: '直接支出',
+    directIncome: '直接收入',
+    inbound: '实际转入',
     helper: '如果这里的数量明显偏少，问题交易很可能被连接到了其他 account id。',
   },
 } as const
@@ -192,9 +211,14 @@ export default function AccountTransactionDiagnostics({ accountId }: { accountId
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{text.monthly}</p>
                   <div className="mt-3 space-y-2">
                     {query.data.monthlySummary.map((item) => (
-                      <div key={item.month} className="flex items-center justify-between rounded-xl bg-white px-3 py-2 text-sm text-slate-700 shadow-sm">
-                        <span>{item.month}</span>
-                        <span className="text-xs text-slate-500">D {item.direct} / F {item.from} / T {item.to} / Σ {item.total}</span>
+                      <div key={item.month} className="rounded-xl bg-white px-3 py-2 text-sm text-slate-700 shadow-sm">
+                        <div className="flex items-center justify-between">
+                          <span>{item.month}</span>
+                          <span className="text-xs text-slate-500">D {item.direct} / F {item.from} / T {item.to} / Σ {item.total}</span>
+                        </div>
+                        <p className="mt-1 text-[11px] text-slate-500">
+                          {text.monthlyAmount}: {text.directExpense} {item.directExpenseAmount.toLocaleString()} / {text.directIncome} {item.directIncomeAmount.toLocaleString()} / {text.inbound} {item.transferInAmount.toLocaleString()}
+                        </p>
                       </div>
                     ))}
                   </div>
