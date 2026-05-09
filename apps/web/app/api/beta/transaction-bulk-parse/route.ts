@@ -25,6 +25,12 @@ interface AccountShape {
   type?: string | null
 }
 
+interface AccountMention {
+  account: AccountShape
+  score: number
+  position: number
+}
+
 const TRANSFER_HINTS = [
   '충전',
   'チャージ',
@@ -357,6 +363,49 @@ function inferTransferTargetAccount(
   return candidates[0]?.account || null
 }
 
+function findAccountMentions(description: string, accounts: AccountShape[]) {
+  const lower = description.toLowerCase()
+  const compactLower = lower.replace(/\s+/g, '')
+
+  const mentions = accounts
+    .map<AccountMention | null>((account) => {
+      const normalizedName = normalizeWhitespace(account.name).toLowerCase()
+      const compactName = normalizedName.replace(/\s+/g, '')
+      const score = scoreAccountMatch(description, account)
+      const positions = [
+        normalizedName ? lower.indexOf(normalizedName) : -1,
+        compactName ? compactLower.indexOf(compactName) : -1,
+      ].filter((position) => position >= 0)
+
+      if (score <= 0 || positions.length === 0) {
+        return null
+      }
+
+      return {
+        account,
+        score,
+        position: Math.min(...positions),
+      }
+    })
+    .filter((entry): entry is AccountMention => Boolean(entry))
+    .sort((left, right) => {
+      if (left.position !== right.position) {
+        return left.position - right.position
+      }
+      return right.score - left.score
+    })
+
+  const deduped: AccountMention[] = []
+  const seen = new Set<string>()
+  for (const mention of mentions) {
+    if (seen.has(mention.account.id)) continue
+    seen.add(mention.account.id)
+    deduped.push(mention)
+  }
+
+  return deduped
+}
+
 function stripAccountMentions(description: string, accounts: AccountShape[], selectedAccount?: AccountShape | null) {
   let cleaned = description
 
@@ -483,35 +532,54 @@ function parseLine(
   }
 
   const defaultAccount = accounts.find((account) => account.id === defaultAccountId) || null
+  const mentionedAccounts = findAccountMentions(rawDescription, accounts)
+  const explicitArrowTransfer = /->|→|=>|에서|from/i.test(rawDescription)
+  let transferFromAccount = defaultAccount
+  let transferToAccount: AccountShape | null = null
+
+  if (defaultAccount) {
+    transferToAccount =
+      mentionedAccounts.find((mention) => mention.account.id !== defaultAccount.id)?.account ||
+      (isTransferHint(rawDescription) ? inferTransferTargetAccount(rawDescription, accounts, defaultAccountId) : null)
+  } else if (explicitArrowTransfer && mentionedAccounts.length >= 2) {
+    transferFromAccount = mentionedAccounts[0]?.account || null
+    transferToAccount = mentionedAccounts.find((mention) => mention.account.id !== transferFromAccount?.id)?.account || null
+  } else if (isTransferHint(rawDescription) && mentionedAccounts.length >= 2) {
+    transferFromAccount = mentionedAccounts[0]?.account || null
+    transferToAccount = mentionedAccounts.find((mention) => mention.account.id !== transferFromAccount?.id)?.account || null
+  }
+
   const explicitTransferTarget = isTransferHint(rawDescription)
     ? inferTransferTargetAccount(rawDescription, accounts, defaultAccountId)
     : null
   const inferredAccount = explicitTransferTarget || inferAccount(rawDescription, accounts, defaultAccountId)
-  const description = stripAccountMentions(rawDescription, accounts, inferredAccount)
+  const description = stripAccountMentions(rawDescription, accounts, transferToAccount || inferredAccount)
   const finalDescription = description || rawDescription
   const shouldTreatAsTransfer =
-    Boolean(defaultAccountId) &&
-    Boolean(defaultAccount) &&
-    Boolean(inferredAccount) &&
-    inferredAccount?.id !== defaultAccountId &&
+    Boolean(transferFromAccount) &&
+    Boolean(transferToAccount) &&
+    transferFromAccount?.id !== transferToAccount?.id &&
     (
+      explicitArrowTransfer ||
       isTransferHint(rawDescription) ||
       isTransferHint(finalDescription) ||
       !finalDescription ||
       finalDescription.length <= 2
     )
 
-  if (shouldTreatAsTransfer && inferredAccount) {
+  if (shouldTreatAsTransfer && transferFromAccount && transferToAccount) {
     return {
       id: `parsed-${index}`,
       source: trimmed,
       date: parsedDate || defaultDate || today,
-      description: `${inferredAccount.name} 충전`,
+      description: `${transferToAccount.name} 충전`,
       amount: Math.abs(numericAmount),
       type: 'transfer' as const,
-      accountId: inferredAccount.id,
-      accountName: inferredAccount.name,
-      currency: inferredAccount.currency || defaultAccount?.currency || 'JPY',
+      accountId: transferToAccount.id,
+      accountName: transferToAccount.name,
+      fromAccountId: transferFromAccount.id,
+      toAccountId: transferToAccount.id,
+      currency: transferFromAccount.currency || transferToAccount.currency || 'JPY',
       categoryKey: 'transfer',
       categoryName: 'Transfer',
       confidence: 0.92,

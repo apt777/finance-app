@@ -18,6 +18,8 @@ interface ParsedRow {
   amount?: number
   type?: 'income' | 'expense' | 'transfer'
   accountId?: string | null
+  fromAccountId?: string | null
+  toAccountId?: string | null
   accountName?: string | null
   currency?: string | null
   categoryKey?: string | null
@@ -128,9 +130,10 @@ export default function AIBulkImportBeta() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [rowValidationErrors, setRowValidationErrors] = useState<Record<string, RowValidationErrors>>({})
 
-  const getEffectiveAccountId = (row: ParsedRow) => (row.type === 'transfer' ? row.accountId || '' : row.accountId || selectedAccountId)
+  const getEffectiveAccountId = (row: ParsedRow) => (row.type === 'transfer' ? row.toAccountId || row.accountId || '' : row.accountId || selectedAccountId)
   const getEffectiveAccount = (row: ParsedRow) => accounts.find((account) => account.id === getEffectiveAccountId(row))
-  const getTransferSourceAccount = () => accounts.find((account) => account.id === selectedAccountId)
+  const getTransferSourceAccount = (row?: ParsedRow) =>
+    accounts.find((account) => account.id === (row?.fromAccountId || selectedAccountId))
   const duplicateState = useMemo(() => {
     const result = new Map<string, string>()
     const seenDraftRows: Array<{
@@ -155,7 +158,7 @@ export default function AIBulkImportBeta() {
       const duplicateInExisting = findDuplicateTransaction(
         {
           accountId: row.type === 'transfer' ? null : effectiveAccountId,
-          fromAccountId: row.type === 'transfer' ? selectedAccountId : null,
+          fromAccountId: row.type === 'transfer' ? getTransferSourceAccount(row)?.id || null : null,
           toAccountId: row.type === 'transfer' ? effectiveAccountId : null,
           date: row.date,
           description: row.description,
@@ -174,7 +177,7 @@ export default function AIBulkImportBeta() {
       const duplicateInDraft = findDuplicateTransaction(
         {
           accountId: row.type === 'transfer' ? null : effectiveAccountId,
-          fromAccountId: row.type === 'transfer' ? selectedAccountId : null,
+          fromAccountId: row.type === 'transfer' ? getTransferSourceAccount(row)?.id || null : null,
           toAccountId: row.type === 'transfer' ? effectiveAccountId : null,
           date: row.date,
           description: row.description,
@@ -193,7 +196,7 @@ export default function AIBulkImportBeta() {
       seenDraftRows.push({
         id: row.id,
         accountId: row.type === 'transfer' ? null : effectiveAccountId,
-        fromAccountId: row.type === 'transfer' ? selectedAccountId : null,
+        fromAccountId: row.type === 'transfer' ? getTransferSourceAccount(row)?.id || null : null,
         toAccountId: row.type === 'transfer' ? effectiveAccountId : null,
         date: row.date,
         description: row.description,
@@ -225,7 +228,7 @@ export default function AIBulkImportBeta() {
       }
     }
 
-    if (row.type === 'transfer' && !selectedAccountId) {
+    if (row.type === 'transfer' && !getTransferSourceAccount(row)?.id) {
       errors.accountId = ui.bulkImport.accountRequired
     }
 
@@ -273,7 +276,7 @@ export default function AIBulkImportBeta() {
           }
 
           if (row.type === 'transfer') {
-            const fromAccount = getTransferSourceAccount()
+            const fromAccount = getTransferSourceAccount(row)
             const toAccount = getEffectiveAccount(row)
 
             if (!fromAccount || !toAccount || fromAccount.id === toAccount.id) {
@@ -301,7 +304,7 @@ export default function AIBulkImportBeta() {
             description: row.description,
             type: row.type,
             amount: Number(row.amount),
-            currency: targetAccount?.currency || row.currency || getTransferSourceAccount()?.currency || 'JPY',
+            currency: targetAccount?.currency || row.currency || getTransferSourceAccount(row)?.currency || 'JPY',
             categoryKey: row.categoryKey || undefined,
           }
         })
@@ -588,7 +591,17 @@ export default function AIBulkImportBeta() {
                     </select>
                     <select
                       value={getEffectiveAccountId(row) || ''}
-                      onChange={(event) => updateRow(row.id, { accountId: event.target.value || null })}
+                      onChange={(event) =>
+                        updateRow(
+                          row.id,
+                          row.type === 'transfer'
+                            ? {
+                                accountId: event.target.value || null,
+                                toAccountId: event.target.value || null,
+                              }
+                            : { accountId: event.target.value || null }
+                        )
+                      }
                       className={`rounded-xl border bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 ${validationErrors.accountId ? 'border-rose-300 focus:border-rose-300 focus:ring-rose-200' : 'border-slate-200 focus:border-blue-300 focus:ring-blue-500'}`}
                     >
                       <option value="">{tSettings('betaSelectAccount')}</option>
@@ -635,7 +648,7 @@ export default function AIBulkImportBeta() {
                     {getEffectiveAccount(row) ? (
                       <span className="rounded-full bg-white px-2.5 py-1 text-slate-600 shadow-sm">
                         {row.type === 'transfer'
-                          ? `${getTransferSourceAccount()?.name || tSettings('betaSelectAccount')} -> ${getEffectiveAccount(row)?.name}`
+                          ? `${getTransferSourceAccount(row)?.name || tSettings('betaSelectAccount')} -> ${getEffectiveAccount(row)?.name}`
                           : getEffectiveAccount(row)?.name}
                       </span>
                     ) : null}
