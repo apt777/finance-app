@@ -61,6 +61,10 @@ function normalizeCompact(value: string | null | undefined) {
   return (value || '').toLowerCase().replace(/\s+/g, '')
 }
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 function addAmountToNestedMonthMap(
   target: Map<string, Map<string, number>>,
   accountId: string,
@@ -89,14 +93,18 @@ function findTransitFundingTargetFromDescription(
     if (!compactName) continue
 
     const mentionsAccount = compactDescription.includes(compactName)
+    const bareAccountTailPattern = new RegExp(`[\\d,.]+${escapeRegExp(compactName)}$`)
     const hasCompactChargeSuffix =
       compactDescription.includes(`${compactName}충`) ||
       compactDescription.includes(`${compactName}충전`) ||
       compactDescription.includes(`${compactName}charge`) ||
       compactDescription.includes(`${compactName}チャージ`) ||
       compactDescription.includes(`${compactName}充值`)
+    const hasBareAccountTail =
+      compactDescription.endsWith(compactName) ||
+      bareAccountTailPattern.test(compactDescription)
 
-    if (mentionsAccount && (hasGenericChargeKeyword || hasCompactChargeSuffix)) {
+    if (mentionsAccount && (hasGenericChargeKeyword || hasCompactChargeSuffix || hasBareAccountTail)) {
       return account
     }
   }
