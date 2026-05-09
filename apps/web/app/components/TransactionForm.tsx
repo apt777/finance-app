@@ -11,6 +11,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { findDuplicateTransaction } from '@/lib/transactionDuplicates'
 import { getUiCopy } from '@/lib/uiCopy'
 import { useRouter } from '@/navigation'
+import { CURRENCY_SYMBOLS, SUPPORTED_CURRENCIES } from '@/lib/currency'
 import { getClientTodayDateString, getClientPreferredTimeZone, saveClientPreferredTimeZone } from '@/lib/timezone'
 
 interface TransactionFormData {
@@ -66,7 +67,7 @@ const buildQuickActionPrefill = (searchParams: URLSearchParams): Partial<Transac
     date: searchParams.get('date') || getTodayDateString(),
     description: searchParams.get('description') || '',
     amount: '',
-    currency: '',
+    currency: 'JPY',
     exchangeToAmount: '',
     categoryKey: searchParams.get('categoryKey') || (type === 'transfer' ? 'transfer' : 'food'),
     notes: searchParams.get('notes') || '',
@@ -138,7 +139,7 @@ const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: Tra
     description: initialData?.description || '',
     type: initialData?.type || 'expense',
     amount: initialData?.amount ?? '',
-    currency: initialData?.currency || '',
+    currency: initialData?.currency || 'JPY',
     exchangeToAmount: initialData?.exchangeToAmount ?? '',
     categoryKey: initialData?.categoryKey || 'food',
     notes: initialData?.notes || '',
@@ -269,7 +270,7 @@ const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: Tra
             description: quickActionPrefill.description || '',
             type: quickActionPrefill.type || 'expense',
             amount: '',
-            currency: '',
+            currency: quickActionPrefill.currency || 'JPY',
             exchangeToAmount: '',
             categoryKey: quickActionPrefill.categoryKey || 'food',
             notes: quickActionPrefill.notes || '',
@@ -284,7 +285,7 @@ const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: Tra
             description: '', 
             type: 'expense', 
             amount: '', 
-            currency: '',
+            currency: 'JPY',
             exchangeToAmount: '',
             categoryKey: 'food',
             notes: '',
@@ -309,14 +310,14 @@ const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: Tra
       setFormData({
         ...formData,
         accountId: value,
-        currency: selectedAccount ? selectedAccount.currency : '',
+        currency: selectedAccount ? selectedAccount.currency : formData.currency || 'JPY',
       });
     } else if (name === 'fromAccountId') {
       const selectedAccount = accounts?.find(acc => acc.id === value);
       setFormData({
         ...formData,
         fromAccountId: value,
-        currency: selectedAccount ? selectedAccount.currency : '',
+        currency: selectedAccount ? selectedAccount.currency : formData.currency || 'JPY',
       });
     } else if (name === 'date') {
       setFormData({
@@ -348,11 +349,6 @@ const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: Tra
       }
       if (formData.fromAccountId === formData.toAccountId) {
         setFormError(tValidation('accountsMustBeDifferent'));
-        return;
-      }
-    } else {
-      if (!formData.accountId) {
-        setFormError(tValidation('allFieldsRequired'));
         return;
       }
     }
@@ -508,7 +504,7 @@ const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: Tra
           ) : (
             <div>
               <label htmlFor="accountId" className="block text-sm font-semibold text-slate-800 mb-2">
-                {tTransactions('account')} <span className="text-red-500">*</span>
+                {tTransactions('account')}
               </label>
               <select
                 name="accountId"
@@ -517,9 +513,8 @@ const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: Tra
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900 placeholder-slate-400"
                 disabled={isLoadingAccounts}
-                required
               >
-                <option value="">{tAccounts('selectAccount')}</option>
+                <option value="">{tAccounts('withoutPaymentMethod')}</option>
                 {accountsError && <option value="" disabled>{tCommon('error')}</option>}
                 {!accountsError && accounts?.map(account => (
                   <option key={account.id} value={account.id}>
@@ -676,7 +671,7 @@ const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: Tra
               </div>
               <div className="relative">
                 <span className="absolute left-4 top-3 text-slate-500 font-medium">
-                  {formData.currency === 'JPY' ? '¥' : formData.currency === 'KRW' ? '₩' : '$'}
+                  {CURRENCY_SYMBOLS[formData.currency] || formData.currency || '¥'}
                 </span>
                 <input
                   type="number"
@@ -741,15 +736,31 @@ const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: Tra
                   }
                 </div>
               ) : (
-                <input
-                  type="text"
-                  name="currency"
-                  id="currency"
-                  value={formData.currency}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 font-medium"
-                  readOnly
-                />
+                formData.accountId ? (
+                  <input
+                    type="text"
+                    name="currency"
+                    id="currency"
+                    value={formData.currency}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 font-medium"
+                    readOnly
+                  />
+                ) : (
+                  <select
+                    name="currency"
+                    id="currency"
+                    value={formData.currency || 'JPY'}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-white text-slate-900 font-medium"
+                  >
+                    {SUPPORTED_CURRENCIES.map((currency) => (
+                      <option key={currency} value={currency}>
+                        {currency}
+                      </option>
+                    ))}
+                  </select>
+                )
               )}
             </div>
           </div>

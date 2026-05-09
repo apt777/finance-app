@@ -19,6 +19,7 @@ interface ParsedRow {
   type?: 'income' | 'expense' | 'transfer'
   accountId?: string | null
   accountName?: string | null
+  currency?: string | null
   categoryKey?: string | null
   categoryName?: string | null
   confidence?: number
@@ -219,7 +220,9 @@ export default function AIBulkImportBeta() {
     }
 
     if (!getEffectiveAccountId(row)) {
-      errors.accountId = ui.bulkImport.accountRequired
+      if (row.type === 'transfer') {
+        errors.accountId = ui.bulkImport.accountRequired
+      }
     }
 
     if (row.type === 'transfer' && !selectedAccountId) {
@@ -291,17 +294,14 @@ export default function AIBulkImportBeta() {
           }
 
           const targetAccount = getEffectiveAccount(row)
-          if (!targetAccount) {
-            return null
-          }
           return {
             clientId: row.id,
-            accountId: targetAccount.id,
+            accountId: targetAccount?.id,
             date: row.date,
             description: row.description,
             type: row.type,
             amount: Number(row.amount),
-            currency: targetAccount.currency,
+            currency: targetAccount?.currency || row.currency || getTransferSourceAccount()?.currency || 'JPY',
             categoryKey: row.categoryKey || undefined,
           }
         })

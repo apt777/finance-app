@@ -109,7 +109,10 @@
     "nisa": "NISA（免税投资）",
     "transitCard": "交通卡/储值卡",
     "transitCardBalanceDesc": "请输入当前剩余储值余额。Kablus 会根据充值记录、手动记录的消费和当前余额来估算未记录的支出。",
-    "viewTransactions": "查看交易"
+    "viewTransactions": "查看交易",
+    "allAccounts": "所有账户",
+    "selectAccount": "选择账户",
+    "withoutPaymentMethod": "不指定支付方式保存"
   },
   "transactions": {
     "title": "交易",

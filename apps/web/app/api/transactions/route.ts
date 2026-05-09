@@ -157,9 +157,6 @@ export async function POST(request: Request) {
     const body: TransactionData = await request.json()
     const { date, description, type, amount: rawAmount, currency, categoryKey, notes, applyBalanceAdjustment } = body
     const transactionAmount = Number(rawAmount)
-    const userTimeZone = await getUserTimeZone(userId)
-    const applyBalance = shouldApplyBalanceAdjustment(date, userTimeZone, applyBalanceAdjustment)
-    const storedNotes = serializeNotes(notes, applyBalance)
     const resolvedCategory = await resolveCategorySelection(userId, categoryKey)
     const normalizedCategoryKey = resolvedCategory?.key || categoryKey
 
@@ -201,6 +198,10 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Invalid exchange amount' }, { status: 400 })
       }
 
+      const userTimeZone = await getUserTimeZone(userId)
+      const applyBalance = shouldApplyBalanceAdjustment(date, userTimeZone, applyBalanceAdjustment)
+      const storedNotes = serializeNotes(notes, applyBalance)
+
       if (applyBalance) {
         const newFromBalance = fromAccount.type === 'credit_card'
           ? fromAccount.balance + transactionAmount
@@ -240,28 +241,29 @@ export async function POST(request: Request) {
 
       return NextResponse.json(newTransaction, { status: 201 })
     }
-
     const { accountId } = body
-
-    if (!accountId) {
-      return NextResponse.json({ error: 'Account is required' }, { status: 400 })
-    }
-
-    const account = await prisma.account.findFirst({
-      where: { id: accountId, userId },
-    })
-
-    if (!account) {
-      return NextResponse.json({ error: 'Account not found' }, { status: 404 })
-    }
 
     if (categoryKey && !resolvedCategory) {
       return NextResponse.json({ error: 'Category not found' }, { status: 400 })
     }
 
+    const account = accountId
+      ? await prisma.account.findFirst({
+          where: { id: accountId, userId },
+        })
+      : null
+
+    if (accountId && !account) {
+      return NextResponse.json({ error: 'Account not found' }, { status: 404 })
+    }
+
+    const userTimeZone = await getUserTimeZone(userId)
+    const applyBalance = account ? shouldApplyBalanceAdjustment(date, userTimeZone, applyBalanceAdjustment) : false
+    const storedNotes = serializeNotes(notes, applyBalance)
+
     const transactionOperations = []
 
-    if (applyBalance) {
+    if (account && applyBalance) {
       const newBalance = account.type === 'credit_card'
         ? type === 'income'
           ? account.balance - transactionAmount
@@ -279,7 +281,7 @@ export async function POST(request: Request) {
       prisma.transaction.create({
         data: {
           userId,
-          accountId,
+          accountId: accountId || null,
           date: new Date(date),
           description,
           type,

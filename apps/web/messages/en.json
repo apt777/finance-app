@@ -121,7 +121,8 @@
     "transitCardBalanceDesc": "Enter the current remaining stored balance. Kablus can estimate untracked spending from top-ups, recorded uses, and the current balance.",
     "viewTransactions": "View Transactions",
     "allAccounts": "All Accounts",
-    "selectAccount": "Select Account"
+    "selectAccount": "Select Account",
+    "withoutPaymentMethod": "Save without payment method"
   },
   "transactions": {
     "title": "Transactions",

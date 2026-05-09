@@ -121,7 +121,8 @@
     "transitCardBalanceDesc": "현재 남아 있는 충전 잔액을 입력하세요. 충전 이력과 직접 기록한 사용 금액을 기준으로 미기록 사용분을 추정할 수 있습니다.",
     "viewTransactions": "거래 내역 보기",
     "allAccounts": "모든 계좌",
-    "selectAccount": "계좌 선택"
+    "selectAccount": "계좌 선택",
+    "withoutPaymentMethod": "결제수단 없이 기록"
   },
   "transactions": {
     "title": "거래 내역",

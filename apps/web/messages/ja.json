@@ -109,7 +109,10 @@
     "nisa": "NISA（非課税）",
     "transitCard": "交通系IC・チャージ式",
     "transitCardBalanceDesc": "現在残っているチャージ残高を入力してください。チャージ履歴、手動で記録した利用額、現在残高から未記録の利用額を推定できます。",
-    "viewTransactions": "取引を表示"
+    "viewTransactions": "取引を表示",
+    "allAccounts": "すべての口座",
+    "selectAccount": "口座を選択",
+    "withoutPaymentMethod": "支払手段なしで記録"
   },
   "transactions": {
     "title": "取引履歴",

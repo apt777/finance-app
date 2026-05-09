@@ -63,7 +63,7 @@ export async function POST(request: Request) {
         (
           isTransfer
             ? row.fromAccountId && row.toAccountId && row.fromAccountId !== row.toAccountId
-            : row.accountId
+            : true
         )
       )
     })
@@ -149,10 +149,6 @@ export async function POST(request: Request) {
       } else {
         const account = row.accountId ? accountMap.get(row.accountId) : null
 
-        if (!account) {
-          continue
-        }
-
         const signedAmount = row.type === 'expense' ? -normalizedAmount : normalizedAmount
 
         createPayloads.push({
@@ -166,7 +162,7 @@ export async function POST(request: Request) {
           categoryKey: row.categoryKey || undefined,
         })
 
-        if (shouldApplyBalanceAdjustment(row.date, userTimeZone, row.applyBalanceAdjustment)) {
+        if (account && shouldApplyBalanceAdjustment(row.date, userTimeZone, row.applyBalanceAdjustment)) {
           const currentBalance = accountBalanceMap.get(row.accountId as string) ?? account.balance
           const nextBalance =
             account.type === 'credit_card'

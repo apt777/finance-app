@@ -64,7 +64,8 @@ const INCOME_HINTS = [
   'refund',
   '배당',
   'dividend',
-  '이자',
+  '예금이자',
+  '이자수입',
   'interest',
 ]
 
@@ -372,6 +373,26 @@ function isTransferHint(value: string) {
   return TRANSFER_HINTS.some((keyword) => normalized.includes(keyword.toLowerCase().replace(/\s+/g, '')))
 }
 
+function inferCurrency(description: string, inferredAccount?: AccountShape | null) {
+  if (inferredAccount?.currency) {
+    return inferredAccount.currency
+  }
+
+  if (/(원|krw|₩)/i.test(description)) {
+    return 'KRW'
+  }
+
+  if (/(usd|\$|달러|dollar)/i.test(description)) {
+    return 'USD'
+  }
+
+  if (/(cny|rmb|위안|元)/i.test(description)) {
+    return 'CNY'
+  }
+
+  return 'JPY'
+}
+
 function parseLine(
   line: string,
   categories: CategoryShape[],
@@ -446,6 +467,7 @@ function parseLine(
       type: 'transfer' as const,
       accountId: inferredAccount.id,
       accountName: inferredAccount.name,
+      currency: inferredAccount.currency || defaultAccount?.currency || 'JPY',
       categoryKey: 'transfer',
       categoryName: 'Transfer',
       confidence: 0.92,
@@ -463,6 +485,7 @@ function parseLine(
     type,
     accountId: inferredAccount?.id || null,
     accountName: inferredAccount?.name || null,
+    currency: inferCurrency(rawDescription, inferredAccount),
     categoryKey: category.categoryKey,
     categoryName: category.categoryName,
     confidence: category.confidence,

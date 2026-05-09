@@ -178,7 +178,6 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     const userTimeZone = await getUserTimeZone(userId)
     const applyBalance = shouldApplyBalanceAdjustment(body.date, userTimeZone, body.applyBalanceAdjustment)
     const storedNotes = serializeNotes(body.notes, applyBalance)
-
     const operations: any[] = []
 
     if (transactionAffectsBalance(existingTransaction)) {
@@ -288,19 +287,19 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
         }),
       )
     } else {
-      if (!body.accountId) {
-        return NextResponse.json({ error: 'Account is required' }, { status: 400 })
-      }
+      const account = body.accountId
+        ? await prisma.account.findFirst({
+            where: { id: body.accountId, userId },
+          })
+        : null
 
-      const account = await prisma.account.findFirst({
-        where: { id: body.accountId, userId },
-      })
-
-      if (!account) {
+      if (body.accountId && !account) {
         return NextResponse.json({ error: 'Account not found' }, { status: 404 })
       }
 
-      if (applyBalance) {
+      const shouldAdjustAccountBalance = account ? applyBalance : false
+
+      if (account && shouldAdjustAccountBalance) {
         const signedAmount = body.type === 'expense' ? -transactionAmount : transactionAmount
         operations.push(
           prisma.account.update({
@@ -318,7 +317,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
         prisma.transaction.update({
           where: { id: existingTransaction.id },
           data: {
-            accountId: body.accountId,
+            accountId: body.accountId || null,
             fromAccountId: null,
             toAccountId: null,
             date: new Date(body.date),
