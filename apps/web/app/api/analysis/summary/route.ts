@@ -61,6 +61,17 @@ function normalizeCompact(value: string | null | undefined) {
   return (value || '').toLowerCase().replace(/\s+/g, '')
 }
 
+function addAmountToNestedMonthMap(
+  target: Map<string, Map<string, number>>,
+  accountId: string,
+  month: string,
+  amount: number
+) {
+  const current = target.get(accountId) ?? new Map<string, number>()
+  current.set(month, (current.get(month) ?? 0) + amount)
+  target.set(accountId, current)
+}
+
 function findTransitFundingTargetFromDescription(
   description: string,
   transitAccounts: Array<{ id: string; name: string }>
@@ -162,6 +173,8 @@ export async function GET() {
     const transitAccountIds = new Set(transitAccounts.map((account) => account.id))
     const transitFundingMap = new Map<string, number>()
     const transitRecordedExpenseMap = new Map<string, number>()
+    const transitFundingByMonthMap = new Map<string, Map<string, number>>()
+    const transitRecordedExpenseByMonthMap = new Map<string, Map<string, number>>()
     const monthlyMap = new Map<string, { month: string; income: number; expense: number; net: number }>()
     const categoryTotals = new Map<string, number>()
     const monthlyCategoryTotals = new Map<string, Map<string, number>>()
@@ -193,6 +206,12 @@ export async function GET() {
             transaction.toAccountId,
             (transitFundingMap.get(transaction.toAccountId) ?? 0) + Math.abs(transaction.amount)
           )
+          addAmountToNestedMonthMap(
+            transitFundingByMonthMap,
+            transaction.toAccountId,
+            monthKey(date),
+            Math.abs(transaction.amount)
+          )
         }
         continue
       }
@@ -204,6 +223,12 @@ export async function GET() {
           transitFundingMap.set(
             transaction.toAccountId,
             (transitFundingMap.get(transaction.toAccountId) ?? 0) + Math.abs(transaction.exchangeToAmount || 0)
+          )
+          addAmountToNestedMonthMap(
+            transitFundingByMonthMap,
+            transaction.toAccountId,
+            key,
+            Math.abs(transaction.exchangeToAmount || 0)
           )
         }
         const exchangeItem = exchangeMonthlyMap.get(key) ?? { month: key, fromAmount: 0, toAmount: 0, count: 0 }
@@ -223,6 +248,12 @@ export async function GET() {
           inferredTransitFundingTarget.id,
           (transitFundingMap.get(inferredTransitFundingTarget.id) ?? 0) + Math.abs(transaction.amount)
         )
+        addAmountToNestedMonthMap(
+          transitFundingByMonthMap,
+          inferredTransitFundingTarget.id,
+          key,
+          Math.abs(transaction.amount)
+        )
         continue
       }
 
@@ -232,10 +263,22 @@ export async function GET() {
             transaction.accountId,
             (transitFundingMap.get(transaction.accountId) ?? 0) + Math.abs(transaction.amount)
           )
+          addAmountToNestedMonthMap(
+            transitFundingByMonthMap,
+            transaction.accountId,
+            key,
+            Math.abs(transaction.amount)
+          )
         } else if (transactionType === 'expense') {
           transitRecordedExpenseMap.set(
             transaction.accountId,
             (transitRecordedExpenseMap.get(transaction.accountId) ?? 0) + Math.abs(transaction.amount)
+          )
+          addAmountToNestedMonthMap(
+            transitRecordedExpenseByMonthMap,
+            transaction.accountId,
+            key,
+            Math.abs(transaction.amount)
           )
         }
       }
@@ -298,6 +341,67 @@ export async function GET() {
         account.categoryKey,
         (categoryTotals.get(account.categoryKey) ?? 0) + account.inferredExpenseBaseAmount
       )
+
+      const monthlyFunding = transitFundingByMonthMap.get(account.accountId) ?? new Map<string, number>()
+      const monthlyRecorded = transitRecordedExpenseByMonthMap.get(account.accountId) ?? new Map<string, number>()
+      const monthCandidates = Array.from(new Set([...monthlyFunding.keys(), ...monthlyRecorded.keys()]))
+      const weightedMonths = monthCandidates
+        .map((month) => {
+          const funding = monthlyFunding.get(month) ?? 0
+          const recorded = monthlyRecorded.get(month) ?? 0
+          return {
+            month,
+            weight: Math.max(0, funding - recorded),
+          }
+        })
+        .filter((entry) => entry.weight > 0)
+
+      const fallbackMonth =
+        monthCandidates.sort().at(-1) ||
+        Array.from(monthlyMap.keys()).sort().at(-1) ||
+        monthKey(new Date())
+      const totalWeight = weightedMonths.reduce((sum, entry) => sum + entry.weight, 0)
+      const distributions = totalWeight > 0
+        ? weightedMonths.map((entry, index) => {
+            const rawAmount = index === weightedMonths.length - 1
+              ? account.inferredExpenseAmount - weightedMonths
+                  .slice(0, -1)
+                  .reduce((sum, prev) => sum + (account.inferredExpenseAmount * prev.weight) / totalWeight, 0)
+              : (account.inferredExpenseAmount * entry.weight) / totalWeight
+
+            return {
+              month: entry.month,
+              amount: rawAmount,
+            }
+          })
+        : [{ month: fallbackMonth, amount: account.inferredExpenseAmount }]
+
+      distributions.forEach(({ month, amount }) => {
+        if (amount <= 0) {
+          return
+        }
+
+        const amountInBaseCurrency = convertAmount(amount, account.currency, baseCurrency)
+        const monthCategories = monthlyCategoryTotals.get(month) ?? new Map<string, number>()
+        monthCategories.set(
+          account.categoryKey!,
+          (monthCategories.get(account.categoryKey!) ?? 0) + amountInBaseCurrency
+        )
+        monthlyCategoryTotals.set(month, monthCategories)
+
+        const monthly = monthlyMap.get(month) ?? { month, income: 0, expense: 0, net: 0 }
+        monthly.expense += amountInBaseCurrency
+        monthly.net = monthly.income - monthly.expense
+        monthlyMap.set(month, monthly)
+
+        const year = Number(month.split('-')[0])
+        if (Number.isFinite(year)) {
+          const yearly = yearlyMap.get(year) ?? { year, income: 0, expense: 0, net: 0 }
+          yearly.expense += amountInBaseCurrency
+          yearly.net = yearly.income - yearly.expense
+          yearlyMap.set(year, yearly)
+        }
+      })
     })
 
     const inferredTransitExpense = {
