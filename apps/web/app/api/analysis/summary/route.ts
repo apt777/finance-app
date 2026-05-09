@@ -271,8 +271,10 @@ export async function GET() {
       })
       .filter((account) => account.topUpAmount > 0 || account.recordedExpenseAmount > 0 || account.currentBalance > 0)
 
-    inferredTransitExpenseAccounts.forEach((account) => {
-      if (!account.enabled || account.inferredExpenseBaseAmount <= 0 || !account.categoryKey) {
+    const enabledInferredTransitExpenseAccounts = inferredTransitExpenseAccounts.filter((account) => account.enabled)
+
+    enabledInferredTransitExpenseAccounts.forEach((account) => {
+      if (account.inferredExpenseBaseAmount <= 0 || !account.categoryKey) {
         return
       }
 
@@ -344,8 +346,8 @@ export async function GET() {
     })
 
     const inferredTransitExpense = {
-      total: inferredTransitExpenseAccounts.reduce((sum, account) => sum + account.inferredExpenseBaseAmount, 0),
-      accounts: inferredTransitExpenseAccounts,
+      total: enabledInferredTransitExpenseAccounts.reduce((sum, account) => sum + account.inferredExpenseBaseAmount, 0),
+      accounts: enabledInferredTransitExpenseAccounts,
     }
 
     const topCategories = Array.from(categoryTotals.entries())
