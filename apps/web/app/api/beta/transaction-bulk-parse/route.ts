@@ -316,6 +316,47 @@ function inferAccount(description: string, accounts: AccountShape[], defaultAcco
   return defaultAccount
 }
 
+function scoreAccountMatch(description: string, account: AccountShape) {
+  const lower = description.toLowerCase()
+  const compactLower = lower.replace(/\s+/g, '')
+  const normalizedName = normalizeWhitespace(account.name).toLowerCase()
+  const compactName = normalizedName.replace(/\s+/g, '')
+
+  let score = 0
+
+  if (normalizedName && lower.includes(normalizedName)) {
+    score = Math.max(score, 100 + normalizedName.length)
+  }
+
+  if (compactName && compactLower.includes(compactName)) {
+    score = Math.max(score, 90 + compactName.length)
+  }
+
+  if (normalizedName && normalizedName.includes(lower) && lower.length >= 3) {
+    score = Math.max(score, 70 + lower.length)
+  }
+
+  if (compactName && compactName.includes(compactLower) && compactLower.length >= 3) {
+    score = Math.max(score, 65 + compactLower.length)
+  }
+
+  return score
+}
+
+function inferTransferTargetAccount(
+  description: string,
+  accounts: AccountShape[],
+  defaultAccountId?: string
+) {
+  const candidates = accounts
+    .filter((account) => account.id !== defaultAccountId)
+    .map((account) => ({ account, score: scoreAccountMatch(description, account) }))
+    .filter((entry) => entry.score > 0)
+    .sort((left, right) => right.score - left.score)
+
+  return candidates[0]?.account || null
+}
+
 function stripAccountMentions(description: string, accounts: AccountShape[], selectedAccount?: AccountShape | null) {
   let cleaned = description
 
@@ -441,10 +482,13 @@ function parseLine(
     }
   }
 
-  const inferredAccount = inferAccount(rawDescription, accounts, defaultAccountId)
+  const defaultAccount = accounts.find((account) => account.id === defaultAccountId) || null
+  const explicitTransferTarget = isTransferHint(rawDescription)
+    ? inferTransferTargetAccount(rawDescription, accounts, defaultAccountId)
+    : null
+  const inferredAccount = explicitTransferTarget || inferAccount(rawDescription, accounts, defaultAccountId)
   const description = stripAccountMentions(rawDescription, accounts, inferredAccount)
   const finalDescription = description || rawDescription
-  const defaultAccount = accounts.find((account) => account.id === defaultAccountId) || null
   const shouldTreatAsTransfer =
     Boolean(defaultAccountId) &&
     Boolean(defaultAccount) &&
