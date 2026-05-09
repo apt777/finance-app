@@ -159,7 +159,7 @@ export default function AIBulkImportBeta() {
       )
 
       if (duplicateInExisting) {
-        result.set(row.id, ui.transactionForm.duplicateError)
+        result.set(row.id, ui.transactionForm.duplicateHint)
         continue
       }
 
@@ -215,7 +215,7 @@ export default function AIBulkImportBeta() {
   }
 
   const validRows = rows.filter((row) => {
-    if (row.error || row.type === 'transfer' || duplicateState.has(row.id)) {
+    if (row.error || row.type === 'transfer') {
       return false
     }
 

@@ -102,10 +102,13 @@
     "typeFilter": "種別でフィルター",
     "allCurrencies": "すべての通貨",
     "allTypes": "すべての種別",
-    "checking": "当座預金",
-    "savings": "普通預金",
+    "checking": "生活口座",
+    "savings": "貯蓄・定期",
     "creditCard": "クレジットカード",
-    "investment": "投資",
+    "investment": "証券・投資",
+    "nisa": "NISA（非課税）",
+    "transitCard": "交通系IC・チャージ式",
+    "transitCardBalanceDesc": "現在残っているチャージ残高を入力してください。チャージ履歴、手動で記録した利用額、現在残高から未記録の利用額を推定できます。",
     "viewTransactions": "取引を表示"
   },
   "transactions": {

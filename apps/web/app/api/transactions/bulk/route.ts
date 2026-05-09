@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 import { requireRouteSession } from '@/lib/server-auth'
-import { findDuplicateTransaction } from '@/lib/transactionDuplicates'
 
 interface BulkRow {
   clientId?: string
@@ -39,22 +38,6 @@ function shouldApplyBalanceAdjustment(date: string, requested?: boolean) {
   return Boolean(requested)
 }
 
-function getDayRange(date: string) {
-  const normalized = new Date(date)
-
-  if (Number.isNaN(normalized.getTime())) {
-    return null
-  }
-
-  const start = new Date(normalized)
-  start.setHours(0, 0, 0, 0)
-
-  const end = new Date(normalized)
-  end.setHours(23, 59, 59, 999)
-
-  return { start, end }
-}
-
 export async function POST(request: Request) {
   const { userId } = await requireRouteSession()
 
@@ -87,44 +70,14 @@ export async function POST(request: Request) {
     }
 
     const accountIds = [...new Set(validRows.map((row) => row.accountId))]
-    const dateRanges = validRows
-      .map((row) => getDayRange(row.date))
-      .filter((range): range is NonNullable<ReturnType<typeof getDayRange>> => Boolean(range))
-
-    const minDate = dateRanges.reduce((min, range) => (range.start < min ? range.start : min), dateRanges[0]!.start)
-    const maxDate = dateRanges.reduce((max, range) => (range.end > max ? range.end : max), dateRanges[0]!.end)
-
-    const [accounts, existingTransactions] = await Promise.all([
-      prisma.account.findMany({
-        where: {
-          userId,
-          id: { in: accountIds },
-        },
-      }),
-      prisma.transaction.findMany({
-        where: {
-          userId,
-          accountId: { in: accountIds },
-          type: { in: ['income', 'expense'] },
-          date: {
-            gte: minDate,
-            lte: maxDate,
-          },
-        },
-        select: {
-          id: true,
-          accountId: true,
-          date: true,
-          description: true,
-          type: true,
-          amount: true,
-          currency: true,
-        },
-      }),
-    ])
+    const accounts = await prisma.account.findMany({
+      where: {
+        userId,
+        id: { in: accountIds },
+      },
+    })
 
     const accountMap = new Map(accounts.map((account) => [account.id, account]))
-    const duplicatePool = [...existingTransactions]
     const accountBalanceMap = new Map(accounts.map((account) => [account.id, account.balance]))
     const createPayloads: Array<{
       userId: string
@@ -137,7 +90,6 @@ export async function POST(request: Request) {
       categoryKey?: string | null
     }> = []
 
-    let skippedDuplicateCount = 0
     let importedCount = 0
     const importedClientIds: string[] = []
     const skippedDuplicateClientIds: string[] = []
@@ -150,27 +102,6 @@ export async function POST(request: Request) {
       }
 
       const normalizedAmount = Number(row.amount)
-      const duplicate = findDuplicateTransaction(
-        {
-          accountId: row.accountId,
-          date: row.date,
-          description: row.description,
-          type: row.type,
-          amount: normalizedAmount,
-          currency: row.currency,
-          ignoreDescription: true,
-        },
-        duplicatePool
-      )
-
-      if (duplicate) {
-        skippedDuplicateCount += 1
-        if (row.clientId) {
-          skippedDuplicateClientIds.push(row.clientId)
-        }
-        continue
-      }
-
       const signedAmount = row.type === 'expense' ? -normalizedAmount : normalizedAmount
 
       createPayloads.push({
@@ -182,16 +113,6 @@ export async function POST(request: Request) {
         amount: signedAmount,
         currency: row.currency,
         categoryKey: row.categoryKey || undefined,
-      })
-
-      duplicatePool.push({
-        id: `draft-${createPayloads.length}`,
-        accountId: row.accountId,
-        date: new Date(row.date),
-        description: row.description,
-        type: row.type,
-        amount: signedAmount,
-        currency: row.currency,
       })
 
       if (shouldApplyBalanceAdjustment(row.date, row.applyBalanceAdjustment)) {
@@ -234,7 +155,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       importedCount,
-      skippedDuplicateCount,
+      skippedDuplicateCount: 0,
       importedClientIds,
       skippedDuplicateClientIds,
     })

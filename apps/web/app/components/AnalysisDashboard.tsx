@@ -70,6 +70,7 @@ export default function AnalysisDashboard() {
   const currentMonth = data.monthly[data.monthly.length - 1]
   const previousMonth = data.monthly[data.monthly.length - 2]
   const currentExchangeMonth = data.exchangeMonthly[data.exchangeMonthly.length - 1]
+  const inferredTransitExpense = data.inferredTransitExpense
   const expenseDelta = currentMonth && previousMonth ? currentMonth.expense - previousMonth.expense : 0
   const overBudgetCount = data.budgetStatus.filter((item) => item.usagePercentage >= 100).length
   const categoryNameMap = new Map(categories.map((category) => [category.key, category.name]))
@@ -90,10 +91,34 @@ export default function AnalysisDashboard() {
   const expenseTone = expenseDelta > 0
     ? 'text-rose-600'
     : isDark ? 'text-emerald-300' : 'text-emerald-600'
+  const inferredTransitCopy =
+    locale === 'en'
+      ? {
+          title: 'Estimated untracked transit spending',
+          desc: 'Calculated from top-ups, manually recorded card usage, and the current balance.',
+          accounts: (count: number) => `${count} stored-value card${count === 1 ? '' : 's'}`,
+        }
+      : locale === 'ja'
+        ? {
+            title: '推定の未記録交通カード利用',
+            desc: 'チャージ額、手動で記録した利用額、現在残高をもとに計算しています。',
+            accounts: (count: number) => `${count}枚のチャージ式カード`,
+          }
+        : locale === 'zh'
+          ? {
+              title: '估算的未记录交通卡支出',
+              desc: '根据充值金额、手动记录的使用金额和当前余额计算。',
+              accounts: (count: number) => `${count} 张储值卡`,
+            }
+          : {
+              title: '추정 미기록 교통카드 사용액',
+              desc: '충전액, 직접 기록한 사용액, 현재 잔액을 기준으로 계산합니다.',
+              accounts: (count: number) => `${count}개 충전식 카드 기준`,
+            }
 
   return (
     <div className={`space-y-6 ${theme === 'modern' ? isDark ? 'rounded-[34px] border border-white/10 bg-white/5 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.24)] backdrop-blur-xl md:p-6' : 'rounded-[34px] border border-white/80 bg-white/50 p-4 shadow-[0_18px_50px_rgba(148,163,184,0.12)] backdrop-blur-xl md:p-6' : ''}`}>
-      <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <section className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${inferredTransitExpense.total > 0 ? 'xl:grid-cols-5' : 'xl:grid-cols-4'}`}>
         <article className={`rounded-3xl p-6 ${theme === 'modern' ? isDark ? 'border border-blue-400/20 bg-blue-500/10 text-white shadow-lg' : 'border border-blue-200 bg-blue-50 text-slate-950 shadow-sm' : 'bg-gradient-to-br from-slate-900 to-slate-800 text-white'}`}>
           <div className="flex items-center justify-between mb-4">
             <ChartColumnIncreasing className="w-6 h-6" />
@@ -149,6 +174,25 @@ export default function AnalysisDashboard() {
             {activeRecurringCount > 0 ? ui.analysis.recurringHintActive : ui.analysis.recurringHintEmpty}
           </p>
         </Link>
+
+        {inferredTransitExpense.total > 0 ? (
+          <article className={`rounded-3xl border p-6 ${theme === 'modern' ? isDark ? 'border-white/10 bg-white/5 shadow-sm' : 'border-white/80 bg-white/80 shadow-sm' : 'border-slate-200 bg-white'}`}>
+            <div className="flex items-center justify-between mb-4">
+              <span className={`flex h-11 w-11 items-center justify-center rounded-2xl ${isDark ? 'bg-cyan-500/15 text-cyan-300' : 'bg-cyan-100 text-cyan-700'}`}>
+                <ChartColumnIncreasing className="w-6 h-6" />
+              </span>
+              <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${isDark ? 'bg-white/10 text-slate-200' : 'bg-slate-100 text-slate-700'}`}>
+                {inferredTransitCopy.accounts(inferredTransitExpense.accounts.length)}
+              </span>
+            </div>
+            <p className="text-sm text-slate-500">{inferredTransitCopy.title}</p>
+            <p className={`mt-2 text-3xl font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              {Math.round(inferredTransitExpense.total).toLocaleString()}
+              <span className={`ml-2 text-base font-semibold ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{data.baseCurrency}</span>
+            </p>
+            <p className="mt-2 text-xs text-slate-500">{inferredTransitCopy.desc}</p>
+          </article>
+        ) : null}
       </section>
 
       {data.exchangeMonthly.length > 0 && (

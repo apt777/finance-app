@@ -5,7 +5,7 @@ import { useAccounts } from '@/hooks/useAccounts'
 import { Link } from '@/navigation'
 import { useRouter } from '@/navigation'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Trash2, Plus, Wallet, CreditCard, PiggyBank, TrendingUp, Filter, ChevronRight, Pencil } from 'lucide-react'
+import { Trash2, Plus, Wallet, CreditCard, PiggyBank, TrendingUp, Filter, ChevronRight, Pencil, TrainFront } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useUiTheme } from '@/context/UiThemeContext'
 import AppLoadingState from '@/components/AppLoadingState'
@@ -91,6 +91,10 @@ const AccountList = () => {
         return <CreditCard className="w-5 h-5" />
       case 'investment':
         return <TrendingUp className="w-5 h-5" />
+      case 'nisa':
+        return <TrendingUp className="w-5 h-5" />
+      case 'transit_card':
+        return <TrainFront className="w-5 h-5" />
       default:
         return <Wallet className="w-5 h-5" />
     }
@@ -107,6 +111,10 @@ const AccountList = () => {
         return tAccounts('creditCard')
       case 'investment':
         return tAccounts('investment')
+      case 'nisa':
+        return tAccounts('nisa')
+      case 'transit_card':
+        return tAccounts('transitCard')
       default:
         return type
     }

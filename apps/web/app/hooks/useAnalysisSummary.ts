@@ -24,6 +24,19 @@ export interface AnalysisSummary {
     usagePercentage: number
     daysRemaining: number
   }>
+  inferredTransitExpense: {
+    total: number
+    accounts: Array<{
+      accountId: string
+      accountName: string
+      currency: string
+      topUpAmount: number
+      recordedExpenseAmount: number
+      currentBalance: number
+      inferredExpenseAmount: number
+      inferredExpenseBaseAmount: number
+    }>
+  }
 }
 
 async function fetchAnalysisSummary(): Promise<AnalysisSummary> {

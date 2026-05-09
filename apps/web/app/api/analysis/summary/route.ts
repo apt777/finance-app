@@ -72,6 +72,16 @@ export async function GET() {
       },
       orderBy: { date: 'asc' },
     })
+    const accounts = await prisma.account.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        currency: true,
+        balance: true,
+      },
+    })
 
     const budgets = await prisma.budget.findMany({
       where: { userId },
@@ -93,6 +103,10 @@ export async function GET() {
 
     const categoryMap = new Map(categories.map((category) => [category.key, category.name]))
     const categoryTypeMap = new Map(categories.map((category) => [category.key, category.type]))
+    const transitAccounts = accounts.filter((account) => account.type === 'transit_card')
+    const transitAccountIds = new Set(transitAccounts.map((account) => account.id))
+    const transitFundingMap = new Map<string, number>()
+    const transitRecordedExpenseMap = new Map<string, number>()
     const monthlyMap = new Map<string, { month: string; income: number; expense: number; net: number }>()
     const categoryTotals = new Map<string, number>()
     const monthlyCategoryTotals = new Map<string, Map<string, number>>()
@@ -112,12 +126,24 @@ export async function GET() {
       )
 
       if (transactionType === 'transfer') {
+        if (transaction.toAccountId && transitAccountIds.has(transaction.toAccountId)) {
+          transitFundingMap.set(
+            transaction.toAccountId,
+            (transitFundingMap.get(transaction.toAccountId) ?? 0) + Math.abs(transaction.amount)
+          )
+        }
         continue
       }
 
       const key = monthKey(date)
 
       if (transactionType === 'exchange') {
+        if (transaction.toAccountId && transitAccountIds.has(transaction.toAccountId)) {
+          transitFundingMap.set(
+            transaction.toAccountId,
+            (transitFundingMap.get(transaction.toAccountId) ?? 0) + Math.abs(transaction.exchangeToAmount || 0)
+          )
+        }
         const exchangeItem = exchangeMonthlyMap.get(key) ?? { month: key, fromAmount: 0, toAmount: 0, count: 0 }
         exchangeItem.fromAmount += Math.abs(convertAmount(transaction.amount, transaction.currency, baseCurrency))
         exchangeItem.toAmount += Math.abs(convertAmount(transaction.exchangeToAmount || 0, transaction.exchangeToCurrency || baseCurrency, baseCurrency))
@@ -129,6 +155,20 @@ export async function GET() {
       const monthly = monthlyMap.get(key) ?? { month: key, income: 0, expense: 0, net: 0 }
       const yearly = yearlyMap.get(date.getFullYear()) ?? { year: date.getFullYear(), income: 0, expense: 0, net: 0 }
       const normalizedAmount = Math.abs(convertAmount(transaction.amount, transaction.currency, baseCurrency))
+
+      if (transaction.accountId && transitAccountIds.has(transaction.accountId)) {
+        if (transactionType === 'income') {
+          transitFundingMap.set(
+            transaction.accountId,
+            (transitFundingMap.get(transaction.accountId) ?? 0) + Math.abs(transaction.amount)
+          )
+        } else if (transactionType === 'expense') {
+          transitRecordedExpenseMap.set(
+            transaction.accountId,
+            (transitRecordedExpenseMap.get(transaction.accountId) ?? 0) + Math.abs(transaction.amount)
+          )
+        }
+      }
 
       if (transactionType === 'income') {
         monthly.income += normalizedAmount
@@ -155,6 +195,31 @@ export async function GET() {
       yearly.net = yearly.income - yearly.expense
       monthlyMap.set(key, monthly)
       yearlyMap.set(date.getFullYear(), yearly)
+    }
+
+    const inferredTransitExpenseAccounts = transitAccounts
+      .map((account) => {
+        const topUpAmount = transitFundingMap.get(account.id) ?? 0
+        const recordedExpenseAmount = transitRecordedExpenseMap.get(account.id) ?? 0
+        const currentBalance = Math.max(account.balance, 0)
+        const inferredExpenseAmount = Math.max(0, topUpAmount - recordedExpenseAmount - currentBalance)
+
+        return {
+          accountId: account.id,
+          accountName: account.name,
+          currency: account.currency,
+          topUpAmount,
+          recordedExpenseAmount,
+          currentBalance,
+          inferredExpenseAmount,
+          inferredExpenseBaseAmount: convertAmount(inferredExpenseAmount, account.currency, baseCurrency),
+        }
+      })
+      .filter((account) => account.topUpAmount > 0 || account.recordedExpenseAmount > 0 || account.currentBalance > 0)
+
+    const inferredTransitExpense = {
+      total: inferredTransitExpenseAccounts.reduce((sum, account) => sum + account.inferredExpenseBaseAmount, 0),
+      accounts: inferredTransitExpenseAccounts,
     }
 
     const topCategories = Array.from(categoryTotals.entries())
@@ -229,6 +294,7 @@ export async function GET() {
       monthlyCategoryBreakdown,
       baseCurrency,
       budgetStatus,
+      inferredTransitExpense,
     })
   } catch (error: any) {
     console.error('Failed to build analysis summary:', error)
@@ -241,6 +307,10 @@ export async function GET() {
         monthlyCategoryBreakdown: [],
         baseCurrency: 'JPY',
         budgetStatus: [],
+        inferredTransitExpense: {
+          total: 0,
+          accounts: [],
+        },
       },
       { status: 200 }
     )

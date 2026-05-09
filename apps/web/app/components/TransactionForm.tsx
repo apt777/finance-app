@@ -365,11 +365,6 @@ const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: Tra
       return;
     }
 
-    if (duplicateTransaction) {
-      setFormError(ui.transactionForm.duplicateError);
-      return;
-    }
-
     mutation.mutate(formData)
   }
 
@@ -407,7 +402,6 @@ const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: Tra
         type: formData.type as 'income' | 'expense' | 'transfer' | 'exchange',
         amount: normalizedAmount,
         currency: formData.currency,
-        ignoreDescription: true,
       },
       existingTransactions.filter((transaction: any) => transaction.id !== transactionId)
     )

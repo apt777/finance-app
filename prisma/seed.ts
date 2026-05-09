@@ -37,6 +37,7 @@ async function main() {
     { name: 'Credit Card', key: 'credit_card' },
     { name: 'Investment Account', key: 'investment' },
     { name: 'NISA Account', key: 'nisa' },
+    { name: 'Transit / Stored-Value Card', key: 'transit_card' },
     { name: 'Crypto Wallet', key: 'crypto' },
     { name: 'Cash', key: 'cash' },
   ]

@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, AlertCircle, CheckCircle, Wallet } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from '@/navigation'
 
 // userId is no longer needed from the form
@@ -59,6 +59,7 @@ const AccountForm = ({ onAccountAdded, initialData }: AccountFormProps) => {
   const tAccounts = useTranslations('accounts')
   const tCommon = useTranslations('common')
   const tValidation = useTranslations('validation')
+  const locale = useLocale()
   const router = useRouter()
   const queryClient = useQueryClient()
   const isEditMode = Boolean(initialData?.id)
@@ -109,7 +110,8 @@ const AccountForm = ({ onAccountAdded, initialData }: AccountFormProps) => {
     { value: 'savings', label: tAccounts('savings') },
     { value: 'credit_card', label: tAccounts('creditCard') },
     { value: 'investment', label: tAccounts('investment') },
-    { value: 'nisa', label: 'NISA' },
+    { value: 'nisa', label: tAccounts('nisa') },
+    { value: 'transit_card', label: tAccounts('transitCard') },
   ]
 
   const currencies = [
@@ -118,6 +120,43 @@ const AccountForm = ({ onAccountAdded, initialData }: AccountFormProps) => {
     { value: 'USD', label: 'USD ($)' },
   ]
   const isCreditCard = formData.type === 'credit_card'
+  const isTransitCard = formData.type === 'transit_card'
+  const accountTypeHint =
+    locale === 'en'
+      ? ({
+          checking: 'Use this for your main spending and income account.',
+          savings: 'Use this for savings, fixed deposits, and money you set aside.',
+          credit_card: 'Tracks billed card balances that still need to be paid.',
+          investment: 'Use this for brokerage or general investment accounts.',
+          nisa: 'Use this for Japan NISA accounts and tax-free investment balances.',
+          transit_card: 'Use this for prepaid transit or stored-value cards such as Suica.',
+        } as Record<string, string>)[formData.type]
+      : locale === 'ja'
+        ? ({
+            checking: '普段の入出金を管理するメイン口座向けです。',
+            savings: '貯蓄、定期預金、目的別の積立に向いています。',
+            credit_card: 'すでに請求され、これから支払う予定の金額を管理します。',
+            investment: '証券口座や一般的な投資用口座に使います。',
+            nisa: '日本のNISA口座や非課税投資残高の管理に使います。',
+            transit_card: 'Suica などの交通系ICやチャージ式残高の管理に使います。',
+          } as Record<string, string>)[formData.type]
+        : locale === 'zh'
+          ? ({
+              checking: '适合记录日常收支的主账户。',
+              savings: '适合储蓄、定存和专门留存的资金。',
+              credit_card: '用于管理已经出账、等待偿还的信用卡金额。',
+              investment: '适合证券账户和一般投资账户。',
+              nisa: '适合日本 NISA 账户和免税投资余额。',
+              transit_card: '适合 Suica 等交通卡或其他储值型余额账户。',
+            } as Record<string, string>)[formData.type]
+          : ({
+              checking: '일상 입출금과 생활비를 관리하는 메인 계좌에 적합합니다.',
+              savings: '저축, 예적금, 따로 모아두는 자금을 관리할 때 적합합니다.',
+              credit_card: '이미 청구되어 앞으로 갚아야 할 신용카드 금액을 관리합니다.',
+              investment: '증권 계좌나 일반 투자용 계좌에 사용합니다.',
+              nisa: '일본 NISA 계좌와 비과세 투자 잔액을 관리할 때 사용합니다.',
+              transit_card: '스이카 같은 교통카드나 충전식 잔액 계좌에 사용합니다.',
+            } as Record<string, string>)[formData.type]
 
   return (
     <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl shadow-sm border border-slate-100 p-8">
@@ -169,6 +208,9 @@ const AccountForm = ({ onAccountAdded, initialData }: AccountFormProps) => {
                 <option key={type.value} value={type.value}>{type.label}</option>
               ))}
             </select>
+            {accountTypeHint ? (
+              <p className="mt-2 text-xs text-slate-500">{accountTypeHint}</p>
+            ) : null}
           </div>
 
           {/* Currency */}
@@ -194,7 +236,7 @@ const AccountForm = ({ onAccountAdded, initialData }: AccountFormProps) => {
         {/* Balance */}
         <div>
           <label htmlFor="balance" className="block text-sm font-semibold text-slate-800 mb-2">
-            {isCreditCard ? tAccounts('paymentDueAmount') : tAccounts('initialBalance')} <span className="text-red-500">*</span>
+            {isCreditCard ? tAccounts('paymentDueAmount') : isTransitCard ? tAccounts('balance') : tAccounts('initialBalance')} <span className="text-red-500">*</span>
           </label>
           <div className="relative">
             <input
@@ -216,6 +258,8 @@ const AccountForm = ({ onAccountAdded, initialData }: AccountFormProps) => {
           </div>
           {isCreditCard ? (
             <p className="mt-2 text-xs text-slate-500">{tAccounts('paymentDueAmountDesc')}</p>
+          ) : isTransitCard ? (
+            <p className="mt-2 text-xs text-slate-500">{tAccounts('transitCardBalanceDesc')}</p>
           ) : null}
         </div>
 

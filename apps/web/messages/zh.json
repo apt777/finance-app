@@ -102,10 +102,13 @@
     "typeFilter": "按类型筛选",
     "allCurrencies": "所有货币",
     "allTypes": "所有类型",
-    "checking": "支票账户",
-    "savings": "储蓄账户",
+    "checking": "日常收支账户",
+    "savings": "储蓄/定存",
     "creditCard": "信用卡",
-    "investment": "投资",
+    "investment": "证券/投资",
+    "nisa": "NISA（免税投资）",
+    "transitCard": "交通卡/储值卡",
+    "transitCardBalanceDesc": "请输入当前剩余储值余额。Kablus 会根据充值记录、手动记录的消费和当前余额来估算未记录的支出。",
     "viewTransactions": "查看交易"
   },
   "transactions": {
