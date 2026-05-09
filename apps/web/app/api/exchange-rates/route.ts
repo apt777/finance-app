@@ -9,81 +9,78 @@ interface ExchangeRateData {
 }
 
 const UPDATE_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
-const DEFAULT_TRACKED_CURRENCIES = ['JPY', 'USD', 'KRW']
+const API_RATE_TARGETS = [
+  { base: 'JPY', quote: 'KRW' },
+  { base: 'USD', quote: 'JPY' },
+  { base: 'USD', quote: 'KRW' },
+  { base: 'CNY', quote: 'JPY' },
+  { base: 'EUR', quote: 'JPY' },
+  { base: 'GBP', quote: 'JPY' },
+] as const
 
-async function getTrackedCurrencies(userId: string) {
-  try {
-    const setting = await prisma.userSetting.findUnique({
-      where: {
-        userId_key: {
-          userId,
-          key: 'tracked_currencies',
-        },
-      },
-    })
-
-    if (!setting?.value) {
-      return DEFAULT_TRACKED_CURRENCIES
-    }
-
-    const parsed = JSON.parse(setting.value)
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_TRACKED_CURRENCIES
-  } catch {
-    return DEFAULT_TRACKED_CURRENCIES
-  }
+function isApiManagedPair(fromCurrency: string, toCurrency: string) {
+  return API_RATE_TARGETS.some((pair) => pair.base === fromCurrency && pair.quote === toCurrency)
 }
 
 async function updateRatesFromExternalApi(userId: string) {
   try {
-    const response = await fetch('https://open.er-api.com/v6/latest/JPY');
-    const data = await response.json();
+    const uniqueBases = [...new Set(API_RATE_TARGETS.map((pair) => pair.base))]
+    const responses = await Promise.all(
+      uniqueBases.map(async (base) => {
+        const response = await fetch(`https://open.er-api.com/v6/latest/${base}`)
+        const data = await response.json()
+        return { base, data }
+      })
+    )
 
-    if (data.result !== 'success') {
-      console.error('Failed to fetch external rates:', data);
-      return;
-    }
+    const rateTables = new Map<string, Record<string, number>>()
 
-    const rates = data.rates;
-    const trackedCurrencies = await getTrackedCurrencies(userId)
-    const targets = trackedCurrencies.filter((currency) => currency !== 'JPY')
-
-    // Prepare operations for transaction
-    const operations = [];
-
-    for (const target of targets) {
-      if (rates[target]) {
-        const rate = rates[target];
-        
-        // JPY -> Target
-        operations.push(
-          prisma.exchangeRate.upsert({
-            where: {
-              userId_fromCurrency_toCurrency: {
-                userId,
-                fromCurrency: 'JPY',
-                toCurrency: target,
-              }
-            },
-            update: {
-              rate: rate,
-              source: 'api',
-              updatedAt: new Date(),
-            },
-            create: {
-              userId,
-              fromCurrency: 'JPY',
-              toCurrency: target,
-              rate: rate,
-              source: 'api',
-            }
-          })
-        );
-
+    for (const { base, data } of responses) {
+      if (data.result !== 'success' || !data.rates) {
+        console.error('Failed to fetch external rates:', { base, data })
+        continue
       }
+
+      rateTables.set(base, data.rates as Record<string, number>)
     }
 
-    await prisma.$transaction(operations);
-    console.log(`Updated exchange rates for user ${userId}`);
+    const operations = API_RATE_TARGETS.flatMap(({ base, quote }) => {
+      const table = rateTables.get(base)
+      const rate = table?.[quote]
+
+      if (typeof rate !== 'number' || !Number.isFinite(rate) || rate <= 0) {
+        return []
+      }
+
+      return [
+        prisma.exchangeRate.upsert({
+          where: {
+            userId_fromCurrency_toCurrency: {
+              userId,
+              fromCurrency: base,
+              toCurrency: quote,
+            },
+          },
+          update: {
+            rate,
+            source: 'api',
+            updatedAt: new Date(),
+          },
+          create: {
+            userId,
+            fromCurrency: base,
+            toCurrency: quote,
+            rate,
+            source: 'api',
+          },
+        }),
+      ]
+    })
+
+    if (operations.length > 0) {
+      await prisma.$transaction(operations)
+      console.log(`Updated exchange rates for user ${userId}`)
+    }
 
   } catch (error) {
     console.error('Error updating rates from external API:', error);
@@ -98,21 +95,36 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check the most recently updated rate
-    const latestRate = await prisma.exchangeRate.findFirst({
-      where: { userId },
-      orderBy: { updatedAt: 'desc' }
-    });
+    const managedRates = await prisma.exchangeRate.findMany({
+      where: {
+        userId,
+        OR: API_RATE_TARGETS.map((pair) => ({
+          fromCurrency: pair.base,
+          toCurrency: pair.quote,
+        })),
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
+    })
 
-    const shouldUpdate = !latestRate || (new Date().getTime() - new Date(latestRate.updatedAt).getTime() > UPDATE_INTERVAL_MS);
+    const oldestManagedRate = managedRates.at(-1)
+    const shouldUpdate =
+      managedRates.length < API_RATE_TARGETS.length ||
+      !oldestManagedRate ||
+      (new Date().getTime() - new Date(oldestManagedRate.updatedAt).getTime() > UPDATE_INTERVAL_MS)
 
     if (shouldUpdate) {
-      await updateRatesFromExternalApi(userId);
+      await updateRatesFromExternalApi(userId)
     }
 
     const exchangeRates = await prisma.exchangeRate.findMany({
       where: {
         userId,
+        OR: API_RATE_TARGETS.map((pair) => ({
+          fromCurrency: pair.base,
+          toCurrency: pair.quote,
+        })),
       },
       orderBy: {
         updatedAt: 'desc'
@@ -143,6 +155,10 @@ export async function POST(request: Request) {
     });
 
     const { from, to, rate }: ExchangeRateData = await request.json()
+
+    if (!isApiManagedPair(from, to)) {
+      return NextResponse.json({ error: 'Only the supported exchange-rate pairs can be updated.' }, { status: 400 })
+    }
 
     // Check if this exchange rate pair already exists for the user
     const existingRate = await prisma.exchangeRate.findUnique({
