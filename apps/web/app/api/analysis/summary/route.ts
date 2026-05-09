@@ -74,6 +74,20 @@ function roundAnalysisAmount(value: number) {
   return Math.round(value)
 }
 
+function readBaseSnapshotAmount(
+  transaction: {
+    baseCurrencySnapshot?: string | null
+    baseAmountSnapshot?: number | null
+  },
+  baseCurrency: string
+) {
+  if (transaction.baseCurrencySnapshot === baseCurrency && typeof transaction.baseAmountSnapshot === 'number') {
+    return transaction.baseAmountSnapshot
+  }
+
+  return null
+}
+
 export async function GET() {
   const { userId } = await requireRouteSession()
 
@@ -129,6 +143,38 @@ export async function GET() {
       const inverse = exchangeRates.find((item) => item.fromCurrency === toCurrency && item.toCurrency === fromCurrency)?.rate
       if (inverse) return amount / inverse
       return amount
+    }
+    const getTransactionAmountInBaseCurrency = (transaction: {
+      amount: number
+      currency: string
+      baseCurrencySnapshot?: string | null
+      baseAmountSnapshot?: number | null
+    }) => {
+      const snapshot = readBaseSnapshotAmount(transaction, baseCurrency)
+      if (typeof snapshot === 'number') {
+        return snapshot
+      }
+
+      return convertAmount(transaction.amount, transaction.currency, baseCurrency)
+    }
+    const getExchangeToAmountInBaseCurrency = (transaction: {
+      exchangeToAmount?: number | null
+      exchangeToCurrency?: string | null
+      baseCurrencySnapshot?: string | null
+      exchangeToBaseAmountSnapshot?: number | null
+    }) => {
+      if (
+        transaction.baseCurrencySnapshot === baseCurrency &&
+        typeof transaction.exchangeToBaseAmountSnapshot === 'number'
+      ) {
+        return transaction.exchangeToBaseAmountSnapshot
+      }
+
+      return convertAmount(
+        transaction.exchangeToAmount || 0,
+        transaction.exchangeToCurrency || baseCurrency,
+        baseCurrency
+      )
     }
 
     const categoryMap = new Map(categories.map((category) => [category.key, category.name]))
@@ -192,8 +238,8 @@ export async function GET() {
           )
         }
         const exchangeItem = exchangeMonthlyMap.get(key) ?? { month: key, fromAmount: 0, toAmount: 0, count: 0 }
-        exchangeItem.fromAmount += Math.abs(convertAmount(transaction.amount, transaction.currency, baseCurrency))
-        exchangeItem.toAmount += Math.abs(convertAmount(transaction.exchangeToAmount || 0, transaction.exchangeToCurrency || baseCurrency, baseCurrency))
+        exchangeItem.fromAmount += Math.abs(getTransactionAmountInBaseCurrency(transaction))
+        exchangeItem.toAmount += Math.abs(getExchangeToAmountInBaseCurrency(transaction))
         exchangeItem.count += 1
         exchangeMonthlyMap.set(key, exchangeItem)
         continue
@@ -201,7 +247,7 @@ export async function GET() {
 
       const monthly = monthlyMap.get(key) ?? { month: key, income: 0, expense: 0, net: 0 }
       const yearly = yearlyMap.get(date.getFullYear()) ?? { year: date.getFullYear(), income: 0, expense: 0, net: 0 }
-      const normalizedAmount = Math.abs(convertAmount(transaction.amount, transaction.currency, baseCurrency))
+      const normalizedAmount = Math.abs(getTransactionAmountInBaseCurrency(transaction))
 
       if (transaction.accountId && transitAccountIds.has(transaction.accountId)) {
         if (transactionType === 'income') {
@@ -407,7 +453,13 @@ export async function GET() {
             transaction.categoryKey === budget.categoryKey
           )
         })
-        .reduce((sum, transaction) => sum + Math.abs(convertAmount(transaction.amount, transaction.currency, budget.currency)), 0)
+        .reduce((sum, transaction) => {
+          if (budget.currency === baseCurrency) {
+            return sum + Math.abs(getTransactionAmountInBaseCurrency(transaction))
+          }
+
+          return sum + Math.abs(convertAmount(transaction.amount, transaction.currency, budget.currency))
+        }, 0)
 
       const isCurrentBudgetMonth = todayParts.year === budget.year && todayParts.month === budget.month
       const daysInBudgetMonth = new Date(budget.year, budget.month || 1, 0).getDate()

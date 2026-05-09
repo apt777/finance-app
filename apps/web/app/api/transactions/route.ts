@@ -4,6 +4,7 @@ import { requireRouteSession } from '@/lib/server-auth'
 import { ensureDefaultCategories } from '@/lib/categories'
 import { DEFAULT_TRANSACTION_CATEGORIES } from '@/lib/defaultCategories'
 import { processDueRecurringTransactions } from '@/lib/recurring'
+import { resolveTransactionBaseSnapshot } from '@/lib/transactionBaseSnapshot'
 import { getTodayDateStringInTimeZone } from '@/lib/timezone'
 import { getUserTimeZone } from '@/lib/user-timezone'
 
@@ -159,6 +160,14 @@ export async function POST(request: Request) {
     const transactionAmount = Number(rawAmount)
     const resolvedCategory = await resolveCategorySelection(userId, categoryKey)
     const normalizedCategoryKey = resolvedCategory?.key || categoryKey
+    const currentRates = await prisma.exchangeRate.findMany({
+      where: { userId },
+      select: {
+        fromCurrency: true,
+        toCurrency: true,
+        rate: true,
+      },
+    })
 
     if (!date || !description || !type || !currency || Number.isNaN(transactionAmount) || transactionAmount <= 0) {
       return NextResponse.json({ error: 'Invalid transaction payload' }, { status: 400 })
@@ -201,6 +210,15 @@ export async function POST(request: Request) {
       const userTimeZone = await getUserTimeZone(userId)
       const applyBalance = shouldApplyBalanceAdjustment(date, userTimeZone, applyBalanceAdjustment)
       const storedNotes = serializeNotes(notes, applyBalance)
+      const snapshot = await resolveTransactionBaseSnapshot({
+        date,
+        amount: transactionAmount,
+        currency,
+        exchangeToAmount: type === 'exchange' ? exchangeToAmount : null,
+        exchangeToCurrency: type === 'exchange' ? exchangeToCurrency : null,
+        userTimeZone,
+        currentRates,
+      })
 
       if (applyBalance) {
         const newFromBalance = fromAccount.type === 'credit_card'
@@ -231,6 +249,12 @@ export async function POST(request: Request) {
             exchangeToAmount: type === 'exchange' ? exchangeToAmount : null,
             exchangeToCurrency: type === 'exchange' ? exchangeToCurrency : null,
             exchangeRateApplied: type === 'exchange' ? exchangeRateApplied : null,
+            baseCurrencySnapshot: snapshot.baseCurrencySnapshot,
+            baseAmountSnapshot: snapshot.baseAmountSnapshot,
+            exchangeToBaseAmountSnapshot: snapshot.exchangeToBaseAmountSnapshot,
+            snapshotRateApplied: snapshot.snapshotRateApplied,
+            snapshotRateDate: snapshot.snapshotRateDate,
+            snapshotRateSource: snapshot.snapshotRateSource,
             notes: storedNotes,
           } as any,
         })
@@ -260,6 +284,14 @@ export async function POST(request: Request) {
     const userTimeZone = await getUserTimeZone(userId)
     const applyBalance = account ? shouldApplyBalanceAdjustment(date, userTimeZone, applyBalanceAdjustment) : false
     const storedNotes = serializeNotes(notes, applyBalance)
+    const signedAmount = type === 'expense' ? -transactionAmount : transactionAmount
+    const snapshot = await resolveTransactionBaseSnapshot({
+      date,
+      amount: signedAmount,
+      currency,
+      userTimeZone,
+      currentRates,
+    })
 
     const transactionOperations = []
 
@@ -285,9 +317,15 @@ export async function POST(request: Request) {
           date: new Date(date),
           description,
           type,
-          amount: type === 'expense' ? -transactionAmount : transactionAmount,
+          amount: signedAmount,
           currency,
           categoryKey: normalizedCategoryKey,
+          baseCurrencySnapshot: snapshot.baseCurrencySnapshot,
+          baseAmountSnapshot: snapshot.baseAmountSnapshot,
+          exchangeToBaseAmountSnapshot: snapshot.exchangeToBaseAmountSnapshot,
+          snapshotRateApplied: snapshot.snapshotRateApplied,
+          snapshotRateDate: snapshot.snapshotRateDate,
+          snapshotRateSource: snapshot.snapshotRateSource,
           notes: storedNotes,
         },
       }),

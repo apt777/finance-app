@@ -168,6 +168,12 @@ model Transaction {
   exchangeToAmount Float?
   exchangeToCurrency String?
   exchangeRateApplied Float?
+  baseCurrencySnapshot String?
+  baseAmountSnapshot Float?
+  exchangeToBaseAmountSnapshot Float?
+  snapshotRateApplied Float?
+  snapshotRateDate DateTime?
+  snapshotRateSource String?
   categoryKey     String?   // References TransactionCategory.key
   notes           String?
   createdAt       DateTime  @default(now())

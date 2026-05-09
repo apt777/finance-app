@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 import { requireRouteSession } from '@/lib/server-auth'
+import { resolveTransactionBaseSnapshot } from '@/lib/transactionBaseSnapshot'
 import { getTodayDateStringInTimeZone } from '@/lib/timezone'
 import { getUserTimeZone } from '@/lib/user-timezone'
 
@@ -89,9 +90,18 @@ export async function POST(request: Request) {
         id: { in: accountIds },
       },
     })
+    const currentRates = await prisma.exchangeRate.findMany({
+      where: { userId },
+      select: {
+        fromCurrency: true,
+        toCurrency: true,
+        rate: true,
+      },
+    })
 
     const accountMap = new Map(accounts.map((account) => [account.id, account]))
     const accountBalanceMap = new Map(accounts.map((account) => [account.id, account.balance]))
+    const historicalCache = new Map<string, { rate: number; date: string; source: string } | null>()
     const createPayloads: Array<{
       userId: string
       accountId?: string
@@ -103,6 +113,12 @@ export async function POST(request: Request) {
       amount: number
       currency: string
       categoryKey?: string | null
+      baseCurrencySnapshot?: string | null
+      baseAmountSnapshot?: number | null
+      exchangeToBaseAmountSnapshot?: number | null
+      snapshotRateApplied?: number | null
+      snapshotRateDate?: Date | null
+      snapshotRateSource?: string | null
     }> = []
 
     let importedCount = 0
@@ -119,6 +135,15 @@ export async function POST(request: Request) {
           continue
         }
 
+        const snapshot = await resolveTransactionBaseSnapshot({
+          date: row.date,
+          amount: normalizedAmount,
+          currency: row.currency,
+          userTimeZone,
+          currentRates,
+          historicalCache,
+        })
+
         createPayloads.push({
           userId,
           fromAccountId: fromAccount.id,
@@ -129,6 +154,12 @@ export async function POST(request: Request) {
           amount: normalizedAmount,
           currency: row.currency,
           categoryKey: row.categoryKey || 'transfer',
+          baseCurrencySnapshot: snapshot.baseCurrencySnapshot,
+          baseAmountSnapshot: snapshot.baseAmountSnapshot,
+          exchangeToBaseAmountSnapshot: snapshot.exchangeToBaseAmountSnapshot,
+          snapshotRateApplied: snapshot.snapshotRateApplied,
+          snapshotRateDate: snapshot.snapshotRateDate,
+          snapshotRateSource: snapshot.snapshotRateSource,
         })
 
         if (shouldApplyBalanceAdjustment(row.date, userTimeZone, row.applyBalanceAdjustment)) {
@@ -150,6 +181,14 @@ export async function POST(request: Request) {
         const account = row.accountId ? accountMap.get(row.accountId) : null
 
         const signedAmount = row.type === 'expense' ? -normalizedAmount : normalizedAmount
+        const snapshot = await resolveTransactionBaseSnapshot({
+          date: row.date,
+          amount: signedAmount,
+          currency: row.currency,
+          userTimeZone,
+          currentRates,
+          historicalCache,
+        })
 
         createPayloads.push({
           userId,
@@ -160,6 +199,12 @@ export async function POST(request: Request) {
           amount: signedAmount,
           currency: row.currency,
           categoryKey: row.categoryKey || undefined,
+          baseCurrencySnapshot: snapshot.baseCurrencySnapshot,
+          baseAmountSnapshot: snapshot.baseAmountSnapshot,
+          exchangeToBaseAmountSnapshot: snapshot.exchangeToBaseAmountSnapshot,
+          snapshotRateApplied: snapshot.snapshotRateApplied,
+          snapshotRateDate: snapshot.snapshotRateDate,
+          snapshotRateSource: snapshot.snapshotRateSource,
         })
 
         if (account && shouldApplyBalanceAdjustment(row.date, userTimeZone, row.applyBalanceAdjustment)) {

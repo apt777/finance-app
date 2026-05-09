@@ -3,6 +3,7 @@ import prisma from '@lib/prisma'
 import { requireRouteSession } from '@/lib/server-auth'
 import { DEFAULT_TRANSACTION_CATEGORIES } from '@/lib/defaultCategories'
 import { ensureDefaultCategories } from '@/lib/categories'
+import { resolveTransactionBaseSnapshot } from '@/lib/transactionBaseSnapshot'
 import { getTodayDateStringInTimeZone } from '@/lib/timezone'
 import { getUserTimeZone } from '@/lib/user-timezone'
 
@@ -178,6 +179,14 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     const userTimeZone = await getUserTimeZone(userId)
     const applyBalance = shouldApplyBalanceAdjustment(body.date, userTimeZone, body.applyBalanceAdjustment)
     const storedNotes = serializeNotes(body.notes, applyBalance)
+    const currentRates = await prisma.exchangeRate.findMany({
+      where: { userId },
+      select: {
+        fromCurrency: true,
+        toCurrency: true,
+        rate: true,
+      },
+    })
     const operations: any[] = []
 
     if (transactionAffectsBalance(existingTransaction)) {
@@ -245,6 +254,16 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
         return NextResponse.json({ error: 'Invalid exchange amount' }, { status: 400 })
       }
 
+      const snapshot = await resolveTransactionBaseSnapshot({
+        date: body.date,
+        amount: transactionAmount,
+        currency: body.currency,
+        exchangeToAmount: body.type === 'exchange' ? exchangeToAmount : null,
+        exchangeToCurrency: body.type === 'exchange' ? exchangeToCurrency : null,
+        userTimeZone,
+        currentRates,
+      })
+
       if (applyBalance) {
         operations.push(
           prisma.account.update({
@@ -282,6 +301,12 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
             exchangeToAmount: body.type === 'exchange' ? exchangeToAmount : null,
             exchangeToCurrency: body.type === 'exchange' ? exchangeToCurrency : null,
             exchangeRateApplied: body.type === 'exchange' ? exchangeRateApplied : null,
+            baseCurrencySnapshot: snapshot.baseCurrencySnapshot,
+            baseAmountSnapshot: snapshot.baseAmountSnapshot,
+            exchangeToBaseAmountSnapshot: snapshot.exchangeToBaseAmountSnapshot,
+            snapshotRateApplied: snapshot.snapshotRateApplied,
+            snapshotRateDate: snapshot.snapshotRateDate,
+            snapshotRateSource: snapshot.snapshotRateSource,
             notes: storedNotes,
           } as any,
         }),
@@ -298,9 +323,16 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       }
 
       const shouldAdjustAccountBalance = account ? applyBalance : false
+      const signedAmount = body.type === 'expense' ? -transactionAmount : transactionAmount
+      const snapshot = await resolveTransactionBaseSnapshot({
+        date: body.date,
+        amount: signedAmount,
+        currency: body.currency,
+        userTimeZone,
+        currentRates,
+      })
 
       if (account && shouldAdjustAccountBalance) {
-        const signedAmount = body.type === 'expense' ? -transactionAmount : transactionAmount
         operations.push(
           prisma.account.update({
             where: { id: account.id },
@@ -323,12 +355,18 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
             date: new Date(body.date),
             description: body.description,
             type: body.type,
-            amount: body.type === 'expense' ? -transactionAmount : transactionAmount,
+            amount: signedAmount,
             currency: body.currency,
             categoryKey: normalizedCategoryKey,
             exchangeToAmount: null,
             exchangeToCurrency: null,
             exchangeRateApplied: null,
+            baseCurrencySnapshot: snapshot.baseCurrencySnapshot,
+            baseAmountSnapshot: snapshot.baseAmountSnapshot,
+            exchangeToBaseAmountSnapshot: snapshot.exchangeToBaseAmountSnapshot,
+            snapshotRateApplied: snapshot.snapshotRateApplied,
+            snapshotRateDate: snapshot.snapshotRateDate,
+            snapshotRateSource: snapshot.snapshotRateSource,
             notes: storedNotes,
           } as any,
         }),
