@@ -57,14 +57,6 @@ function normalizeTransactionType(
   return amount < 0 ? 'expense' : 'income'
 }
 
-function normalizeCompact(value: string | null | undefined) {
-  return (value || '').toLowerCase().replace(/\s+/g, '')
-}
-
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
-
 function addAmountToNestedMonthMap(
   target: Map<string, Map<string, number>>,
   accountId: string,
@@ -74,46 +66,6 @@ function addAmountToNestedMonthMap(
   const current = target.get(accountId) ?? new Map<string, number>()
   current.set(month, (current.get(month) ?? 0) + amount)
   target.set(accountId, current)
-}
-
-function findTransitFundingTargetFromDescription(
-  description: string,
-  transitAccounts: Array<{ id: string; name: string }>
-) {
-  const compactDescription = normalizeCompact(description)
-  if (!compactDescription) {
-    return null
-  }
-
-  const genericChargeKeywords = ['충전', 'チャージ', 'charge', 'topup', 'top-up', '充值']
-  const hasGenericChargeKeyword = genericChargeKeywords.some((keyword) => compactDescription.includes(normalizeCompact(keyword)))
-
-  for (const account of transitAccounts) {
-    const compactName = normalizeCompact(account.name)
-    if (!compactName) continue
-
-    const mentionsAccount = compactDescription.includes(compactName)
-    const bareAccountTailPattern = new RegExp(`[\\d,.]+${escapeRegExp(compactName)}$`)
-    const hasCompactChargeSuffix =
-      compactDescription.includes(`${compactName}충`) ||
-      compactDescription.includes(`${compactName}충전`) ||
-      compactDescription.includes(`${compactName}charge`) ||
-      compactDescription.includes(`${compactName}チャージ`) ||
-      compactDescription.includes(`${compactName}充值`)
-    const hasBareAccountTail =
-      compactDescription.endsWith(compactName) ||
-      bareAccountTailPattern.test(compactDescription)
-
-    if (mentionsAccount && (hasGenericChargeKeyword || hasCompactChargeSuffix || hasBareAccountTail)) {
-      return account
-    }
-  }
-
-  if (hasGenericChargeKeyword && transitAccounts.length === 1) {
-    return transitAccounts[0]
-  }
-
-  return null
 }
 
 export async function GET() {
@@ -200,13 +152,6 @@ export async function GET() {
         transaction.amount,
         transaction.categoryKey ? categoryTypeMap.get(transaction.categoryKey) : null
       )
-      const inferredTransitFundingTarget =
-        transaction.accountId && !transitAccountIds.has(transaction.accountId) && transactionType === 'expense'
-          ? findTransitFundingTargetFromDescription(
-              transaction.description,
-              transitAccounts.map((account) => ({ id: account.id, name: account.name }))
-            )
-          : null
 
       if (transactionType === 'transfer') {
         if (transaction.toAccountId && transitAccountIds.has(transaction.toAccountId)) {
@@ -250,20 +195,6 @@ export async function GET() {
       const monthly = monthlyMap.get(key) ?? { month: key, income: 0, expense: 0, net: 0 }
       const yearly = yearlyMap.get(date.getFullYear()) ?? { year: date.getFullYear(), income: 0, expense: 0, net: 0 }
       const normalizedAmount = Math.abs(convertAmount(transaction.amount, transaction.currency, baseCurrency))
-
-      if (inferredTransitFundingTarget) {
-        transitFundingMap.set(
-          inferredTransitFundingTarget.id,
-          (transitFundingMap.get(inferredTransitFundingTarget.id) ?? 0) + Math.abs(transaction.amount)
-        )
-        addAmountToNestedMonthMap(
-          transitFundingByMonthMap,
-          inferredTransitFundingTarget.id,
-          key,
-          Math.abs(transaction.amount)
-        )
-        continue
-      }
 
       if (transaction.accountId && transitAccountIds.has(transaction.accountId)) {
         if (transactionType === 'income') {
