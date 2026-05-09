@@ -70,6 +70,10 @@ function addAmountToNestedMonthMap(
   target.set(accountId, current)
 }
 
+function roundAnalysisAmount(value: number) {
+  return Math.round(value)
+}
+
 export async function GET() {
   const { userId } = await requireRouteSession()
 
@@ -419,14 +423,50 @@ export async function GET() {
     })
 
     return NextResponse.json({
-      monthly: Array.from(monthlyMap.values()).slice(-12),
-      yearly: Array.from(yearlyMap.values()).sort((a, b) => a.year - b.year),
+      monthly: Array.from(monthlyMap.values())
+        .slice(-12)
+        .map((item) => ({
+          ...item,
+          income: roundAnalysisAmount(item.income),
+          expense: roundAnalysisAmount(item.expense),
+          net: roundAnalysisAmount(item.net),
+        })),
+      yearly: Array.from(yearlyMap.values())
+        .sort((a, b) => a.year - b.year)
+        .map((item) => ({
+          ...item,
+          income: roundAnalysisAmount(item.income),
+          expense: roundAnalysisAmount(item.expense),
+          net: roundAnalysisAmount(item.net),
+        })),
       exchangeMonthly: Array.from(exchangeMonthlyMap.values()).sort((a, b) => a.month.localeCompare(b.month)).slice(-12),
-      topCategories,
-      monthlyCategoryBreakdown,
+      topCategories: topCategories.map((item) => ({
+        ...item,
+        amount: roundAnalysisAmount(item.amount),
+      })),
+      monthlyCategoryBreakdown: monthlyCategoryBreakdown.map((item) => ({
+        ...item,
+        categories: item.categories.map((category) => ({
+          ...category,
+          amount: roundAnalysisAmount(category.amount),
+        })),
+      })),
       baseCurrency,
-      budgetStatus,
-      inferredTransitExpense,
+      budgetStatus: budgetStatus.map((budget) => ({
+        ...budget,
+        actual: roundAnalysisAmount(budget.actual),
+      })),
+      inferredTransitExpense: {
+        total: roundAnalysisAmount(inferredTransitExpense.total),
+        accounts: inferredTransitExpense.accounts.map((account) => ({
+          ...account,
+          topUpAmount: roundAnalysisAmount(account.topUpAmount),
+          recordedExpenseAmount: roundAnalysisAmount(account.recordedExpenseAmount),
+          currentBalance: roundAnalysisAmount(account.currentBalance),
+          inferredExpenseAmount: roundAnalysisAmount(account.inferredExpenseAmount),
+          inferredExpenseBaseAmount: roundAnalysisAmount(account.inferredExpenseBaseAmount),
+        })),
+      },
     })
   } catch (error: any) {
     console.error('Failed to build analysis summary:', error)
