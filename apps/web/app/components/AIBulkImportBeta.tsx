@@ -450,12 +450,12 @@ export default function AIBulkImportBeta() {
 
             <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs leading-6 text-slate-500">
               {locale === 'en'
-                ? 'Transfer beta: if you choose a source account above and type something like "Suica top-up 2000", Kablus will save it as a transfer.'
+                ? 'Transfer beta: type something like "Suica transit-card top-up 2000" to create a transit-card top-up transfer candidate. You can choose the source account above, or write both sides directly like "SMBC Gold Card -> Suica transit-card top-up 2000".'
                 : locale === 'ja'
-                  ? '送金ベータ: 上で出金口座を選んだ状態で「Suica チャージ 2000」のように入力すると、振替として保存します。'
+                  ? '振替ベータ: 「Suica 交通カードチャージ 2000」のように入力すると、交通カードへのチャージ振替候補として認識します。上で出金口座を選ぶか、「SMBCゴールドカード -> Suica 交通カードチャージ 2000」のように出金口座と入金口座を一緒に書くこともできます。'
                   : locale === 'zh'
-                    ? '转账 Beta：先在上方选择转出账户，再输入“Suica 充值 2000”这类内容时，会按转账保存。'
-                    : '이체 베타: 위에서 출금 계좌를 고른 뒤 "스이카충전 2000"처럼 입력하면 이체로 저장됩니다.'}
+                    ? '转账 Beta：输入“Suica 交通卡充值 2000”这类内容时，会识别为交通卡充值转账候选。你可以先在上方选择转出账户，也可以像“SMBC골드카드 -> 스이카 交通卡充值 2000”这样把转出账户和转入账户一起写上。'
+                    : '이체 베타: "스이카 교통카드충전 2000"처럼 입력하면 교통카드 충전 이체 후보로 인식합니다. 출금 계좌를 위에서 고르거나, "SMBC골드카드 -> 스이카 교통카드충전 2000"처럼 출금 계좌와 입금 계좌를 함께 적을 수도 있습니다.'}
             </div>
 
             <button
