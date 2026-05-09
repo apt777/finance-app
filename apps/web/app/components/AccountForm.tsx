@@ -180,24 +180,24 @@ const AccountForm = ({ onAccountAdded, initialData }: AccountFormProps) => {
     locale === 'en'
       ? {
           toggle: 'Auto-categorize remaining card usage',
-          desc: 'Calculate top-ups minus recorded card spending minus the current balance, then add the remainder to the selected expense category in analysis.',
+          desc: 'When enabled, Kablus calculates top-ups minus recorded card spending minus the current balance, then adds the estimated remainder to the selected expense category in analysis. When disabled, no estimated transit-card usage is included in analysis cards or category breakdowns.',
           category: 'Category for inferred spending',
         }
       : locale === 'ja'
         ? {
-            toggle: '残りの利用額を自動分類する',
-            desc: 'チャージ額から記録済みの利用額と現在残高を引いた残りを、分析で選択した支出カテゴリへ自動で加えます。',
-            category: '推定利用額のカテゴリ',
-          }
+          toggle: '残りの利用額を自動分類する',
+          desc: '有効にすると、チャージ額から記録済みの利用額と現在残高を引いた残りを、分析で選択した支出カテゴリへ推定値として自動で加えます。無効にすると、この交通カードの推定利用額は分析カードやカテゴリ内訳に反映されません。',
+          category: '推定利用額のカテゴリ',
+        }
         : locale === 'zh'
           ? {
               toggle: '自动归类剩余使用金额',
-              desc: '用充值金额减去已记录的卡内消费和当前余额后，把剩余金额自动加入分析中的所选支出分类。',
+              desc: '启用后，Kablus 会用充值金额减去已记录的卡内消费和当前余额，并将剩余的推定金额自动加入分析中的所选支出分类。关闭后，这张交通卡的推定使用额不会出现在分析卡片或分类明细中。',
               category: '推定支出的分类',
             }
           : {
               toggle: '남는 사용 금액 자동 분류',
-              desc: '충전액에서 기록된 카드 사용액과 현재 잔액을 뺀 나머지를, 분석에서 선택한 지출 카테고리에 자동으로 합산합니다.',
+              desc: '체크하면 충전액에서 기록된 카드 사용액과 현재 잔액을 뺀 나머지를 추정값으로 계산해, 분석에서 선택한 지출 카테고리에 자동 합산합니다. 체크를 끄면 이 교통카드의 추정 사용액은 분석 카드와 카테고리 분석에 반영되지 않습니다.',
               category: '추정 사용분 카테고리',
             }
 
