@@ -44,10 +44,12 @@ const parseTransactions = async ({ input, defaultAccountId }: { input: string; d
 
 const createTransactionsBulk = async (rows: Array<{
   clientId: string
-  accountId: string
+  accountId?: string
+  fromAccountId?: string
+  toAccountId?: string
   date: string
   description: string
-  type: 'income' | 'expense'
+  type: 'income' | 'expense' | 'transfer'
   amount: number
   currency: string
   categoryKey?: string | null
@@ -125,13 +127,16 @@ export default function AIBulkImportBeta() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [rowValidationErrors, setRowValidationErrors] = useState<Record<string, RowValidationErrors>>({})
 
-  const getEffectiveAccountId = (row: ParsedRow) => row.accountId || selectedAccountId
+  const getEffectiveAccountId = (row: ParsedRow) => (row.type === 'transfer' ? row.accountId || '' : row.accountId || selectedAccountId)
   const getEffectiveAccount = (row: ParsedRow) => accounts.find((account) => account.id === getEffectiveAccountId(row))
+  const getTransferSourceAccount = () => accounts.find((account) => account.id === selectedAccountId)
   const duplicateState = useMemo(() => {
     const result = new Map<string, string>()
     const seenDraftRows: Array<{
       id: string
       accountId?: string | null
+      fromAccountId?: string | null
+      toAccountId?: string | null
       date: string
       description: string
       type: 'income' | 'expense' | 'transfer'
@@ -142,13 +147,15 @@ export default function AIBulkImportBeta() {
       const effectiveAccountId = getEffectiveAccountId(row)
       const effectiveAccount = accounts.find((account) => account.id === effectiveAccountId)
 
-      if (!effectiveAccountId || row.error || row.type === 'transfer' || !row.date || !row.description || !row.amount || !row.type) {
+      if (!row.date || !row.description || !row.amount || !row.type || row.error) {
         continue
       }
 
       const duplicateInExisting = findDuplicateTransaction(
         {
-          accountId: effectiveAccountId,
+          accountId: row.type === 'transfer' ? null : effectiveAccountId,
+          fromAccountId: row.type === 'transfer' ? selectedAccountId : null,
+          toAccountId: row.type === 'transfer' ? effectiveAccountId : null,
           date: row.date,
           description: row.description,
           type: row.type,
@@ -165,7 +172,9 @@ export default function AIBulkImportBeta() {
 
       const duplicateInDraft = findDuplicateTransaction(
         {
-          accountId: effectiveAccountId,
+          accountId: row.type === 'transfer' ? null : effectiveAccountId,
+          fromAccountId: row.type === 'transfer' ? selectedAccountId : null,
+          toAccountId: row.type === 'transfer' ? effectiveAccountId : null,
           date: row.date,
           description: row.description,
           type: row.type,
@@ -182,7 +191,9 @@ export default function AIBulkImportBeta() {
 
       seenDraftRows.push({
         id: row.id,
-        accountId: effectiveAccountId,
+        accountId: row.type === 'transfer' ? null : effectiveAccountId,
+        fromAccountId: row.type === 'transfer' ? selectedAccountId : null,
+        toAccountId: row.type === 'transfer' ? effectiveAccountId : null,
         date: row.date,
         description: row.description,
         type: row.type,
@@ -211,11 +222,15 @@ export default function AIBulkImportBeta() {
       errors.accountId = ui.bulkImport.accountRequired
     }
 
+    if (row.type === 'transfer' && !selectedAccountId) {
+      errors.accountId = ui.bulkImport.accountRequired
+    }
+
     return errors
   }
 
   const validRows = rows.filter((row) => {
-    if (row.error || row.type === 'transfer') {
+    if (row.error) {
       return false
     }
 
@@ -250,15 +265,35 @@ export default function AIBulkImportBeta() {
 
       const payload = validRows
         .map((row) => {
-          if (!row.date || !row.description || !row.amount || !row.type || row.type === 'transfer') {
+          if (!row.date || !row.description || !row.amount || !row.type) {
             return null
+          }
+
+          if (row.type === 'transfer') {
+            const fromAccount = getTransferSourceAccount()
+            const toAccount = getEffectiveAccount(row)
+
+            if (!fromAccount || !toAccount || fromAccount.id === toAccount.id) {
+              return null
+            }
+
+            return {
+              clientId: row.id,
+              fromAccountId: fromAccount.id,
+              toAccountId: toAccount.id,
+              date: row.date,
+              description: row.description,
+              type: 'transfer' as const,
+              amount: Number(row.amount),
+              currency: fromAccount.currency,
+              categoryKey: 'transfer',
+            }
           }
 
           const targetAccount = getEffectiveAccount(row)
           if (!targetAccount) {
             return null
           }
-
           return {
             clientId: row.id,
             accountId: targetAccount.id,
@@ -410,6 +445,16 @@ export default function AIBulkImportBeta() {
                     : '팁: "date 3/1" 또는 "3/1"처럼 날짜만 적은 줄을 넣으면, 다음 날짜 줄이 나오기 전까지 아래 행들이 그 날짜로 처리됩니다.'}
             </div>
 
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs leading-6 text-slate-500">
+              {locale === 'en'
+                ? 'Transfer beta: if you choose a source account above and type something like "Suica top-up 2000", Kablus will save it as a transfer.'
+                : locale === 'ja'
+                  ? '送金ベータ: 上で出金口座を選んだ状態で「Suica チャージ 2000」のように入力すると、振替として保存します。'
+                  : locale === 'zh'
+                    ? '转账 Beta：先在上方选择转出账户，再输入“Suica 充值 2000”这类内容时，会按转账保存。'
+                    : '이체 베타: 위에서 출금 계좌를 고른 뒤 "스이카충전 2000"처럼 입력하면 이체로 저장됩니다.'}
+            </div>
+
             <button
               type="button"
               onClick={() => parseMutation.mutate({ input, defaultAccountId: selectedAccountId || undefined })}
@@ -518,24 +563,28 @@ export default function AIBulkImportBeta() {
                         const nextCategory = categories.find((category) => category.type === nextType)
                         updateRow(row.id, {
                           type: nextType,
-                          categoryKey: nextCategory?.key || null,
+                          categoryKey: nextType === 'transfer' ? 'transfer' : nextCategory?.key || null,
                         })
                       }}
                       className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="expense">{tTransactions('expense')}</option>
                       <option value="income">{tTransactions('income')}</option>
+                      <option value="transfer">{tTransactions('transfer')}</option>
                     </select>
                     <select
                       value={row.categoryKey || ''}
                       onChange={(event) => updateRow(row.id, { categoryKey: event.target.value })}
-                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-500"
+                      disabled={row.type === 'transfer'}
+                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 disabled:text-slate-400"
                     >
-                      {filteredCategories.map((category) => (
-                        <option key={category.id} value={category.key}>
-                          {category.name}
-                        </option>
-                      ))}
+                      {row.type === 'transfer'
+                        ? <option value="transfer">{tTransactions('transfer')}</option>
+                        : filteredCategories.map((category) => (
+                            <option key={category.id} value={category.key}>
+                              {category.name}
+                            </option>
+                          ))}
                     </select>
                     <select
                       value={getEffectiveAccountId(row) || ''}
@@ -585,7 +634,9 @@ export default function AIBulkImportBeta() {
                     ) : null}
                     {getEffectiveAccount(row) ? (
                       <span className="rounded-full bg-white px-2.5 py-1 text-slate-600 shadow-sm">
-                        {getEffectiveAccount(row)?.name}
+                        {row.type === 'transfer'
+                          ? `${getTransferSourceAccount()?.name || tSettings('betaSelectAccount')} -> ${getEffectiveAccount(row)?.name}`
+                          : getEffectiveAccount(row)?.name}
                       </span>
                     ) : null}
                     {duplicateState.get(row.id) ? (

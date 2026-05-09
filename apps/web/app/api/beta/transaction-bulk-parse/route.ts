@@ -22,7 +22,21 @@ interface AccountShape {
   id: string
   name: string
   currency: string
+  type?: string | null
 }
+
+const TRANSFER_HINTS = [
+  '충전',
+  'チャージ',
+  'charge',
+  'topup',
+  'top-up',
+  '充值',
+  '입금',
+  'deposit',
+  '송금',
+  'transfer',
+]
 
 const INCOME_HINTS = [
   '월급',
@@ -353,6 +367,11 @@ function splitCompoundSegments(value: string) {
   return segments.length > 0 ? segments : [value]
 }
 
+function isTransferHint(value: string) {
+  const normalized = value.toLowerCase().replace(/\s+/g, '')
+  return TRANSFER_HINTS.some((keyword) => normalized.includes(keyword.toLowerCase().replace(/\s+/g, '')))
+}
+
 function parseLine(
   line: string,
   categories: CategoryShape[],
@@ -404,6 +423,35 @@ function parseLine(
   const inferredAccount = inferAccount(rawDescription, accounts, defaultAccountId)
   const description = stripAccountMentions(rawDescription, accounts, inferredAccount)
   const finalDescription = description || rawDescription
+  const defaultAccount = accounts.find((account) => account.id === defaultAccountId) || null
+  const shouldTreatAsTransfer =
+    Boolean(defaultAccountId) &&
+    Boolean(defaultAccount) &&
+    Boolean(inferredAccount) &&
+    inferredAccount?.id !== defaultAccountId &&
+    (
+      isTransferHint(rawDescription) ||
+      isTransferHint(finalDescription) ||
+      !finalDescription ||
+      finalDescription.length <= 2
+    )
+
+  if (shouldTreatAsTransfer && inferredAccount) {
+    return {
+      id: `parsed-${index}`,
+      source: trimmed,
+      date: parsedDate || defaultDate || today,
+      description: `${inferredAccount.name} 충전`,
+      amount: Math.abs(numericAmount),
+      type: 'transfer' as const,
+      accountId: inferredAccount.id,
+      accountName: inferredAccount.name,
+      categoryKey: 'transfer',
+      categoryName: 'Transfer',
+      confidence: 0.92,
+    }
+  }
+
   const type = inferType(numericAmount, finalDescription)
   const category = recommendCategory(finalDescription, type, categories)
   return {
@@ -438,7 +486,7 @@ export async function POST(request: Request) {
     const categories = await ensureDefaultCategories(userId)
     const accounts = await prisma.account.findMany({
       where: { userId },
-      select: { id: true, name: true, currency: true },
+      select: { id: true, name: true, currency: true, type: true },
       orderBy: { name: 'asc' },
     })
     const userTimeZone = await getUserTimeZone(userId)

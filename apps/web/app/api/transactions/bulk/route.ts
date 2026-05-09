@@ -6,10 +6,12 @@ import { getUserTimeZone } from '@/lib/user-timezone'
 
 interface BulkRow {
   clientId?: string
-  accountId: string
+  accountId?: string
+  fromAccountId?: string
+  toAccountId?: string
   date: string
   description: string
-  type: 'income' | 'expense'
+  type: 'income' | 'expense' | 'transfer'
   amount: number
   currency: string
   categoryKey?: string | null
@@ -49,14 +51,20 @@ export async function POST(request: Request) {
     }
 
     const validRows = rows.filter((row) => {
+      const isTransfer = row.type === 'transfer'
+
       return (
-        row.accountId &&
         row.date &&
         row.description &&
-        (row.type === 'income' || row.type === 'expense') &&
+        (row.type === 'income' || row.type === 'expense' || row.type === 'transfer') &&
         Number.isFinite(Number(row.amount)) &&
         Number(row.amount) > 0 &&
-        row.currency
+        row.currency &&
+        (
+          isTransfer
+            ? row.fromAccountId && row.toAccountId && row.fromAccountId !== row.toAccountId
+            : row.accountId
+        )
       )
     })
 
@@ -64,7 +72,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No valid transactions to import' }, { status: 400 })
     }
 
-    const accountIds = [...new Set(validRows.map((row) => row.accountId))]
+    const accountIds = [
+      ...new Set(
+        validRows.flatMap((row) => {
+          if (row.type === 'transfer') {
+            return [row.fromAccountId, row.toAccountId].filter(Boolean) as string[]
+          }
+
+          return row.accountId ? [row.accountId] : []
+        })
+      ),
+    ]
     const accounts = await prisma.account.findMany({
       where: {
         userId,
@@ -76,10 +94,12 @@ export async function POST(request: Request) {
     const accountBalanceMap = new Map(accounts.map((account) => [account.id, account.balance]))
     const createPayloads: Array<{
       userId: string
-      accountId: string
+      accountId?: string
+      fromAccountId?: string
+      toAccountId?: string
       date: Date
       description: string
-      type: 'income' | 'expense'
+      type: 'income' | 'expense' | 'transfer'
       amount: number
       currency: string
       categoryKey?: string | null
@@ -90,38 +110,75 @@ export async function POST(request: Request) {
     const skippedDuplicateClientIds: string[] = []
 
     for (const row of validRows) {
-      const account = accountMap.get(row.accountId)
-
-      if (!account) {
-        continue
-      }
-
       const normalizedAmount = Number(row.amount)
-      const signedAmount = row.type === 'expense' ? -normalizedAmount : normalizedAmount
+      if (row.type === 'transfer') {
+        const fromAccount = row.fromAccountId ? accountMap.get(row.fromAccountId) : null
+        const toAccount = row.toAccountId ? accountMap.get(row.toAccountId) : null
 
-      createPayloads.push({
-        userId,
-        accountId: row.accountId,
-        date: new Date(row.date),
-        description: row.description,
-        type: row.type,
-        amount: signedAmount,
-        currency: row.currency,
-        categoryKey: row.categoryKey || undefined,
-      })
+        if (!fromAccount || !toAccount) {
+          continue
+        }
 
-      if (shouldApplyBalanceAdjustment(row.date, userTimeZone, row.applyBalanceAdjustment)) {
-        const currentBalance = accountBalanceMap.get(row.accountId) ?? account.balance
-        const nextBalance =
-          account.type === 'credit_card'
-            ? row.type === 'income'
-              ? currentBalance - normalizedAmount
-              : currentBalance + normalizedAmount
-            : row.type === 'income'
-              ? currentBalance + normalizedAmount
-              : currentBalance - normalizedAmount
+        createPayloads.push({
+          userId,
+          fromAccountId: fromAccount.id,
+          toAccountId: toAccount.id,
+          date: new Date(row.date),
+          description: row.description,
+          type: 'transfer',
+          amount: normalizedAmount,
+          currency: row.currency,
+          categoryKey: row.categoryKey || 'transfer',
+        })
 
-        accountBalanceMap.set(row.accountId, nextBalance)
+        if (shouldApplyBalanceAdjustment(row.date, userTimeZone, row.applyBalanceAdjustment)) {
+          const currentFromBalance = accountBalanceMap.get(fromAccount.id) ?? fromAccount.balance
+          const currentToBalance = accountBalanceMap.get(toAccount.id) ?? toAccount.balance
+          const nextFromBalance =
+            fromAccount.type === 'credit_card'
+              ? currentFromBalance + normalizedAmount
+              : currentFromBalance - normalizedAmount
+          const nextToBalance =
+            toAccount.type === 'credit_card'
+              ? currentToBalance - normalizedAmount
+              : currentToBalance + normalizedAmount
+
+          accountBalanceMap.set(fromAccount.id, nextFromBalance)
+          accountBalanceMap.set(toAccount.id, nextToBalance)
+        }
+      } else {
+        const account = row.accountId ? accountMap.get(row.accountId) : null
+
+        if (!account) {
+          continue
+        }
+
+        const signedAmount = row.type === 'expense' ? -normalizedAmount : normalizedAmount
+
+        createPayloads.push({
+          userId,
+          accountId: row.accountId,
+          date: new Date(row.date),
+          description: row.description,
+          type: row.type,
+          amount: signedAmount,
+          currency: row.currency,
+          categoryKey: row.categoryKey || undefined,
+        })
+
+        if (shouldApplyBalanceAdjustment(row.date, userTimeZone, row.applyBalanceAdjustment)) {
+          const currentBalance = accountBalanceMap.get(row.accountId as string) ?? account.balance
+          const nextBalance =
+            account.type === 'credit_card'
+              ? row.type === 'income'
+                ? currentBalance - normalizedAmount
+                : currentBalance + normalizedAmount
+              : row.type === 'income'
+                ? currentBalance + normalizedAmount
+                : currentBalance - normalizedAmount
+
+          accountBalanceMap.set(row.accountId as string, nextBalance)
+        }
       }
 
       importedCount += 1
