@@ -547,6 +547,9 @@ function parseLine(
   } else if (isTransferHint(rawDescription) && mentionedAccounts.length >= 2) {
     transferFromAccount = mentionedAccounts[0]?.account || null
     transferToAccount = mentionedAccounts.find((mention) => mention.account.id !== transferFromAccount?.id)?.account || null
+  } else if (isTransferHint(rawDescription) && mentionedAccounts.length === 1) {
+    transferFromAccount = defaultAccount
+    transferToAccount = mentionedAccounts[0]?.account || null
   }
 
   const explicitTransferTarget = isTransferHint(rawDescription)
@@ -556,9 +559,8 @@ function parseLine(
   const description = stripAccountMentions(rawDescription, accounts, transferToAccount || inferredAccount)
   const finalDescription = description || rawDescription
   const shouldTreatAsTransfer =
-    Boolean(transferFromAccount) &&
     Boolean(transferToAccount) &&
-    transferFromAccount?.id !== transferToAccount?.id &&
+    (!transferFromAccount || transferFromAccount?.id !== transferToAccount?.id) &&
     (
       explicitArrowTransfer ||
       isTransferHint(rawDescription) ||
@@ -567,7 +569,7 @@ function parseLine(
       finalDescription.length <= 2
     )
 
-  if (shouldTreatAsTransfer && transferFromAccount && transferToAccount) {
+  if (shouldTreatAsTransfer && transferToAccount) {
     return {
       id: `parsed-${index}`,
       source: trimmed,
@@ -577,9 +579,9 @@ function parseLine(
       type: 'transfer' as const,
       accountId: transferToAccount.id,
       accountName: transferToAccount.name,
-      fromAccountId: transferFromAccount.id,
+      fromAccountId: transferFromAccount?.id || null,
       toAccountId: transferToAccount.id,
-      currency: transferFromAccount.currency || transferToAccount.currency || 'JPY',
+      currency: transferFromAccount?.currency || transferToAccount.currency || 'JPY',
       categoryKey: 'transfer',
       categoryName: 'Transfer',
       confidence: 0.92,

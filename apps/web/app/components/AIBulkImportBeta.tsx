@@ -78,7 +78,7 @@ const createTransactionsBulk = async (rows: Array<{
   }>
 }
 
-type RowValidationErrors = Partial<Record<'date' | 'description' | 'amount' | 'accountId', string>>
+type RowValidationErrors = Partial<Record<'date' | 'description' | 'amount' | 'accountId' | 'fromAccountId' | 'toAccountId', string>>
 
 export default function AIBulkImportBeta() {
   const locale = useLocale()
@@ -222,14 +222,14 @@ export default function AIBulkImportBeta() {
       errors.amount = ui.bulkImport.amountRequired
     }
 
-    if (!getEffectiveAccountId(row)) {
-      if (row.type === 'transfer') {
-        errors.accountId = ui.bulkImport.accountRequired
+    if (row.type === 'transfer') {
+      if (!getTransferSourceAccount(row)?.id) {
+        errors.fromAccountId = ui.bulkImport.accountRequired
       }
-    }
-
-    if (row.type === 'transfer' && !getTransferSourceAccount(row)?.id) {
-      errors.accountId = ui.bulkImport.accountRequired
+      if (!getEffectiveAccountId(row)) {
+        errors.toAccountId = ui.bulkImport.accountRequired
+      }
+      return errors
     }
 
     return errors
@@ -539,7 +539,7 @@ export default function AIBulkImportBeta() {
 
                     return (
                       <>
-                  <div className="grid grid-cols-1 gap-3 md:grid-cols-[150px_minmax(0,1fr)_140px_140px_180px_180px_auto] md:items-center">
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-[150px_minmax(0,1fr)_140px_140px_180px_220px_auto] md:items-center">
                     <input
                       type="date"
                       value={row.date || ''}
@@ -589,28 +589,47 @@ export default function AIBulkImportBeta() {
                             </option>
                           ))}
                     </select>
-                    <select
-                      value={getEffectiveAccountId(row) || ''}
-                      onChange={(event) =>
-                        updateRow(
-                          row.id,
-                          row.type === 'transfer'
-                            ? {
-                                accountId: event.target.value || null,
-                                toAccountId: event.target.value || null,
-                              }
-                            : { accountId: event.target.value || null }
-                        )
-                      }
-                      className={`rounded-xl border bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 ${validationErrors.accountId ? 'border-rose-300 focus:border-rose-300 focus:ring-rose-200' : 'border-slate-200 focus:border-blue-300 focus:ring-blue-500'}`}
-                    >
-                      <option value="">{tSettings('betaSelectAccount')}</option>
-                      {accounts.map((account) => (
-                        <option key={account.id} value={account.id}>
-                          {account.name} ({account.currency})
-                        </option>
-                      ))}
-                    </select>
+                    {row.type === 'transfer' ? (
+                      <div className="grid grid-cols-1 gap-2">
+                        <select
+                          value={getTransferSourceAccount(row)?.id || ''}
+                          onChange={(event) => updateRow(row.id, { fromAccountId: event.target.value || null })}
+                          className={`rounded-xl border bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 ${validationErrors.fromAccountId ? 'border-rose-300 focus:border-rose-300 focus:ring-rose-200' : 'border-slate-200 focus:border-blue-300 focus:ring-blue-500'}`}
+                        >
+                          <option value="">{locale === 'en' ? 'From account' : locale === 'ja' ? '出金口座' : locale === 'zh' ? '转出账户' : '출금 계좌'}</option>
+                          {accounts.map((account) => (
+                            <option key={account.id} value={account.id}>
+                              {account.name} ({account.currency})
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          value={getEffectiveAccountId(row) || ''}
+                          onChange={(event) => updateRow(row.id, { accountId: event.target.value || null, toAccountId: event.target.value || null })}
+                          className={`rounded-xl border bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 ${validationErrors.toAccountId ? 'border-rose-300 focus:border-rose-300 focus:ring-rose-200' : 'border-slate-200 focus:border-blue-300 focus:ring-blue-500'}`}
+                        >
+                          <option value="">{locale === 'en' ? 'To account' : locale === 'ja' ? '入金口座' : locale === 'zh' ? '转入账户' : '입금 계좌'}</option>
+                          {accounts.map((account) => (
+                            <option key={account.id} value={account.id}>
+                              {account.name} ({account.currency})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : (
+                      <select
+                        value={getEffectiveAccountId(row) || ''}
+                        onChange={(event) => updateRow(row.id, { accountId: event.target.value || null })}
+                        className={`rounded-xl border bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 ${validationErrors.accountId ? 'border-rose-300 focus:border-rose-300 focus:ring-rose-200' : 'border-slate-200 focus:border-blue-300 focus:ring-blue-500'}`}
+                      >
+                        <option value="">{tSettings('betaSelectAccount')}</option>
+                        {accounts.map((account) => (
+                          <option key={account.id} value={account.id}>
+                            {account.name} ({account.currency})
+                          </option>
+                        ))}
+                      </select>
+                    )}
                     <div className="flex items-center justify-between gap-2 md:justify-end">
                       <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
                         (row.confidence || 0) >= 0.9
@@ -635,6 +654,8 @@ export default function AIBulkImportBeta() {
                       {validationErrors.description ? <span className="rounded-full bg-rose-100 px-2.5 py-1">{validationErrors.description}</span> : null}
                       {validationErrors.amount ? <span className="rounded-full bg-rose-100 px-2.5 py-1">{validationErrors.amount}</span> : null}
                       {validationErrors.accountId ? <span className="rounded-full bg-rose-100 px-2.5 py-1">{validationErrors.accountId}</span> : null}
+                      {validationErrors.fromAccountId ? <span className="rounded-full bg-rose-100 px-2.5 py-1">{validationErrors.fromAccountId}</span> : null}
+                      {validationErrors.toAccountId ? <span className="rounded-full bg-rose-100 px-2.5 py-1">{validationErrors.toAccountId}</span> : null}
                     </div>
                   ) : null}
                   <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
