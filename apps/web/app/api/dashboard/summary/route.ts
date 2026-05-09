@@ -2,20 +2,8 @@ import { NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 import { requireRouteSession } from '@/lib/server-auth'
 import { processDueRecurringTransactions } from '@/lib/recurring'
-
-function monthKey(date: Date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-}
-
-function startOfDay(date: Date) {
-  const next = new Date(date)
-  next.setHours(0, 0, 0, 0)
-  return next
-}
-
-function endOfMonth(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999)
-}
+import { getCalendarDateString, getMonthKeyInTimeZone, getTodayDateStringInTimeZone } from '@/lib/timezone'
+import { getUserTimeZone } from '@/lib/user-timezone'
 
 function addAmountByCurrency(target: Record<string, number>, currency: string, amount: number) {
   target[currency] = (target[currency] || 0) + amount
@@ -31,9 +19,9 @@ export async function GET() {
   try {
     await processDueRecurringTransactions(userId)
 
-    const today = new Date()
-    const monthEnd = endOfMonth(today)
-    const currentMonthKey = monthKey(today)
+    const userTimeZone = await getUserTimeZone(userId)
+    const currentMonthKey = getMonthKeyInTimeZone(userTimeZone)
+    const todayDateString = getTodayDateStringInTimeZone(userTimeZone)
 
     const [recurringItems, accounts, paymentPlans] = await Promise.all([
       prisma.recurringTransaction.findMany({
@@ -41,10 +29,6 @@ export async function GET() {
           userId,
           isActive: true,
           type: 'expense',
-          nextRunDate: {
-            gte: startOfDay(today),
-            lte: monthEnd,
-          },
         },
         select: {
           amount: true,
@@ -80,7 +64,14 @@ export async function GET() {
     ])
 
     const recurringByCurrency: Record<string, number> = {}
-    recurringItems.forEach((item) => {
+    const upcomingRecurringItems = recurringItems
+      .filter((item) => {
+        if (!item.nextRunDate) return false
+
+        const runDate = getCalendarDateString(item.nextRunDate)
+        return runDate >= todayDateString && runDate.slice(0, 7) === currentMonthKey
+      })
+    upcomingRecurringItems.forEach((item) => {
       addAmountByCurrency(recurringByCurrency, item.currency, Math.abs(item.amount))
     })
 
@@ -106,7 +97,7 @@ export async function GET() {
     return NextResponse.json({
       recurringByCurrency,
       creditCardPaymentsByCurrency,
-      totalUpcomingCount: recurringItems.length,
+      totalUpcomingCount: upcomingRecurringItems.length,
       totalCreditCardCount: Object.values(creditCardPaymentsByCurrency).filter((amount) => amount > 0).length,
     })
   } catch (error: any) {

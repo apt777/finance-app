@@ -4,6 +4,7 @@ import { requireRouteSession } from '@/lib/server-auth'
 import { ensureDefaultCategories } from '@/lib/categories'
 import { normalizeAppLocale } from '@/lib/defaultCategories'
 import { getLocaleBaseCurrency, getLocaleMirrorCurrency, getLocaleTrackedCurrencies } from '@/lib/currencyPreferences'
+import { TIMEZONE_SETTING_KEY, getLocaleDefaultTimeZone, normalizeTimeZone } from '@/lib/timezone'
 
 interface AccountInput {
   name: string
@@ -79,6 +80,7 @@ export async function POST(request: NextRequest) {
       trackedCurrencies,
       baseCurrency,
       mirrorCurrency,
+      timeZone,
     } = await request.json() as {
       accounts: AccountInput[]
       exchangeRates: ExchangeRateInput[]
@@ -88,6 +90,7 @@ export async function POST(request: NextRequest) {
       trackedCurrencies?: string[]
       baseCurrency?: string
       mirrorCurrency?: string
+      timeZone?: string
     }
 
     if (!Array.isArray(accounts) || !Array.isArray(exchangeRates)) {
@@ -104,6 +107,7 @@ export async function POST(request: NextRequest) {
     const resolvedMirrorCurrency = typeof mirrorCurrency === 'string'
       ? mirrorCurrency
       : getLocaleMirrorCurrency(normalizedLocale)
+    const resolvedTimeZone = normalizeTimeZone(timeZone, getLocaleDefaultTimeZone(normalizedLocale))
 
     await ensureDefaultCategories(userId, normalizedLocale)
 
@@ -265,6 +269,23 @@ export async function POST(request: NextRequest) {
           userId,
           key: 'dashboard_mirror_currency',
           value: resolvedMirrorCurrency,
+        },
+      })
+
+      await tx.userSetting.upsert({
+        where: {
+          userId_key: {
+            userId,
+            key: TIMEZONE_SETTING_KEY,
+          },
+        },
+        update: {
+          value: resolvedTimeZone,
+        },
+        create: {
+          userId,
+          key: TIMEZONE_SETTING_KEY,
+          value: resolvedTimeZone,
         },
       })
     })

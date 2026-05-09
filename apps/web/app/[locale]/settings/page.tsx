@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Bell, Globe, Languages, Lock, PiggyBank, Repeat, Settings, Sparkles, Tags, Zap } from 'lucide-react'
 import CategoryManager from '@/components/CategoryManager'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
@@ -18,6 +18,12 @@ import { useTrackedCurrencies } from '@/hooks/useTrackedCurrencies'
 import { useEntitlements } from '@/hooks/useEntitlements'
 import { useAuth } from '@/context/AuthProviderClient'
 import { useRouter } from '@/navigation'
+import {
+  getClientPreferredTimeZone,
+  getLocaleDefaultTimeZone,
+  getTimeZoneOptions,
+  saveClientPreferredTimeZone,
+} from '@/lib/timezone'
 
 export default function SettingsPage() {
   const tSettings = useTranslations('settings')
@@ -30,9 +36,13 @@ export default function SettingsPage() {
   const { signOut } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const [timeZone, setTimeZone] = useState(() => getClientPreferredTimeZone(locale))
+  const [isSavingTimeZone, setIsSavingTimeZone] = useState(false)
+  const [timeZoneFeedback, setTimeZoneFeedback] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('general')
   const [isDeletingMembership, setIsDeletingMembership] = useState(false)
   const [deleteMembershipError, setDeleteMembershipError] = useState<string | null>(null)
+  const timeZoneOptions = useMemo(() => getTimeZoneOptions(locale), [locale])
   const languageNames =
     locale === 'en'
       ? { ko: 'Korean', ja: 'Japanese', en: 'English', zh: 'Chinese' }
@@ -59,6 +69,33 @@ export default function SettingsPage() {
       setActiveTab(requestedTab === 'theme' ? 'general' : requestedTab)
     }
   }, [searchParams])
+
+  useEffect(() => {
+    let isMounted = true
+
+    const fetchTimeZone = async () => {
+      try {
+        const response = await fetch('/api/preferences/timezone')
+        const payload = await response.json().catch(() => null)
+        if (!isMounted) return
+
+        const resolvedTimeZone = payload?.timeZone || getClientPreferredTimeZone(locale) || getLocaleDefaultTimeZone(locale)
+        setTimeZone(resolvedTimeZone)
+        saveClientPreferredTimeZone(resolvedTimeZone)
+      } catch {
+        const fallbackTimeZone = getClientPreferredTimeZone(locale) || getLocaleDefaultTimeZone(locale)
+        if (!isMounted) return
+        setTimeZone(fallbackTimeZone)
+        saveClientPreferredTimeZone(fallbackTimeZone)
+      }
+    }
+
+    fetchTimeZone()
+
+    return () => {
+      isMounted = false
+    }
+  }, [locale])
 
   const tabs = [
     { id: 'general', label: tSettings('general'), icon: Settings },
@@ -105,6 +142,35 @@ export default function SettingsPage() {
       setDeleteMembershipError(error.message || tSettings('deleteMembershipFailed'))
     } finally {
       setIsDeletingMembership(false)
+    }
+  }
+
+  const handleTimeZoneChange = async (nextTimeZone: string) => {
+    const previousTimeZone = timeZone
+    setTimeZone(nextTimeZone)
+    setTimeZoneFeedback(null)
+    setIsSavingTimeZone(true)
+
+    try {
+      const response = await fetch('/api/preferences/timezone', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ timeZone: nextTimeZone }),
+      })
+      const payload = await response.json().catch(() => null)
+
+      if (!response.ok) {
+        throw new Error(payload?.error || tSettings('timeZoneSaveFailed'))
+      }
+
+      saveClientPreferredTimeZone(payload?.timeZone || nextTimeZone)
+      setTimeZone(payload?.timeZone || nextTimeZone)
+      setTimeZoneFeedback(tSettings('timeZoneSaved'))
+    } catch (error: any) {
+      setTimeZone(previousTimeZone)
+      setTimeZoneFeedback(error.message || tSettings('timeZoneSaveFailed'))
+    } finally {
+      setIsSavingTimeZone(false)
     }
   }
 
@@ -273,6 +339,31 @@ export default function SettingsPage() {
                         ))}
                       </select>
                     </div>
+                  </div>
+                </div>
+
+                <div className="mt-8 border-t border-slate-200 pt-6">
+                  <div className="rounded-[24px] border border-slate-200 bg-white p-5">
+                    <label className="block text-sm font-bold uppercase tracking-[0.2em] text-slate-700">
+                      {tSettings('timeZoneSettings')}
+                    </label>
+                    <p className="mt-3 text-sm leading-6 text-slate-500">{tSettings('timeZoneDesc')}</p>
+                    <select
+                      value={timeZone}
+                      onChange={(event) => handleTimeZoneChange(event.target.value)}
+                      disabled={isSavingTimeZone}
+                      className="mt-4 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition-all focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {timeZoneOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="mt-3 text-xs leading-6 text-slate-500">{tSettings('timeZoneHelp')}</p>
+                    <p className="mt-2 text-xs font-semibold text-slate-500">
+                      {isSavingTimeZone ? tSettings('savingTimeZone') : timeZoneFeedback || tSettings('timeZoneCurrent', { value: timeZone })}
+                    </p>
                   </div>
                 </div>
 

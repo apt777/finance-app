@@ -1,4 +1,6 @@
 import prisma from '@lib/prisma'
+import { getCalendarDateString, getTodayDateStringInTimeZone } from '@/lib/timezone'
+import { getUserTimeZone } from '@/lib/user-timezone'
 
 type AccountLike = {
   id: string
@@ -92,15 +94,12 @@ export function calculateInitialRunDate(startDate: Date, interval: string, dayOf
   return calculateNextRunDate(base, interval, dayOfMonth, dayOfWeek)
 }
 
-function shouldProcessRecurring(item: RecurringWithAccounts, today: Date) {
+function shouldProcessRecurring(item: RecurringWithAccounts, todayDateString: string) {
   if (!item.isActive || !item.nextRunDate) {
     return false
   }
 
-  const nextRunDay = startOfDay(item.nextRunDate)
-  const todayDay = startOfDay(today)
-
-  return nextRunDay.getTime() <= todayDay.getTime()
+  return getCalendarDateString(item.nextRunDate) <= todayDateString
 }
 
 async function findExistingRecurringTransaction(
@@ -209,14 +208,13 @@ async function createRecurringTransaction(tx: typeof prisma, item: RecurringWith
 }
 
 export async function processDueRecurringTransactions(userId: string) {
-  const today = new Date()
+  const timeZone = await getUserTimeZone(userId)
+  const todayDateString = getTodayDateStringInTimeZone(timeZone)
   const items = await prisma.recurringTransaction.findMany({
     where: {
       userId,
       isActive: true,
-      nextRunDate: {
-        lte: endOfDay(today),
-      },
+      nextRunDate: { not: null },
     },
     include: {
       account: { select: { id: true, type: true, balance: true } },
@@ -229,8 +227,8 @@ export async function processDueRecurringTransactions(userId: string) {
   for (const item of items as RecurringWithAccounts[]) {
     let nextRunDate = item.nextRunDate
 
-    while (nextRunDate && shouldProcessRecurring({ ...item, nextRunDate }, today)) {
-      if (item.endDate && startOfDay(nextRunDate).getTime() > startOfDay(item.endDate).getTime()) {
+    while (nextRunDate && shouldProcessRecurring({ ...item, nextRunDate }, todayDateString)) {
+      if (item.endDate && getCalendarDateString(nextRunDate) > getCalendarDateString(item.endDate)) {
         nextRunDate = null
         break
       }

@@ -12,6 +12,14 @@ import { getUiCopy } from '@/lib/uiCopy'
 import { SUPPORTED_CURRENCIES } from '@/lib/currency'
 import { getLocaleBaseCurrency, getLocaleMirrorCurrency, getLocaleTrackedCurrencies } from '@/lib/currencyPreferences'
 import type { SupportedCurrency } from '@/lib/currencyPreferences'
+import {
+  formatDateParts,
+  getClientPreferredTimeZone,
+  getDatePartsInTimeZone,
+  getLocaleDefaultTimeZone,
+  getTimeZoneOptions,
+  saveClientPreferredTimeZone,
+} from '@/lib/timezone'
 
 interface AccountInput {
   name?: string
@@ -52,8 +60,6 @@ interface RecurringInput {
   startDate?: string
 }
 
-const today = new Date()
-
 export default function SetupPage() {
   const router = useRouter()
   const locale = useLocale()
@@ -70,6 +76,10 @@ export default function SetupPage() {
   const [baseCurrency, setBaseCurrency] = useState(getLocaleBaseCurrency(locale))
   const [mirrorCurrency, setMirrorCurrency] = useState(getLocaleMirrorCurrency(locale))
   const [trackedCurrencies, setTrackedCurrencies] = useState<string[]>(getLocaleTrackedCurrencies(locale))
+  const [timeZone, setTimeZone] = useState(() => getClientPreferredTimeZone(locale))
+  const todayParts = useMemo(() => getDatePartsInTimeZone(new Date(), timeZone), [timeZone])
+  const todayDateString = useMemo(() => formatDateParts(todayParts), [todayParts])
+  const timeZoneOptions = useMemo(() => getTimeZoneOptions(locale), [locale])
 
   const [accounts, setAccounts] = useState<AccountInput[]>([
     { name: '', type: 'checking', currency: getLocaleBaseCurrency(locale), balance: '' },
@@ -81,8 +91,8 @@ export default function SetupPage() {
       amount: '',
       currency: getLocaleBaseCurrency(locale),
       period: 'monthly',
-      year: today.getFullYear(),
-      month: today.getMonth() + 1,
+      year: todayParts.year,
+      month: todayParts.month,
       alertThreshold: 80,
     },
   ])
@@ -98,8 +108,8 @@ export default function SetupPage() {
       fromAccountName: '',
       toAccountName: '',
       interval: 'monthly',
-      dayOfMonth: today.getDate(),
-      startDate: new Date().toISOString().split('T')[0] ?? '',
+      dayOfMonth: todayParts.day,
+      startDate: todayDateString,
     },
   ])
 
@@ -145,6 +155,7 @@ export default function SetupPage() {
     setBaseCurrency((current) => current || getLocaleBaseCurrency(locale))
     setMirrorCurrency((current) => current || getLocaleMirrorCurrency(locale))
     setTrackedCurrencies((current) => (current.length >= 2 ? current : getLocaleTrackedCurrencies(locale)))
+    setTimeZone((current) => current || getLocaleDefaultTimeZone(locale))
   }, [locale])
 
   const expenseCategories = useMemo(
@@ -182,6 +193,7 @@ export default function SetupPage() {
           trackedCurrencies,
           baseCurrency,
           mirrorCurrency,
+          timeZone,
           budgets: budgets.filter((budget) => Number(budget.amount) > 0),
           recurringTransactions: recurringTransactions
             .filter((item) => item.name && item.description && Number(item.amount) > 0)
@@ -212,6 +224,7 @@ export default function SetupPage() {
 
       window.localStorage.setItem('kablus-base-currency', baseCurrency)
       window.localStorage.setItem('kablus-mirror-currency', mirrorCurrency)
+      saveClientPreferredTimeZone(timeZone)
 
       router.push('/')
     } catch (submitError: any) {
@@ -234,8 +247,8 @@ export default function SetupPage() {
         amount: '',
         currency: baseCurrency,
         period: 'monthly',
-        year: today.getFullYear(),
-        month: today.getMonth() + 1,
+        year: todayParts.year,
+        month: todayParts.month,
         alertThreshold: 80,
       },
     ])
@@ -256,6 +269,7 @@ export default function SetupPage() {
           trackedCurrencies,
           baseCurrency,
           mirrorCurrency,
+          timeZone,
           budgets: [],
           recurringTransactions: [],
         }),
@@ -270,6 +284,7 @@ export default function SetupPage() {
       await queryClient.invalidateQueries({ queryKey: ['trackedCurrencies'] })
       window.localStorage.setItem('kablus-base-currency', baseCurrency)
       window.localStorage.setItem('kablus-mirror-currency', mirrorCurrency)
+      saveClientPreferredTimeZone(timeZone)
       router.push('/')
     } catch (skipError: any) {
       setError(skipError.message)
@@ -292,8 +307,8 @@ export default function SetupPage() {
         fromAccountName: '',
         toAccountName: '',
         interval: 'monthly',
-        dayOfMonth: today.getDate(),
-        startDate: new Date().toISOString().split('T')[0] ?? '',
+        dayOfMonth: todayParts.day,
+        startDate: todayDateString,
       },
     ])
   }
@@ -435,6 +450,27 @@ export default function SetupPage() {
                     )
                   })}
                 </div>
+              </div>
+            </div>
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-semibold text-slate-800">{ui.setup.timeZoneTitle}</p>
+              <p className="mt-1 text-xs text-slate-500">{ui.setup.timeZoneDesc}</p>
+              <div className="mt-4">
+                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  {ui.setup.timeZoneLabel}
+                </label>
+                <select
+                  value={timeZone}
+                  onChange={(event) => setTimeZone(event.target.value)}
+                  className={`${selectClassName} mt-2`}
+                >
+                  {timeZoneOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-2 text-xs text-slate-500">{ui.setup.timeZoneHelp}</p>
               </div>
             </div>
           </div>

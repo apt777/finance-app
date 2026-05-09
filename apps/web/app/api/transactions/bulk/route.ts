@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 import { requireRouteSession } from '@/lib/server-auth'
+import { getTodayDateStringInTimeZone } from '@/lib/timezone'
+import { getUserTimeZone } from '@/lib/user-timezone'
 
 interface BulkRow {
   clientId?: string
@@ -22,16 +24,8 @@ function normalizeDateInput(date: string) {
   return date.includes('T') ? date.split('T')[0] ?? date : date
 }
 
-function getLocalTodayDateString() {
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = String(today.getMonth() + 1).padStart(2, '0')
-  const day = String(today.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-function shouldApplyBalanceAdjustment(date: string, requested?: boolean) {
-  if (normalizeDateInput(date) === getLocalTodayDateString()) {
+function shouldApplyBalanceAdjustment(date: string, timeZone: string, requested?: boolean) {
+  if (normalizeDateInput(date) === getTodayDateStringInTimeZone(timeZone)) {
     return true
   }
 
@@ -48,6 +42,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
     const rows = Array.isArray(body?.rows) ? (body.rows as BulkRow[]) : []
+    const userTimeZone = await getUserTimeZone(userId)
 
     if (rows.length === 0) {
       return NextResponse.json({ error: 'No transactions to import' }, { status: 400 })
@@ -115,7 +110,7 @@ export async function POST(request: Request) {
         categoryKey: row.categoryKey || undefined,
       })
 
-      if (shouldApplyBalanceAdjustment(row.date, row.applyBalanceAdjustment)) {
+      if (shouldApplyBalanceAdjustment(row.date, userTimeZone, row.applyBalanceAdjustment)) {
         const currentBalance = accountBalanceMap.get(row.accountId) ?? account.balance
         const nextBalance =
           account.type === 'credit_card'

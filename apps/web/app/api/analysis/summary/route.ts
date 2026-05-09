@@ -4,6 +4,8 @@ import { requireRouteSession } from '@/lib/server-auth'
 import { ensureDefaultCategories } from '@/lib/categories'
 import { processDueRecurringTransactions } from '@/lib/recurring'
 import { getTransitCardInferenceSettingKey, parseTransitCardInferenceSetting } from '@/lib/transitCardInference'
+import { getCalendarDateString, getDatePartsInTimeZone } from '@/lib/timezone'
+import { getUserTimeZone } from '@/lib/user-timezone'
 
 function monthKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
@@ -77,6 +79,7 @@ export async function GET() {
 
   try {
     await processDueRecurringTransactions(userId)
+    const userTimeZone = await getUserTimeZone(userId)
 
     const transactions = await prisma.transaction.findMany({
       where: {
@@ -374,9 +377,10 @@ export async function GET() {
 
     const latestMonth = Array.from(monthlyMap.values()).slice(-1)[0]
     const today = new Date()
+    const todayParts = getDatePartsInTimeZone(today, userTimeZone)
     const [targetYear, targetMonth] = latestMonth
       ? latestMonth.month.split('-').map(Number)
-      : [today.getFullYear(), today.getMonth() + 1]
+      : [todayParts.year, todayParts.month]
     const activeBudgets = budgets.filter((budget) => {
       if (budget.period !== 'monthly' || !budget.month) return false
       return budget.year === targetYear && budget.month === targetMonth
@@ -385,31 +389,31 @@ export async function GET() {
     const budgetStatus = activeBudgets.map((budget) => {
       const actual = transactions
         .filter((transaction) => {
-          const date = new Date(transaction.date)
+          const dateKey = getCalendarDateString(transaction.date)
+          const [transactionYear, transactionMonth] = dateKey.slice(0, 7).split('-').map(Number)
           const transactionType = normalizeTransactionType(
             transaction.type,
             transaction.amount,
             transaction.categoryKey ? categoryTypeMap.get(transaction.categoryKey) : null
           )
           return (
-            !Number.isNaN(date.getTime()) &&
             transactionType === 'expense' &&
-            date.getFullYear() === budget.year &&
-            date.getMonth() + 1 === budget.month &&
+            transactionYear === budget.year &&
+            transactionMonth === budget.month &&
             transaction.categoryKey === budget.categoryKey
           )
         })
         .reduce((sum, transaction) => sum + Math.abs(convertAmount(transaction.amount, transaction.currency, budget.currency)), 0)
 
-      const isCurrentBudgetMonth = today.getFullYear() === budget.year && today.getMonth() + 1 === budget.month
-      const budgetEndDate = new Date(budget.year, budget.month || 1, 0, 23, 59, 59, 999)
+      const isCurrentBudgetMonth = todayParts.year === budget.year && todayParts.month === budget.month
+      const daysInBudgetMonth = new Date(budget.year, budget.month || 1, 0).getDate()
 
       return {
         ...budget,
         actual,
         usagePercentage: budget.amount > 0 ? Math.round((actual / budget.amount) * 100) : 0,
         daysRemaining: isCurrentBudgetMonth
-          ? Math.max(0, Math.ceil((budgetEndDate.getTime() - today.getTime()) / 86400000))
+          ? Math.max(0, daysInBudgetMonth - todayParts.day)
           : 0,
       }
     })

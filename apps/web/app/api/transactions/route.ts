@@ -4,6 +4,8 @@ import { requireRouteSession } from '@/lib/server-auth'
 import { ensureDefaultCategories } from '@/lib/categories'
 import { DEFAULT_TRANSACTION_CATEGORIES } from '@/lib/defaultCategories'
 import { processDueRecurringTransactions } from '@/lib/recurring'
+import { getTodayDateStringInTimeZone } from '@/lib/timezone'
+import { getUserTimeZone } from '@/lib/user-timezone'
 
 interface TransactionData {
   accountId?: string
@@ -24,24 +26,16 @@ interface TransactionData {
 
 const NO_BALANCE_SYNC_MARKER = '[[KABLUS_NO_BALANCE_SYNC]]'
 
-function getLocalTodayDateString() {
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = String(today.getMonth() + 1).padStart(2, '0')
-  const day = String(today.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
 function normalizeDateInput(date: string) {
   return date.includes('T') ? date.split('T')[0] ?? date : date
 }
 
-function isTodayTransaction(date: string) {
-  return normalizeDateInput(date) === getLocalTodayDateString()
+function isTodayTransaction(date: string, timeZone: string) {
+  return normalizeDateInput(date) === getTodayDateStringInTimeZone(timeZone)
 }
 
-function shouldApplyBalanceAdjustment(date: string, requested?: boolean) {
-  if (isTodayTransaction(date)) {
+function shouldApplyBalanceAdjustment(date: string, timeZone: string, requested?: boolean) {
+  if (isTodayTransaction(date, timeZone)) {
     return true
   }
 
@@ -163,7 +157,8 @@ export async function POST(request: Request) {
     const body: TransactionData = await request.json()
     const { date, description, type, amount: rawAmount, currency, categoryKey, notes, applyBalanceAdjustment } = body
     const transactionAmount = Number(rawAmount)
-    const applyBalance = shouldApplyBalanceAdjustment(date, applyBalanceAdjustment)
+    const userTimeZone = await getUserTimeZone(userId)
+    const applyBalance = shouldApplyBalanceAdjustment(date, userTimeZone, applyBalanceAdjustment)
     const storedNotes = serializeNotes(notes, applyBalance)
     const resolvedCategory = await resolveCategorySelection(userId, categoryKey)
     const normalizedCategoryKey = resolvedCategory?.key || categoryKey

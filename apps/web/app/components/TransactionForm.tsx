@@ -11,6 +11,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { findDuplicateTransaction } from '@/lib/transactionDuplicates'
 import { getUiCopy } from '@/lib/uiCopy'
 import { useRouter } from '@/navigation'
+import { getClientTodayDateString, getClientPreferredTimeZone, saveClientPreferredTimeZone } from '@/lib/timezone'
 
 interface TransactionFormData {
   accountId?: string;
@@ -45,11 +46,7 @@ interface TransactionLike {
 }
 
 const getTodayDateString = () => {
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = String(today.getMonth() + 1).padStart(2, '0')
-  const day = String(today.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+  return getClientTodayDateString()
 }
 
 const isTodayDate = (date: string) => date === getTodayDateString()
@@ -137,7 +134,7 @@ const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: Tra
     accountId: initialData?.accountId || '',
     fromAccountId: initialData?.fromAccountId || '',
     toAccountId: initialData?.toAccountId || '',
-    date: initialData?.date || (new Date().toISOString().split('T')[0] ?? ''),
+    date: initialData?.date || getTodayDateString(),
     description: initialData?.description || '',
     type: initialData?.type || 'expense',
     amount: initialData?.amount ?? '',
@@ -151,6 +148,11 @@ const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: Tra
   const searchParams = useSearchParams()
   const quickActionPrefill = useMemo(() => buildQuickActionPrefill(searchParams), [searchParams])
   const [isFullPayment, setIsFullPayment] = useState(false)
+
+  useEffect(() => {
+    const preferredTimeZone = getClientPreferredTimeZone(locale)
+    saveClientPreferredTimeZone(preferredTimeZone)
+  }, [locale])
 
   useEffect(() => {
     const type = searchParams.get('type')
@@ -278,7 +280,7 @@ const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: Tra
             accountId: '', 
             fromAccountId: '', 
             toAccountId: '', 
-            date: new Date().toISOString().split('T')[0] ?? '', 
+            date: getTodayDateString(),
             description: '', 
             type: 'expense', 
             amount: '', 

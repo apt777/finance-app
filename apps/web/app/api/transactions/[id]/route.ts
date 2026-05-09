@@ -3,6 +3,8 @@ import prisma from '@lib/prisma'
 import { requireRouteSession } from '@/lib/server-auth'
 import { DEFAULT_TRANSACTION_CATEGORIES } from '@/lib/defaultCategories'
 import { ensureDefaultCategories } from '@/lib/categories'
+import { getTodayDateStringInTimeZone } from '@/lib/timezone'
+import { getUserTimeZone } from '@/lib/user-timezone'
 
 const NO_BALANCE_SYNC_MARKER = '[[KABLUS_NO_BALANCE_SYNC]]'
 
@@ -23,24 +25,16 @@ interface TransactionData {
   applyBalanceAdjustment?: boolean
 }
 
-function getLocalTodayDateString() {
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = String(today.getMonth() + 1).padStart(2, '0')
-  const day = String(today.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
 function normalizeDateInput(date: string) {
   return date.includes('T') ? date.split('T')[0] ?? date : date
 }
 
-function isTodayTransaction(date: string) {
-  return normalizeDateInput(date) === getLocalTodayDateString()
+function isTodayTransaction(date: string, timeZone: string) {
+  return normalizeDateInput(date) === getTodayDateStringInTimeZone(timeZone)
 }
 
-function shouldApplyBalanceAdjustment(date: string, requested?: boolean) {
-  if (isTodayTransaction(date)) {
+function shouldApplyBalanceAdjustment(date: string, timeZone: string, requested?: boolean) {
+  if (isTodayTransaction(date, timeZone)) {
     return true
   }
   return Boolean(requested)
@@ -181,7 +175,8 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       return NextResponse.json({ error: 'Category not found' }, { status: 400 })
     }
 
-    const applyBalance = shouldApplyBalanceAdjustment(body.date, body.applyBalanceAdjustment)
+    const userTimeZone = await getUserTimeZone(userId)
+    const applyBalance = shouldApplyBalanceAdjustment(body.date, userTimeZone, body.applyBalanceAdjustment)
     const storedNotes = serializeNotes(body.notes, applyBalance)
 
     const operations: any[] = []

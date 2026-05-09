@@ -8,6 +8,7 @@ import { useCategories } from '@/hooks/useCategories'
 import { useRecurringTransactions } from '@/hooks/useRecurringTransactions'
 import { useLocale, useTranslations } from 'next-intl'
 import { getUiCopy } from '@/lib/uiCopy'
+import { getClientTodayDateString } from '@/lib/timezone'
 
 type RecurringFormState = {
   name: string
@@ -22,6 +23,9 @@ type RecurringFormState = {
 }
 
 function buildInitialForm() {
+  const todayDate = getClientTodayDateString()
+  const dayOfMonth = todayDate.split('-')[2] || '1'
+
   return {
     name: '',
     description: '',
@@ -30,7 +34,7 @@ function buildInitialForm() {
     categoryKey: 'housing',
     currency: 'JPY',
     type: 'expense' as const,
-    dayOfMonth: String(new Date().getDate()),
+    dayOfMonth,
     isActive: true,
   }
 }
@@ -71,7 +75,7 @@ export default function RecurringManager() {
         accountId: form.accountId,
         interval: 'monthly',
         dayOfMonth: Number(form.dayOfMonth),
-        startDate: new Date().toISOString().split('T')[0],
+        startDate: getClientTodayDateString(locale),
         isActive: form.isActive,
       }
 

@@ -6,6 +6,7 @@ import { Upload, FileText, Plus, Trash2, AlertCircle, CheckCircle } from 'lucide
 import { useAccounts } from '../hooks/useAccounts'
 import { useLocale, useTranslations } from 'next-intl'
 import { getUiCopy } from '@/lib/uiCopy'
+import { getClientTodayDateString } from '@/lib/timezone'
 
 interface BulkTransaction {
   date: string
@@ -69,7 +70,7 @@ const BulkTransactionImport = () => {
 
   // Manual form state
   const [formData, setFormData] = useState<TransactionFormData>({
-    date: new Date().toISOString().split('T')[0] ?? '',
+    date: getClientTodayDateString(locale),
     description: '',
     amount: '',
     type: 'expense',
@@ -98,7 +99,7 @@ const BulkTransactionImport = () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
       setTransactions([])
       setFormData({
-        date: new Date().toISOString().split('T')[0] ?? '',
+        date: getClientTodayDateString(locale),
         description: '',
         amount: '',
         type: 'expense',
@@ -158,7 +159,7 @@ const BulkTransactionImport = () => {
     if (validateTransaction(newTxn, transactions.length)) {
       setTransactions([...transactions, newTxn])
       setFormData({
-        date: new Date().toISOString().split('T')[0] ?? '',
+        date: getClientTodayDateString(locale),
         description: '',
         amount: '',
         type: 'expense',

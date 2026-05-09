@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { ensureDefaultCategories } from '@/lib/categories'
 import { requireRouteSession } from '@/lib/server-auth'
 import prisma from '@lib/prisma'
+import { getTodayDateStringInTimeZone } from '@/lib/timezone'
+import { getUserTimeZone } from '@/lib/user-timezone'
 
 type ParsedType = 'income' | 'expense' | 'transfer'
 
@@ -357,7 +359,8 @@ function parseLine(
   accounts: AccountShape[],
   index: number,
   defaultAccountId?: string,
-  defaultDate?: string
+  defaultDate?: string,
+  today = ''
 ) {
   const trimmed = normalizeWhitespace(line)
   if (!trimmed) return null
@@ -403,8 +406,6 @@ function parseLine(
   const finalDescription = description || rawDescription
   const type = inferType(numericAmount, finalDescription)
   const category = recommendCategory(finalDescription, type, categories)
-  const today = new Date().toISOString().split('T')[0] || ''
-
   return {
     id: `parsed-${index}`,
     source: trimmed,
@@ -440,6 +441,8 @@ export async function POST(request: Request) {
       select: { id: true, name: true, currency: true },
       orderBy: { name: 'asc' },
     })
+    const userTimeZone = await getUserTimeZone(userId)
+    const today = getTodayDateStringInTimeZone(userTimeZone)
     const lines = input
       .replace(/\r/g, '')
       .split('\n')
@@ -466,7 +469,8 @@ export async function POST(request: Request) {
           accounts,
           index * 100 + segmentOffset,
           defaultAccountId,
-          lineDate
+          lineDate,
+          today
         )
 
         if (parsed) {
