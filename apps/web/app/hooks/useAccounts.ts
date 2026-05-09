@@ -7,6 +7,8 @@ interface Account {
   type: string;
   balance: number;
   currency: string;
+  transitInferenceEnabled?: boolean;
+  transitInferenceCategoryKey?: string | null;
 }
 
 const fetchAccounts = async (): Promise<Account[]> => {

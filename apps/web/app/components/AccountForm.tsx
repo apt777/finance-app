@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, AlertCircle, CheckCircle, Wallet } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from '@/navigation'
+import { useCategories } from '@/hooks/useCategories'
 
 // userId is no longer needed from the form
 interface AccountFormData {
@@ -12,6 +13,8 @@ interface AccountFormData {
   type: string;
   balance: number | string;
   currency: string;
+  transitInferenceEnabled?: boolean;
+  transitInferenceCategoryKey?: string;
 }
 
 const createAccount = async (accountData: Omit<AccountFormData, 'userId'>) => {
@@ -62,6 +65,7 @@ const AccountForm = ({ onAccountAdded, initialData }: AccountFormProps) => {
   const locale = useLocale()
   const router = useRouter()
   const queryClient = useQueryClient()
+  const { data: categories = [] } = useCategories()
   const isEditMode = Boolean(initialData?.id)
   const [formError, setFormError] = useState<string | null>(null);
   const [formData, setFormData] = useState<AccountFormData>({
@@ -69,6 +73,8 @@ const AccountForm = ({ onAccountAdded, initialData }: AccountFormProps) => {
     type: initialData?.type || 'checking',
     balance: initialData?.balance ?? '',
     currency: initialData?.currency || 'JPY',
+    transitInferenceEnabled: initialData?.transitInferenceEnabled ?? false,
+    transitInferenceCategoryKey: initialData?.transitInferenceCategoryKey || 'transportation',
   })
 
   const mutation = useMutation<any, Error, AccountFormData>({ // Explicitly type mutation
@@ -76,7 +82,14 @@ const AccountForm = ({ onAccountAdded, initialData }: AccountFormProps) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
       if (!isEditMode) {
-        setFormData({ name: '', type: 'checking', balance: '', currency: 'JPY' })
+        setFormData({
+          name: '',
+          type: 'checking',
+          balance: '',
+          currency: 'JPY',
+          transitInferenceEnabled: false,
+          transitInferenceCategoryKey: 'transportation',
+        })
       }
       setFormError(null)
       onAccountAdded?.();
@@ -89,6 +102,11 @@ const AccountForm = ({ onAccountAdded, initialData }: AccountFormProps) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+  }
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target
+    setFormData({ ...formData, [name]: checked })
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -121,6 +139,7 @@ const AccountForm = ({ onAccountAdded, initialData }: AccountFormProps) => {
   ]
   const isCreditCard = formData.type === 'credit_card'
   const isTransitCard = formData.type === 'transit_card'
+  const transitExpenseCategories = categories.filter((category) => category.type === 'expense')
   const accountTypeHint =
     locale === 'en'
       ? ({
@@ -157,6 +176,30 @@ const AccountForm = ({ onAccountAdded, initialData }: AccountFormProps) => {
               nisa: '일본 NISA 계좌와 비과세 투자 잔액을 관리할 때 사용합니다.',
               transit_card: '스이카 같은 교통카드나 충전식 잔액 계좌에 사용합니다.',
             } as Record<string, string>)[formData.type]
+  const transitInferenceCopy =
+    locale === 'en'
+      ? {
+          toggle: 'Auto-categorize remaining card usage',
+          desc: 'Calculate top-ups minus recorded card spending minus the current balance, then add the remainder to the selected expense category in analysis.',
+          category: 'Category for inferred spending',
+        }
+      : locale === 'ja'
+        ? {
+            toggle: '残りの利用額を自動分類する',
+            desc: 'チャージ額から記録済みの利用額と現在残高を引いた残りを、分析で選択した支出カテゴリへ自動で加えます。',
+            category: '推定利用額のカテゴリ',
+          }
+        : locale === 'zh'
+          ? {
+              toggle: '自动归类剩余使用金额',
+              desc: '用充值金额减去已记录的卡内消费和当前余额后，把剩余金额自动加入分析中的所选支出分类。',
+              category: '推定支出的分类',
+            }
+          : {
+              toggle: '남는 사용 금액 자동 분류',
+              desc: '충전액에서 기록된 카드 사용액과 현재 잔액을 뺀 나머지를, 분석에서 선택한 지출 카테고리에 자동으로 합산합니다.',
+              category: '추정 사용분 카테고리',
+            }
 
   return (
     <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl shadow-sm border border-slate-100 p-8">
@@ -262,6 +305,44 @@ const AccountForm = ({ onAccountAdded, initialData }: AccountFormProps) => {
             <p className="mt-2 text-xs text-slate-500">{tAccounts('transitCardBalanceDesc')}</p>
           ) : null}
         </div>
+
+        {isTransitCard ? (
+          <div className="rounded-2xl border border-slate-200 bg-white p-5">
+            <label className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                name="transitInferenceEnabled"
+                checked={Boolean(formData.transitInferenceEnabled)}
+                onChange={handleCheckboxChange}
+                className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              />
+              <div>
+                <p className="text-sm font-semibold text-slate-800">{transitInferenceCopy.toggle}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">{transitInferenceCopy.desc}</p>
+              </div>
+            </label>
+
+            <div className="mt-4">
+              <label htmlFor="transitInferenceCategoryKey" className="block text-sm font-semibold text-slate-800 mb-2">
+                {transitInferenceCopy.category}
+              </label>
+              <select
+                name="transitInferenceCategoryKey"
+                id="transitInferenceCategoryKey"
+                value={formData.transitInferenceCategoryKey}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-slate-900"
+                disabled={!formData.transitInferenceEnabled}
+              >
+                {transitExpenseCategories.map((category) => (
+                  <option key={category.id} value={category.key}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        ) : null}
 
         {/* Error Message */}
         {formError && (

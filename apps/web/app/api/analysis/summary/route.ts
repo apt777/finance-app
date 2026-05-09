@@ -3,6 +3,7 @@ import prisma from '@lib/prisma'
 import { requireRouteSession } from '@/lib/server-auth'
 import { ensureDefaultCategories } from '@/lib/categories'
 import { processDueRecurringTransactions } from '@/lib/recurring'
+import { getTransitCardInferenceSettingKey, parseTransitCardInferenceSetting } from '@/lib/transitCardInference'
 
 function monthKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
@@ -129,6 +130,17 @@ export async function GET() {
     const exchangeRates = await prisma.exchangeRate.findMany({
       where: { userId },
     }).catch(() => [])
+    const transitSettingKeys = accounts
+      .filter((account) => account.type === 'transit_card')
+      .map((account) => getTransitCardInferenceSettingKey(account.id))
+    const transitSettings = transitSettingKeys.length > 0
+      ? await prisma.userSetting.findMany({
+          where: {
+            userId,
+            key: { in: transitSettingKeys },
+          },
+        }).catch(() => [])
+      : []
 
     const categories = await ensureDefaultCategories(userId).catch(() => [])
     const baseCurrency = 'JPY'
@@ -144,6 +156,9 @@ export async function GET() {
     const categoryMap = new Map(categories.map((category) => [category.key, category.name]))
     const categoryTypeMap = new Map(categories.map((category) => [category.key, category.type]))
     const transitAccounts = accounts.filter((account) => account.type === 'transit_card')
+    const transitSettingMap = new Map(
+      transitSettings.map((setting) => [setting.key, parseTransitCardInferenceSetting(setting.value)])
+    )
     const transitAccountIds = new Set(transitAccounts.map((account) => account.id))
     const transitFundingMap = new Map<string, number>()
     const transitRecordedExpenseMap = new Map<string, number>()
@@ -263,6 +278,8 @@ export async function GET() {
           accountId: account.id,
           accountName: account.name,
           currency: account.currency,
+          enabled: transitSettingMap.get(getTransitCardInferenceSettingKey(account.id))?.enabled ?? false,
+          categoryKey: transitSettingMap.get(getTransitCardInferenceSettingKey(account.id))?.categoryKey ?? 'transportation',
           topUpAmount,
           recordedExpenseAmount,
           currentBalance,
@@ -271,6 +288,17 @@ export async function GET() {
         }
       })
       .filter((account) => account.topUpAmount > 0 || account.recordedExpenseAmount > 0 || account.currentBalance > 0)
+
+    inferredTransitExpenseAccounts.forEach((account) => {
+      if (!account.enabled || account.inferredExpenseBaseAmount <= 0 || !account.categoryKey) {
+        return
+      }
+
+      categoryTotals.set(
+        account.categoryKey,
+        (categoryTotals.get(account.categoryKey) ?? 0) + account.inferredExpenseBaseAmount
+      )
+    })
 
     const inferredTransitExpense = {
       total: inferredTransitExpenseAccounts.reduce((sum, account) => sum + account.inferredExpenseBaseAmount, 0),

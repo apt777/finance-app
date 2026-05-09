@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import AccountForm from '@/components/AccountForm'
+import { getTransitCardInferenceSettingKey, parseTransitCardInferenceSetting } from '@/lib/transitCardInference'
 
 export default async function EditAccountPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params
@@ -25,6 +26,16 @@ export default async function EditAccountPage(props: { params: Promise<{ id: str
     notFound()
   }
 
+  const setting = await prisma.userSetting.findUnique({
+    where: {
+      userId_key: {
+        userId: session.user.id,
+        key: getTransitCardInferenceSettingKey(account.id),
+      },
+    },
+  }).catch(() => null)
+  const inference = parseTransitCardInferenceSetting(setting?.value)
+
   return (
     <AccountForm
       initialData={{
@@ -33,6 +44,8 @@ export default async function EditAccountPage(props: { params: Promise<{ id: str
         type: account.type,
         balance: account.balance,
         currency: account.currency,
+        transitInferenceEnabled: inference.enabled,
+        transitInferenceCategoryKey: inference.categoryKey || undefined,
       }}
     />
   )

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import prisma from '@lib/prisma'
+import { getTransitCardInferenceSettingKey, parseTransitCardInferenceSetting } from '@/lib/transitCardInference'
 
 export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
   const params = await props.params
@@ -23,7 +24,22 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
       return NextResponse.json({ error: 'Account not found' }, { status: 404 })
     }
 
-    return NextResponse.json(account)
+    const setting = await prisma.userSetting.findUnique({
+      where: {
+        userId_key: {
+          userId: session.user.id,
+          key: getTransitCardInferenceSettingKey(account.id),
+        },
+      },
+    }).catch(() => null)
+
+    const inference = parseTransitCardInferenceSetting(setting?.value)
+
+    return NextResponse.json({
+      ...account,
+      transitInferenceEnabled: inference.enabled,
+      transitInferenceCategoryKey: inference.categoryKey,
+    })
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed to fetch account' }, { status: 500 })
   }
@@ -49,7 +65,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       return NextResponse.json({ error: 'Account not found' }, { status: 404 })
     }
 
-    const { name, type, balance, currency } = await request.json()
+    const { name, type, balance, currency, transitInferenceEnabled, transitInferenceCategoryKey } = await request.json()
 
     const updatedAccount = await prisma.account.update({
       where: { id: params.id },
@@ -60,6 +76,38 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
         currency,
       },
     })
+
+    if (type === 'transit_card') {
+      await prisma.userSetting.upsert({
+        where: {
+          userId_key: {
+            userId: session.user.id,
+            key: getTransitCardInferenceSettingKey(params.id),
+          },
+        },
+        update: {
+          value: JSON.stringify({
+            enabled: Boolean(transitInferenceEnabled),
+            categoryKey: transitInferenceCategoryKey || 'transportation',
+          }),
+        },
+        create: {
+          userId: session.user.id,
+          key: getTransitCardInferenceSettingKey(params.id),
+          value: JSON.stringify({
+            enabled: Boolean(transitInferenceEnabled),
+            categoryKey: transitInferenceCategoryKey || 'transportation',
+          }),
+        },
+      })
+    } else {
+      await prisma.userSetting.deleteMany({
+        where: {
+          userId: session.user.id,
+          key: getTransitCardInferenceSettingKey(params.id),
+        },
+      })
+    }
 
     return NextResponse.json(updatedAccount)
   } catch (error: any) {
