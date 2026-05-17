@@ -57,7 +57,9 @@ export default function CreditCardPaymentPlan({ accountId, currency }: { account
     mutationFn: (paymentPlan: Record<string, string>) => savePaymentPlan(accountId, paymentPlan),
     onSuccess: (data) => {
       queryClient.setQueryData(['creditCardPaymentPlan', accountId], data.paymentPlan || {})
+      queryClient.invalidateQueries({ queryKey: ['accounts'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] })
+      queryClient.invalidateQueries({ queryKey: ['planned-cashflow-forecast'] })
     },
   })
 

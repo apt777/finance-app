@@ -182,7 +182,6 @@ function StackedBarShape({
   height,
   payload,
   dataKey,
-  allKeys,
 }: {
   fill?: string
   x?: number
@@ -191,7 +190,6 @@ function StackedBarShape({
   height?: number
   payload?: Record<string, string | number>
   dataKey?: string
-  allKeys: string[]
 }) {
   if (
     typeof x !== 'number' ||
@@ -507,10 +505,11 @@ export default function OverviewModern() {
       expenseFlowColorMap[ui.overview.otherExpenseCategory] = '#64748b'
     }
 
-    const topKey = [...(hasOtherExpenseFlowCategory
+    // Recharts renders the first visible stacked key as the visual top for this custom shape flow.
+    // Picking the top key in forward order prevents lower "other" segments from peeking through the rounded corners.
+    const topKey = (hasOtherExpenseFlowCategory
       ? [...expenseFlowCategoryNames, ui.overview.otherExpenseCategory]
-      : expenseFlowCategoryNames)]
-      .reverse()
+      : expenseFlowCategoryNames)
       .find((key) => Number(row[key] || 0) > 0)
 
     if (topKey) {
@@ -924,7 +923,7 @@ export default function OverviewModern() {
                         dataKey={key}
                         stackId="expense-flow"
                         fill={expenseFlowColorMap[key]}
-                        shape={<StackedBarShape dataKey={key} allKeys={expenseFlowKeys} />}
+                        shape={<StackedBarShape dataKey={key} />}
                       />
                     ))}
                   </BarChart>

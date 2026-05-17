@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 import { requireRouteSession } from '@/lib/server-auth'
+import { getMonthKeyInTimeZone } from '@/lib/timezone'
+import { getUserTimeZone } from '@/lib/user-timezone'
 
 function getPlanKey(accountId: string) {
   return `credit_card_payment_plan:${accountId}`
@@ -44,22 +46,40 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
 
     const payload = await request.json()
     const paymentPlan = payload?.paymentPlan && typeof payload.paymentPlan === 'object' ? payload.paymentPlan : {}
+    const userTimeZone = await getUserTimeZone(userId)
+    const currentMonthKey = getMonthKeyInTimeZone(userTimeZone)
+    const currentMonthPlannedAmount = Number(paymentPlan?.[currentMonthKey] || 0)
 
-    await prisma.userSetting.upsert({
-      where: {
-        userId_key: {
+    await prisma.$transaction(async (tx) => {
+      await tx.userSetting.upsert({
+        where: {
+          userId_key: {
+            userId,
+            key: getPlanKey(params.id),
+          },
+        },
+        update: {
+          value: JSON.stringify(paymentPlan),
+        },
+        create: {
           userId,
           key: getPlanKey(params.id),
+          value: JSON.stringify(paymentPlan),
         },
-      },
-      update: {
-        value: JSON.stringify(paymentPlan),
-      },
-      create: {
-        userId,
-        key: getPlanKey(params.id),
-        value: JSON.stringify(paymentPlan),
-      },
+      })
+
+      if (Number.isFinite(currentMonthPlannedAmount) && currentMonthPlannedAmount >= 0) {
+        await tx.account.updateMany({
+          where: {
+            id: params.id,
+            userId,
+            type: 'credit_card',
+          },
+          data: {
+            balance: currentMonthPlannedAmount,
+          },
+        })
+      }
     })
 
     return NextResponse.json({ paymentPlan })
