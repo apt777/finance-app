@@ -478,11 +478,30 @@ export default function OverviewModern() {
     .slice(0, 4)
     .map(([name]) => name)
   const expenseFlowPalette = ['#1e3a8a', '#1d4ed8', '#2563eb', '#60a5fa']
-  const expenseFlowColorMap = expenseFlowCategoryNames.reduce<Record<string, string>>((acc, name, index) => {
-    acc[name] = expenseFlowPalette[index] || '#cbd5e1'
+  const expenseFlowLabelByKey = expenseFlowCategoryNames.reduce<Record<string, string>>((acc, name, index) => {
+    acc[`category-${index}`] = name
+    return acc
+  }, {})
+  const expenseFlowColorMap = expenseFlowCategoryNames.reduce<Record<string, string>>((acc, _name, index) => {
+    acc[`category-${index}`] = expenseFlowPalette[index] || '#cbd5e1'
+    return acc
+  }, {})
+  const expenseFlowKeyByCategoryName = expenseFlowCategoryNames.reduce<Record<string, string>>((acc, name, index) => {
+    acc[name] = `category-${index}`
     return acc
   }, {})
   const hasOtherExpenseFlowCategory = Array.from(expenseCategoryTotals.keys()).some((name) => !expenseFlowCategoryNames.includes(name))
+  const expenseFlowOtherKey = 'category-other'
+  if (hasOtherExpenseFlowCategory) {
+    expenseFlowColorMap[expenseFlowOtherKey] = '#64748b'
+    expenseFlowLabelByKey[expenseFlowOtherKey] = ui.overview.otherExpenseCategory
+  }
+  const expenseFlowPrimaryKeys: string[] = expenseFlowCategoryNames
+    .map((name) => expenseFlowKeyByCategoryName[name])
+    .filter((value): value is string => typeof value === 'string')
+  const expenseFlowKeys = hasOtherExpenseFlowCategory
+    ? [...expenseFlowPrimaryKeys, expenseFlowOtherKey]
+    : expenseFlowPrimaryKeys
   const expenseFlowChartData = expenseFlowLabels.map((dateKey) => {
     const dateMap = expenseFlowByDate.get(dateKey) || new Map<string, number>()
     const row: Record<string, string | number> = {
@@ -494,23 +513,24 @@ export default function OverviewModern() {
       if (value <= 0) return
 
       if (expenseFlowCategoryNames.includes(categoryName)) {
-        row[categoryName] = value
+        const categoryKey = expenseFlowKeyByCategoryName[categoryName]
+        if (categoryKey) {
+          row[categoryKey] = value
+        } else {
+          otherTotal += value
+        }
       } else {
         otherTotal += value
       }
     })
 
     if (hasOtherExpenseFlowCategory && otherTotal > 0) {
-      row[ui.overview.otherExpenseCategory] = otherTotal
-      expenseFlowColorMap[ui.overview.otherExpenseCategory] = '#64748b'
+      row[expenseFlowOtherKey] = otherTotal
     }
 
-    // Recharts renders the first visible stacked key as the visual top for this custom shape flow.
-    // Picking the top key in forward order prevents lower "other" segments from peeking through the rounded corners.
-    const topKey = (hasOtherExpenseFlowCategory
-      ? [...expenseFlowCategoryNames, ui.overview.otherExpenseCategory]
-      : expenseFlowCategoryNames)
-      .find((key) => Number(row[key] || 0) > 0)
+    const topKey = [...expenseFlowKeys]
+      .reverse()
+      .find((key) => typeof key === 'string' && Number(row[key] || 0) > 0)
 
     if (topKey) {
       row.__topKey = topKey
@@ -518,9 +538,6 @@ export default function OverviewModern() {
 
     return row
   })
-  const expenseFlowKeys = hasOtherExpenseFlowCategory
-    ? [...expenseFlowCategoryNames, ui.overview.otherExpenseCategory]
-    : expenseFlowCategoryNames
 
   return (
     <div className="space-y-8">
@@ -910,7 +927,7 @@ export default function OverviewModern() {
               <TrendingDown className="h-6 w-6 text-slate-400" />
             </div>
             <div className="h-[280px]">
-              {expenseFlowChartData.some((item) => expenseFlowKeys.some((key) => Number(item[key] || 0) > 0)) ? (
+              {expenseFlowChartData.some((item) => expenseFlowKeys.some((key) => typeof key === 'string' && Number(item[key] || 0) > 0)) ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={expenseFlowChartData}>
                     <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
@@ -921,6 +938,7 @@ export default function OverviewModern() {
                       <Bar
                         key={key}
                         dataKey={key}
+                        name={expenseFlowLabelByKey[key] || key}
                         stackId="expense-flow"
                         fill={expenseFlowColorMap[key]}
                         shape={<StackedBarShape dataKey={key} />}
