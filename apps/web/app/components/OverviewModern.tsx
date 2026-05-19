@@ -126,7 +126,7 @@ function ExpenseStackTooltip({
 }: {
   active?: boolean
   label?: string
-  payload?: Array<{ dataKey?: string; value?: number | string; color?: string }>
+  payload?: Array<{ dataKey?: string; name?: string; value?: number | string; color?: string }>
   currency: string
 }) {
   if (!active || !payload?.length) {
@@ -135,7 +135,7 @@ function ExpenseStackTooltip({
 
   const entries = payload
     .map((item) => ({
-      name: item.dataKey || '',
+      name: item.name || item.dataKey || '',
       value: Math.round(Number(item.value || 0)),
       color: item.color || '#94a3b8',
     }))
