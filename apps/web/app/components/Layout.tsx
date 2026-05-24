@@ -28,6 +28,7 @@ import {
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import AppLoadingState from '@/components/AppLoadingState'
+import { convertCurrency } from '@/lib/currency'
 
 interface Account {
   id: string
@@ -106,9 +107,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const BASE_CURRENCY = baseCurrency
 
   const convertToBaseCurrency = (amount: number, currency: string): number => {
-    if (currency === BASE_CURRENCY) return amount
-    const rate = rates.find((item) => item.fromCurrency === currency && item.toCurrency === BASE_CURRENCY)?.rate
-    return rate ? amount * rate : amount
+    return convertCurrency(amount, currency, BASE_CURRENCY, rates)
   }
 
   let netWorth = 0

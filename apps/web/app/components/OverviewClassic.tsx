@@ -8,6 +8,7 @@ import { Link } from '@/navigation'
 import { TrendingUp, TrendingDown, Wallet, Target, PlusCircle, ArrowUpRight } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import AppLoadingState from '@/components/AppLoadingState'
+import { convertCurrency } from '@/lib/currency'
 
 interface Account {
   id: string
@@ -89,9 +90,7 @@ export default function OverviewClassic() {
   const BASE_CURRENCY = 'JPY'
 
   const convertToBaseCurrency = (amount: number, currency: string): number => {
-    if (currency === BASE_CURRENCY) return amount
-    const rate = rates.find((item) => item.fromCurrency === currency && item.toCurrency === BASE_CURRENCY)?.rate
-    return rate ? amount * rate : 0
+    return convertCurrency(amount, currency, BASE_CURRENCY, rates)
   }
 
   const totalBalanceByCurrency = accounts.reduce<Record<string, number>>((acc, account) => {

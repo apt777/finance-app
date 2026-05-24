@@ -11,6 +11,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { useUiTheme } from '@/context/UiThemeContext'
 import AppLoadingState from '@/components/AppLoadingState'
 import { getUiCopy } from '@/lib/uiCopy'
+import { convertCurrency } from '@/lib/currency'
 
 interface Account {
   id: string;
@@ -94,9 +95,7 @@ const HoldingsList = () => {
   const BASE_CURRENCY = 'JPY'
 
   const convertToBaseCurrency = (amount: number, currency: string): number => {
-    if (currency === BASE_CURRENCY) return amount
-    const rate = exchangeRates.find((r) => r.fromCurrency === currency && r.toCurrency === BASE_CURRENCY)?.rate
-    return rate ? amount * rate : amount
+    return convertCurrency(amount, currency, BASE_CURRENCY, exchangeRates)
   }
 
   const accountMap = new Map<string, string>(accounts.map((account: Account) => [account.id, account.name]))
