@@ -5,6 +5,7 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
+    "test": "turbo run test",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
     "db:generate": "prisma generate --schema=prisma/schema.prisma",
@@ -22,7 +23,8 @@
     "ts-node": "^10.9.2",
     "tsx": "^4.19.2",
     "turbo": "^2.5.6",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vitest": "^4.1.8"
   },
   "engines": {
     "node": ">=18"
