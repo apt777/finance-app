@@ -1,35 +1,13 @@
 import { NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 import { requireRouteSession } from '@/lib/server-auth'
-import { ensureDefaultCategories } from '@/lib/categories'
+import { getCachedCategoryMap } from '@/lib/categories'
 import { ensureDueRecurringTransactionsProcessed } from '@/lib/recurring'
-
-function stripInternalNotes(notes?: string | null) {
-  if (!notes) return null
-
-  const cleaned = notes
-    .replace('[[KABLUS_NO_BALANCE_SYNC]]', '')
-    .replace('[[KABLUS_RECURRING_AUTO]]', '')
-    .trim()
-  return cleaned || null
-}
+import { stripInternalNotes } from '@/lib/transactionPersistence'
 
 async function getCategoryMapSafely(userId: string) {
   try {
-    const categories = await ensureDefaultCategories(userId)
-
-    return new Map(
-      categories.map((category) => [
-        category.key,
-        {
-          key: category.key,
-          name: category.name,
-          icon: 'icon' in category ? category.icon : null,
-          color: 'color' in category ? category.color : null,
-          type: 'type' in category ? category.type : 'expense',
-        },
-      ]),
-    )
+    return await getCachedCategoryMap(userId)
   } catch (error) {
     console.error('Failed to resolve overview categories:', error)
     return new Map()

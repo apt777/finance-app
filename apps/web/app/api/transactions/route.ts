@@ -1,13 +1,17 @@
 import { NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 import { requireRouteSession } from '@/lib/server-auth'
-import { ensureDefaultCategories } from '@/lib/categories'
-import { DEFAULT_TRANSACTION_CATEGORIES } from '@/lib/defaultCategories'
+import { getCachedCategoryMap } from '@/lib/categories'
 import { ensureDueRecurringTransactionsProcessed } from '@/lib/recurring'
 import { resolveTransactionBaseSnapshot } from '@/lib/transactionBaseSnapshot'
-import { getTodayDateStringInTimeZone } from '@/lib/timezone'
 import { getUserTimeZone } from '@/lib/user-timezone'
 import { calculateNextAccountBalance, calculateTransferAccountBalance } from '@/lib/accountBalance'
+import {
+  serializeNotes,
+  shouldApplyBalanceAdjustment,
+  stripInternalNotes,
+  transactionAffectsBalance,
+} from '@/lib/transactionPersistence'
 
 interface TransactionData {
   accountId?: string
@@ -26,43 +30,8 @@ interface TransactionData {
   applyBalanceAdjustment?: boolean
 }
 
-const NO_BALANCE_SYNC_MARKER = '[[KABLUS_NO_BALANCE_SYNC]]'
-
 function normalizeDateInput(date: string) {
   return date.includes('T') ? date.split('T')[0] ?? date : date
-}
-
-function isTodayTransaction(date: string, timeZone: string) {
-  return normalizeDateInput(date) === getTodayDateStringInTimeZone(timeZone)
-}
-
-function shouldApplyBalanceAdjustment(date: string, timeZone: string, requested?: boolean) {
-  if (isTodayTransaction(date, timeZone)) {
-    return true
-  }
-
-  return Boolean(requested)
-}
-
-function serializeNotes(notes: string | undefined, applyBalanceAdjustment: boolean) {
-  const cleaned = (notes || '').replace(NO_BALANCE_SYNC_MARKER, '').trim()
-
-  if (applyBalanceAdjustment) {
-    return cleaned || null
-  }
-
-  return cleaned ? `${cleaned}\n${NO_BALANCE_SYNC_MARKER}` : NO_BALANCE_SYNC_MARKER
-}
-
-function stripInternalNotes(notes?: string | null) {
-  if (!notes) return null
-
-  const cleaned = notes.replace(NO_BALANCE_SYNC_MARKER, '').trim()
-  return cleaned || null
-}
-
-function transactionAffectsBalance(transaction: { notes?: string | null }) {
-  return !transaction.notes?.includes(NO_BALANCE_SYNC_MARKER)
 }
 
 function unauthorized() {
@@ -71,20 +40,7 @@ function unauthorized() {
 
 async function getCategoryMapSafely(userId: string) {
   try {
-    const categories = await ensureDefaultCategories(userId)
-
-    return new Map(
-      categories.map((category) => [
-        category.key,
-        {
-          key: category.key,
-          name: category.name,
-          icon: 'icon' in category ? category.icon : null,
-          color: 'color' in category ? category.color : null,
-          type: 'type' in category ? category.type : 'expense',
-        },
-      ])
-    )
+    return await getCachedCategoryMap(userId)
   } catch (error) {
     console.error('Failed to resolve transaction categories:', error)
     return new Map()

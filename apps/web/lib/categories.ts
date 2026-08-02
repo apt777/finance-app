@@ -1,6 +1,12 @@
 import prisma from '@lib/prisma'
 import { DEFAULT_TRANSACTION_CATEGORIES, getDefaultTransactionCategories } from './defaultCategories'
 
+const CATEGORY_CACHE_TTL_MS = 1000 * 60
+
+type CachedCategory = Awaited<ReturnType<typeof ensureDefaultCategories>>[number]
+
+const categoryCache = new Map<string, { expiresAt: number; categories: CachedCategory[] }>()
+
 function mapDefaultCategories(locale = 'ko') {
   return getDefaultTransactionCategories(locale).map((category, index) => ({
     id: `default-${index}`,
@@ -128,5 +134,54 @@ export async function ensureDefaultCategories(userId: string, locale = 'ko') {
     }
 
     return Array.from(merged.values()).sort((a, b) => a.name.localeCompare(b.name))
+  }
+}
+
+export async function getCachedCategories(userId: string, locale = 'ko') {
+  const cacheKey = `${userId}:${locale}`
+  const cached = categoryCache.get(cacheKey)
+
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.categories
+  }
+
+  const categories = await ensureDefaultCategories(userId, locale)
+  categoryCache.set(cacheKey, {
+    expiresAt: Date.now() + CATEGORY_CACHE_TTL_MS,
+    categories,
+  })
+  return categories
+}
+
+export async function getCachedCategoryMap(
+  userId: string,
+  locale = 'ko'
+): Promise<Map<string, { key: string; name: string; icon: string | null; color: string | null; type: string }>> {
+  const categories = await getCachedCategories(userId, locale)
+
+  return new Map(
+    categories.map((category) => [
+      category.key,
+      {
+        key: category.key,
+        name: category.name,
+        icon: 'icon' in category ? category.icon : null,
+        color: 'color' in category ? category.color : null,
+        type: 'type' in category ? category.type : 'expense',
+      },
+    ])
+  )
+}
+
+export function clearCategoryCache(userId?: string) {
+  if (!userId) {
+    categoryCache.clear()
+    return
+  }
+
+  for (const key of categoryCache.keys()) {
+    if (key.startsWith(`${userId}:`)) {
+      categoryCache.delete(key)
+    }
   }
 }

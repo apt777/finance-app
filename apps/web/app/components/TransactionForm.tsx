@@ -11,6 +11,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { findDuplicateTransaction } from '@/lib/transactionDuplicates'
 import { getUiCopy } from '@/lib/uiCopy'
 import { useRouter } from '@/navigation'
+import { calculateNextAccountBalance, calculateTransferAccountBalance } from '@/lib/accountBalance'
 import { CURRENCY_SYMBOLS, SUPPORTED_CURRENCIES } from '@/lib/currency'
 import { getClientTodayDateString, getClientPreferredTimeZone, saveClientPreferredTimeZone } from '@/lib/timezone'
 
@@ -44,6 +45,21 @@ interface TransactionLike {
   categoryKey?: string
   notes?: string | null
   createdAt?: string
+}
+
+interface AccountLike {
+  id: string
+  name: string
+  type: string
+  balance: number
+  currency: string
+}
+
+interface OverviewDataLike {
+  accounts: AccountLike[]
+  transactions: TransactionLike[]
+  holdings: any[]
+  goals: any[]
 }
 
 const getTodayDateString = () => {
@@ -115,6 +131,61 @@ const updateTransaction = async (transactionId: string, transactionData: Transac
     throw new Error(errorData.error || 'Error');
   }
   return res.json()
+}
+
+const shouldSyncBalanceOnClient = (formData: TransactionFormData) => {
+  if (formData.type === 'transfer' || formData.type === 'exchange') {
+    return true
+  }
+
+  if (!formData.accountId) {
+    return false
+  }
+
+  return isTodayDate(formData.date) || Boolean(formData.applyBalanceAdjustment)
+}
+
+const updateCachedAccounts = (
+  accounts: AccountLike[] | undefined,
+  formData: TransactionFormData,
+  transactionAmount: number
+) => {
+  if (!accounts || accounts.length === 0 || !shouldSyncBalanceOnClient(formData)) {
+    return accounts
+  }
+
+  return accounts.map((account) => {
+    if ((formData.type === 'transfer' || formData.type === 'exchange') && formData.fromAccountId && formData.toAccountId) {
+      if (account.id === formData.fromAccountId) {
+        return {
+          ...account,
+          balance: calculateTransferAccountBalance(account.balance, account.type, 'from', transactionAmount),
+        }
+      }
+
+      if (account.id === formData.toAccountId) {
+        const creditedAmount = formData.type === 'exchange'
+          ? Number(formData.exchangeToAmount || 0)
+          : transactionAmount
+
+        return {
+          ...account,
+          balance: calculateTransferAccountBalance(account.balance, account.type, 'to', creditedAmount),
+        }
+      }
+
+      return account
+    }
+
+    if (formData.accountId && account.id === formData.accountId && (formData.type === 'income' || formData.type === 'expense')) {
+      return {
+        ...account,
+        balance: calculateNextAccountBalance(account.balance, account.type, formData.type, transactionAmount),
+      }
+    }
+
+    return account
+  })
 }
 
 const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: TransactionFormProps) => {
@@ -258,8 +329,33 @@ const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: Tra
         )
       }
 
-      queryClient.invalidateQueries({ queryKey: ['transactions'] })
-      queryClient.invalidateQueries({ queryKey: ['accounts'] })
+      if (!isEditMode) {
+        queryClient.setQueryData<AccountLike[]>(['accounts'], (current = []) =>
+          updateCachedAccounts(current, formData, optimisticAmount) || current
+        )
+      }
+
+      queryClient.setQueryData<OverviewDataLike>(['overview'], (current) => {
+        if (!current) return current
+
+        return {
+          ...current,
+          accounts: !isEditMode
+            ? updateCachedAccounts(current.accounts, formData, optimisticAmount) || current.accounts
+            : current.accounts,
+          transactions: isEditMode
+            ? current.transactions.map((transaction) =>
+                transaction.id === transactionId ? { ...transaction, ...nextTransaction } : transaction
+              )
+            : [nextTransaction, ...current.transactions],
+        }
+      })
+
+      queryClient.invalidateQueries({ queryKey: ['transactions'], refetchType: 'inactive' })
+      queryClient.invalidateQueries({ queryKey: ['accounts'], refetchType: 'inactive' })
+      queryClient.invalidateQueries({ queryKey: ['overview'], refetchType: 'inactive' })
+      queryClient.invalidateQueries({ queryKey: ['dashboard-summary'], refetchType: 'inactive' })
+      queryClient.invalidateQueries({ queryKey: ['planned-cashflow-forecast'], refetchType: 'inactive' })
       if (!isEditMode) {
         if (quickActionPrefill) {
           setFormData({

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
-import { ensureDefaultCategories } from '@/lib/categories'
+import { clearCategoryCache, ensureDefaultCategories } from '@/lib/categories'
 import { requireRouteSession } from '@/lib/server-auth'
 import { DEFAULT_TRANSACTION_CATEGORIES, normalizeAppLocale } from '@/lib/defaultCategories'
 
@@ -64,6 +64,7 @@ export async function POST(request: Request) {
       })
     }
 
+    clearCategoryCache(userId)
     return NextResponse.json(category, { status: 201 })
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed to create category' }, { status: 500 })
@@ -100,6 +101,7 @@ export async function DELETE(request: Request) {
         return NextResponse.json({ error: 'Category not found' }, { status: 404 })
       }
 
+      clearCategoryCache(userId)
       return NextResponse.json({ message: 'Category deleted successfully' })
     } catch {
       // Fallback for legacy schemas where user-scoped category columns are unavailable.
@@ -120,6 +122,7 @@ export async function DELETE(request: Request) {
         where: { id: categoryId },
       })
 
+      clearCategoryCache(userId)
       return NextResponse.json({ message: 'Category deleted successfully' })
     }
   } catch (error: any) {
@@ -155,6 +158,7 @@ export async function PATCH(request: Request) {
         data: { name: name.trim() },
       })
 
+      clearCategoryCache(userId)
       return NextResponse.json(updated)
     }
 
@@ -164,6 +168,7 @@ export async function PATCH(request: Request) {
         data: { name: name.trim() },
       })
 
+      clearCategoryCache(userId)
       return NextResponse.json(updated)
     }
 
@@ -190,6 +195,7 @@ export async function PATCH(request: Request) {
           },
         })
 
+        clearCategoryCache(userId)
         return NextResponse.json(overridden)
       } catch {
         // Fallback for older schemas that don't support user-scoped category overrides yet.
@@ -198,6 +204,7 @@ export async function PATCH(request: Request) {
           data: { name: name.trim() },
         })
 
+        clearCategoryCache(userId)
         return NextResponse.json(updated)
       }
     }
@@ -207,6 +214,7 @@ export async function PATCH(request: Request) {
       data: { name: name.trim() },
     })
 
+    clearCategoryCache(userId)
     return NextResponse.json(updated)
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed to update category' }, { status: 500 })
