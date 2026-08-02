@@ -4,6 +4,7 @@ import { requireRouteSession } from '@/lib/server-auth'
 import { resolveTransactionBaseSnapshot } from '@/lib/transactionBaseSnapshot'
 import { getTodayDateStringInTimeZone } from '@/lib/timezone'
 import { getUserTimeZone } from '@/lib/user-timezone'
+import { calculateNextAccountBalance, calculateTransferAccountBalance } from '@/lib/accountBalance'
 
 interface BulkRow {
   clientId?: string
@@ -165,14 +166,8 @@ export async function POST(request: Request) {
         if (shouldApplyBalanceAdjustment(row.date, userTimeZone, row.applyBalanceAdjustment)) {
           const currentFromBalance = accountBalanceMap.get(fromAccount.id) ?? fromAccount.balance
           const currentToBalance = accountBalanceMap.get(toAccount.id) ?? toAccount.balance
-          const nextFromBalance =
-            fromAccount.type === 'credit_card'
-              ? currentFromBalance + normalizedAmount
-              : currentFromBalance - normalizedAmount
-          const nextToBalance =
-            toAccount.type === 'credit_card'
-              ? currentToBalance - normalizedAmount
-              : currentToBalance + normalizedAmount
+          const nextFromBalance = calculateTransferAccountBalance(currentFromBalance, fromAccount.type, 'from', normalizedAmount)
+          const nextToBalance = calculateTransferAccountBalance(currentToBalance, toAccount.type, 'to', normalizedAmount)
 
           accountBalanceMap.set(fromAccount.id, nextFromBalance)
           accountBalanceMap.set(toAccount.id, nextToBalance)
@@ -209,14 +204,7 @@ export async function POST(request: Request) {
 
         if (account && shouldApplyBalanceAdjustment(row.date, userTimeZone, row.applyBalanceAdjustment)) {
           const currentBalance = accountBalanceMap.get(row.accountId as string) ?? account.balance
-          const nextBalance =
-            account.type === 'credit_card'
-              ? row.type === 'income'
-                ? currentBalance - normalizedAmount
-                : currentBalance + normalizedAmount
-              : row.type === 'income'
-                ? currentBalance + normalizedAmount
-                : currentBalance - normalizedAmount
+          const nextBalance = calculateNextAccountBalance(currentBalance, account.type, row.type, normalizedAmount)
 
           accountBalanceMap.set(row.accountId as string, nextBalance)
         }

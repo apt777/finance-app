@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 import { requireRouteSession } from '@/lib/server-auth'
 import { ensureDefaultCategories } from '@/lib/categories'
-import { processDueRecurringTransactions } from '@/lib/recurring'
+import { ensureDueRecurringTransactionsProcessed } from '@/lib/recurring'
 import { getTransitCardInferenceSettingKey, parseTransitCardInferenceSetting } from '@/lib/transitCardInference'
 import { getCalendarDateString, getDatePartsInTimeZone } from '@/lib/timezone'
 import { getUserTimeZone } from '@/lib/user-timezone'
@@ -96,7 +96,7 @@ export async function GET() {
   }
 
   try {
-    await processDueRecurringTransactions(userId)
+    await ensureDueRecurringTransactionsProcessed(userId)
     const userTimeZone = await getUserTimeZone(userId)
 
     const transactions = await prisma.transaction.findMany({

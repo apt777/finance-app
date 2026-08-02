@@ -3,10 +3,11 @@ import prisma from '@lib/prisma'
 import { requireRouteSession } from '@/lib/server-auth'
 import { ensureDefaultCategories } from '@/lib/categories'
 import { DEFAULT_TRANSACTION_CATEGORIES } from '@/lib/defaultCategories'
-import { processDueRecurringTransactions } from '@/lib/recurring'
+import { ensureDueRecurringTransactionsProcessed } from '@/lib/recurring'
 import { resolveTransactionBaseSnapshot } from '@/lib/transactionBaseSnapshot'
 import { getTodayDateStringInTimeZone } from '@/lib/timezone'
 import { getUserTimeZone } from '@/lib/user-timezone'
+import { calculateNextAccountBalance, calculateTransferAccountBalance } from '@/lib/accountBalance'
 
 interface TransactionData {
   accountId?: string
@@ -120,7 +121,7 @@ export async function GET() {
   }
 
   try {
-    await processDueRecurringTransactions(userId)
+    await ensureDueRecurringTransactionsProcessed(userId)
 
     const [transactions, categoryMap] = await Promise.all([
       prisma.transaction.findMany({
@@ -160,14 +161,19 @@ export async function POST(request: Request) {
     const transactionAmount = Number(rawAmount)
     const resolvedCategory = await resolveCategorySelection(userId, categoryKey)
     const normalizedCategoryKey = resolvedCategory?.key || categoryKey
-    const currentRates = await prisma.exchangeRate.findMany({
-      where: { userId },
-      select: {
-        fromCurrency: true,
-        toCurrency: true,
-        rate: true,
-      },
-    })
+    const needsCurrentRates =
+      currency !== 'JPY' ||
+      (type === 'exchange' && (body.exchangeToCurrency || 'JPY') !== 'JPY')
+    const currentRates = needsCurrentRates
+      ? await prisma.exchangeRate.findMany({
+          where: { userId },
+          select: {
+            fromCurrency: true,
+            toCurrency: true,
+            rate: true,
+          },
+        })
+      : []
 
     if (!date || !description || !type || !currency || Number.isNaN(transactionAmount) || transactionAmount <= 0) {
       return NextResponse.json({ error: 'Invalid transaction payload' }, { status: 400 })
@@ -221,12 +227,8 @@ export async function POST(request: Request) {
       })
 
       if (applyBalance) {
-        const newFromBalance = fromAccount.type === 'credit_card'
-          ? fromAccount.balance + transactionAmount
-          : fromAccount.balance - transactionAmount
-        const newToBalance = toAccount.type === 'credit_card'
-          ? toAccount.balance - creditedAmount
-          : toAccount.balance + creditedAmount
+        const newFromBalance = calculateTransferAccountBalance(fromAccount.balance, fromAccount.type, 'from', transactionAmount)
+        const newToBalance = calculateTransferAccountBalance(toAccount.balance, toAccount.type, 'to', creditedAmount)
 
         transactionOperations.push(
           prisma.account.update({ where: { id: fromAccountId }, data: { balance: newFromBalance } }),
@@ -296,13 +298,7 @@ export async function POST(request: Request) {
     const transactionOperations = []
 
     if (account && applyBalance) {
-      const newBalance = account.type === 'credit_card'
-        ? type === 'income'
-          ? account.balance - transactionAmount
-          : account.balance + transactionAmount
-        : type === 'income'
-          ? account.balance + transactionAmount
-          : account.balance - transactionAmount
+      const newBalance = calculateNextAccountBalance(account.balance, account.type, type as 'income' | 'expense', transactionAmount)
 
       transactionOperations.push(
         prisma.account.update({ where: { id: accountId }, data: { balance: newBalance } }),

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 import { requireRouteSession } from '@/lib/server-auth'
-import { calculateNextRunDate, processDueRecurringTransactions } from '@/lib/recurring'
+import { calculateNextRunDate, ensureDueRecurringTransactionsProcessed } from '@/lib/recurring'
 
 function startOfMonth(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0, 0)
@@ -63,7 +63,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    await processDueRecurringTransactions(userId)
+    await ensureDueRecurringTransactionsProcessed(userId)
 
     const { searchParams } = new URL(request.url)
     const baseCurrency = searchParams.get('baseCurrency') || 'JPY'

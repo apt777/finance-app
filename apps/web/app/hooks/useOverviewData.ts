@@ -1,4 +1,4 @@
-import { useQueries } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/context/AuthProviderClient'
 
 // Define interfaces for data structures (should match Prisma models)
@@ -48,61 +48,49 @@ interface OverviewDataResult {
   goals: Goal[];
 }
 
-const fetchListOrEmpty = async <T>(url: string, label: string): Promise<T[]> => {
+const fetchOverviewData = async (): Promise<OverviewDataResult> => {
   try {
-    const res = await fetch(url)
+    const res = await fetch('/api/overview')
 
     if (!res.ok) {
-      console.error(`[overview] failed to fetch ${label}: ${res.status}`)
-      return []
+      console.error(`[overview] failed to fetch overview data: ${res.status}`)
+      return {
+        accounts: [],
+        transactions: [],
+        holdings: [],
+        goals: [],
+      }
     }
 
     return res.json()
   } catch (error) {
-    console.error(`[overview] failed to fetch ${label}:`, error)
-    return []
+    console.error('[overview] failed to fetch overview data:', error)
+    return {
+      accounts: [],
+      transactions: [],
+      holdings: [],
+      goals: [],
+    }
   }
-}
-
-const fetchAccounts = async (): Promise<Account[]> => {
-  return fetchListOrEmpty<Account>('/api/accounts', 'accounts')
-}
-
-const fetchTransactions = async (): Promise<Transaction[]> => {
-  return fetchListOrEmpty<Transaction>('/api/transactions', 'transactions')
-}
-
-const fetchHoldings = async (): Promise<Holding[]> => {
-  return fetchListOrEmpty<Holding>('/api/holdings', 'holdings')
-}
-
-const fetchGoals = async (): Promise<Goal[]> => {
-  return fetchListOrEmpty<Goal>('/api/goals', 'goals')
 }
 
 export const useOverviewData = () => {
   const { user, loading } = useAuth()
-  const isEnabled = !!user && !loading
-
-  const results = useQueries({
-    queries: [
-      { queryKey: ['accounts'], queryFn: fetchAccounts, enabled: isEnabled },
-      { queryKey: ['transactions'], queryFn: fetchTransactions, enabled: isEnabled },
-      { queryKey: ['holdings'], queryFn: fetchHoldings, enabled: isEnabled },
-      { queryKey: ['goals'], queryFn: fetchGoals, enabled: isEnabled },
-    ],
+  const query = useQuery<OverviewDataResult>({
+    queryKey: ['overview'],
+    queryFn: fetchOverviewData,
+    enabled: !!user && !loading,
+    placeholderData: keepPreviousData,
   })
 
-  const isLoading = results.some((query) => query.isLoading)
-  const isError = false
-
-  // Type assertions for data from useQueries results
-  const data: OverviewDataResult = {
-    accounts: (results[0].data as Account[]) || [],
-    transactions: (results[1].data as Transaction[]) || [],
-    holdings: (results[2].data as Holding[]) || [],
-    goals: (results[3].data as Goal[]) || [],
+  return {
+    data: query.data || {
+      accounts: [],
+      transactions: [],
+      holdings: [],
+      goals: [],
+    },
+    isLoading: query.isLoading,
+    isError: query.isError,
   }
-
-  return { data, isLoading, isError }
 }

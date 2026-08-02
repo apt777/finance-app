@@ -7,7 +7,10 @@ import { ensureDueRecurringTransactionsProcessed } from '@/lib/recurring'
 function stripInternalNotes(notes?: string | null) {
   if (!notes) return null
 
-  const cleaned = notes.replace('[[KABLUS_NO_BALANCE_SYNC]]', '').trim()
+  const cleaned = notes
+    .replace('[[KABLUS_NO_BALANCE_SYNC]]', '')
+    .replace('[[KABLUS_RECURRING_AUTO]]', '')
+    .trim()
   return cleaned || null
 }
 
@@ -25,15 +28,15 @@ async function getCategoryMapSafely(userId: string) {
           color: 'color' in category ? category.color : null,
           type: 'type' in category ? category.type : 'expense',
         },
-      ])
+      ]),
     )
   } catch (error) {
-    console.error('Failed to resolve account transaction categories:', error)
+    console.error('Failed to resolve overview categories:', error)
     return new Map()
   }
 }
 
-export async function GET(_request: Request, props: { params: Promise<{ id: string }> }) {
+export async function GET() {
   const { userId } = await requireRouteSession()
 
   if (!userId) {
@@ -43,52 +46,35 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
   try {
     await ensureDueRecurringTransactionsProcessed(userId)
 
-    const { id } = await props.params
-
-    const account = await prisma.account.findFirst({
-      where: {
-        id,
-        userId,
-      },
-      select: {
-        id: true,
-      },
-    })
-
-    if (!account) {
-      return NextResponse.json({ error: 'Account not found or does not belong to user' }, { status: 404 })
-    }
-
-    const [transactions, categoryMap] = await Promise.all([
+    const [accounts, transactions, holdings, goals, categoryMap] = await Promise.all([
+      prisma.account.findMany({
+        where: { userId },
+        orderBy: { name: 'asc' },
+      }),
       prisma.transaction.findMany({
-        where: {
-          userId,
-          OR: [{ accountId: id }, { fromAccountId: id }, { toAccountId: id }],
-        },
+        where: { userId },
         orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
-        include: {
-          account: {
-            select: { id: true, name: true, currency: true },
-          },
-          fromAccount: {
-            select: { id: true, name: true, currency: true },
-          },
-          toAccount: {
-            select: { id: true, name: true, currency: true },
-          },
-        },
+      }),
+      prisma.holding.findMany({
+        where: { userId },
+      }),
+      prisma.goal.findMany({
+        where: { userId },
       }),
       getCategoryMapSafely(userId),
     ])
 
-    return NextResponse.json(
-      transactions.map((transaction) => ({
+    return NextResponse.json({
+      accounts,
+      transactions: transactions.map((transaction) => ({
         ...transaction,
         notes: stripInternalNotes(transaction.notes),
         category: transaction.categoryKey ? categoryMap.get(transaction.categoryKey) ?? null : null,
-      }))
-    )
+      })),
+      holdings,
+      goals,
+    })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Failed to fetch transactions' }, { status: 500 })
+    return NextResponse.json({ error: error.message || 'Failed to fetch overview data' }, { status: 500 })
   }
 }

@@ -2,8 +2,11 @@ import prisma from '@lib/prisma'
 import { getCalendarDateString, getTodayDateStringInTimeZone } from '@/lib/timezone'
 import { getUserTimeZone } from '@/lib/user-timezone'
 import { calculateInitialRunDate, calculateNextRunDate } from '@/lib/recurringSchedule'
+import { calculateNextAccountBalance, calculateTransferAccountBalance } from '@/lib/accountBalance'
 
 export { calculateInitialRunDate, calculateNextRunDate } from '@/lib/recurringSchedule'
+
+const RECURRING_LAST_PROCESSED_KEY = 'recurring_auto_process_last_date'
 
 type AccountLike = {
   id: string
@@ -88,29 +91,15 @@ async function createRecurringTransaction(tx: typeof prisma, item: RecurringWith
   const amount = Math.abs(item.amount)
 
   if (item.type === 'transfer' && item.fromAccount && item.toAccount) {
-    if (item.fromAccount.type === 'credit_card') {
-      await tx.account.update({
-        where: { id: item.fromAccount.id },
-        data: { balance: item.fromAccount.balance + amount },
-      })
-    } else {
-      await tx.account.update({
-        where: { id: item.fromAccount.id },
-        data: { balance: item.fromAccount.balance - amount },
-      })
-    }
+    await tx.account.update({
+      where: { id: item.fromAccount.id },
+      data: { balance: calculateTransferAccountBalance(item.fromAccount.balance, item.fromAccount.type, 'from', amount) },
+    })
 
-    if (item.toAccount.type === 'credit_card') {
-      await tx.account.update({
-        where: { id: item.toAccount.id },
-        data: { balance: item.toAccount.balance - amount },
-      })
-    } else {
-      await tx.account.update({
-        where: { id: item.toAccount.id },
-        data: { balance: item.toAccount.balance + amount },
-      })
-    }
+    await tx.account.update({
+      where: { id: item.toAccount.id },
+      data: { balance: calculateTransferAccountBalance(item.toAccount.balance, item.toAccount.type, 'to', amount) },
+    })
 
     return tx.transaction.create({
       data: {
@@ -132,18 +121,10 @@ async function createRecurringTransaction(tx: typeof prisma, item: RecurringWith
   }
 
   const signedAmount = item.type === 'expense' ? -amount : amount
-  const nextBalance =
-    item.account.type === 'credit_card'
-      ? item.type === 'income'
-        ? item.account.balance - amount
-        : item.account.balance + amount
-      : item.type === 'income'
-        ? item.account.balance + amount
-        : item.account.balance - amount
 
   await tx.account.update({
     where: { id: item.account.id },
-    data: { balance: nextBalance },
+    data: { balance: calculateNextAccountBalance(item.account.balance, item.account.type, item.type as 'income' | 'expense', amount) },
   })
 
   return tx.transaction.create({
@@ -218,6 +199,47 @@ export async function processDueRecurringTransactions(userId: string) {
       nextRunDate = refreshed?.nextRunDate ?? null
     }
   }
+}
+
+export async function ensureDueRecurringTransactionsProcessed(userId: string) {
+  const timeZone = await getUserTimeZone(userId)
+  const todayDateString = getTodayDateStringInTimeZone(timeZone)
+  const setting = await prisma.userSetting.findUnique({
+    where: {
+      userId_key: {
+        userId,
+        key: RECURRING_LAST_PROCESSED_KEY,
+      },
+    },
+    select: {
+      value: true,
+    },
+  })
+
+  if (setting?.value === todayDateString) {
+    return false
+  }
+
+  await processDueRecurringTransactions(userId)
+
+  await prisma.userSetting.upsert({
+    where: {
+      userId_key: {
+        userId,
+        key: RECURRING_LAST_PROCESSED_KEY,
+      },
+    },
+    update: {
+      value: todayDateString,
+    },
+    create: {
+      userId,
+      key: RECURRING_LAST_PROCESSED_KEY,
+      value: todayDateString,
+    },
+  })
+
+  return true
 }
 
 export function getMonthKey(date: Date) {

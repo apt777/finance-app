@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import prisma from '@lib/prisma'
 import { requireRouteSession } from '@/lib/server-auth'
-import { processDueRecurringTransactions } from '@/lib/recurring'
+import { ensureDueRecurringTransactionsProcessed } from '@/lib/recurring'
 import { getCalendarDateString, getMonthKeyInTimeZone, getTodayDateStringInTimeZone } from '@/lib/timezone'
 import { getUserTimeZone } from '@/lib/user-timezone'
 
@@ -17,7 +17,7 @@ export async function GET() {
   }
 
   try {
-    await processDueRecurringTransactions(userId)
+    await ensureDueRecurringTransactionsProcessed(userId)
 
     const userTimeZone = await getUserTimeZone(userId)
     const currentMonthKey = getMonthKeyInTimeZone(userTimeZone)
