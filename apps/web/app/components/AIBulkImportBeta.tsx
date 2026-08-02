@@ -121,7 +121,8 @@ export default function AIBulkImportBeta() {
   const queryClient = useQueryClient()
   const { data: accounts = [] } = useAccounts()
   const { data: categories = [] } = useCategories()
-  const { data: existingTransactions = [] } = useTransactions()
+  const { data: existingTransactionsResponse } = useTransactions({ pageSize: 'all' })
+  const existingTransactions = existingTransactionsResponse?.transactions ?? []
 
   const [input, setInput] = useState('')
   const [rows, setRows] = useState<ParsedRow[]>([])

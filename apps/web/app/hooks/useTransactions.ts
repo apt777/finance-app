@@ -1,4 +1,5 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query'; import { useAuth } from '@/context/AuthProviderClient'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useAuth } from '@/context/AuthProviderClient'
 
 interface Transaction {
   id: string;
@@ -31,9 +32,38 @@ interface Transaction {
   };
 }
 
-// This function will now take an optional accountId
-const fetchTransactions = async (accountId?: string): Promise<Transaction[]> => {
-  const url = accountId ? `/api/accounts/${accountId}/transactions` : `/api/transactions`; // New global transactions API
+export interface TransactionsResponse {
+  transactions: Transaction[];
+  total: number;
+  page: number;
+  pageSize: number | 'all';
+  hasMore: boolean;
+  summary: {
+    income: number;
+    expense: number;
+    net: number;
+  };
+}
+
+interface FetchTransactionsOptions {
+  accountId?: string;
+  page?: number;
+  pageSize?: number | 'all';
+}
+
+const fetchTransactions = async ({
+  accountId,
+  page = 1,
+  pageSize = 30,
+}: FetchTransactionsOptions): Promise<TransactionsResponse> => {
+  const url = new URL(
+    accountId ? `/api/accounts/${accountId}/transactions` : '/api/transactions',
+    window.location.origin,
+  )
+
+  url.searchParams.set('page', String(page))
+  url.searchParams.set('pageSize', String(pageSize))
+
   const res = await fetch(url);
   if (!res.ok) {
     throw new Error('Network response was not ok');
@@ -41,12 +71,15 @@ const fetchTransactions = async (accountId?: string): Promise<Transaction[]> => 
   return res.json();
 };
 
-// The hook will now take an optional accountId
-export const useTransactions = (accountId?: string) => {
+export const useTransactions = (options?: FetchTransactionsOptions) => {
   const { user, loading } = useAuth()
-  return useQuery<Transaction[]>({
-    queryKey: accountId ? ['transactions', accountId] : ['transactions', 'all'], // Adjust queryKey
-    queryFn: () => fetchTransactions(accountId),
+  const accountId = options?.accountId
+  const page = options?.page ?? 1
+  const pageSize = options?.pageSize ?? 30
+
+  return useQuery<TransactionsResponse>({
+    queryKey: accountId ? ['transactions', accountId, page, pageSize] : ['transactions', 'all', page, pageSize],
+    queryFn: () => fetchTransactions({ accountId, page, pageSize }),
     enabled: !!user && !loading,
     staleTime: 1000 * 60,
     gcTime: 1000 * 60 * 30,

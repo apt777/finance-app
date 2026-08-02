@@ -199,7 +199,8 @@ const TransactionForm = ({ onTransactionAdded, transactionId, initialData }: Tra
   const queryClient = useQueryClient()
   const { data: accounts, isLoading: isLoadingAccounts, error: accountsError } = useAccounts()
   const { data: categories } = useCategories()
-  const { data: existingTransactions = [] } = useTransactions()
+  const { data: existingTransactionsResponse } = useTransactions({ pageSize: 'all' })
+  const existingTransactions = existingTransactionsResponse?.transactions ?? []
   const isEditMode = Boolean(transactionId)
   const [formError, setFormError] = useState<string | null>(null);
   const [formData, setFormData] = useState<TransactionFormData>({

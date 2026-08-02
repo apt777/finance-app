@@ -30,6 +30,35 @@ interface TransactionData {
   applyBalanceAdjustment?: boolean
 }
 
+function summarizeTransactions(
+  transactions: Array<{
+    type: string
+    amount: number
+    baseAmountSnapshot: number | null
+  }>,
+) {
+  return transactions.reduce(
+    (summary, transaction) => {
+      const normalizedAmount =
+        typeof transaction.baseAmountSnapshot === 'number'
+          ? transaction.baseAmountSnapshot
+          : transaction.amount
+
+      if (transaction.type === 'income') {
+        summary.income += Math.max(0, normalizedAmount)
+      }
+
+      if (transaction.type === 'expense') {
+        summary.expense += Math.abs(normalizedAmount)
+      }
+
+      summary.net = summary.income - summary.expense
+      return summary
+    },
+    { income: 0, expense: 0, net: 0 },
+  )
+}
+
 function normalizeDateInput(date: string) {
   return date.includes('T') ? date.split('T')[0] ?? date : date
 }
@@ -69,7 +98,12 @@ async function resolveCategorySelection(userId: string, categoryValue?: string |
   )
 }
 
-export async function GET() {
+function parsePositiveInteger(value: string | null, fallback: number) {
+  const parsed = Number(value)
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback
+}
+
+export async function GET(request: Request) {
   const { userId } = await requireRouteSession()
 
   if (!userId) {
@@ -78,27 +112,54 @@ export async function GET() {
 
   try {
     await ensureDueRecurringTransactionsProcessed(userId)
+    const { searchParams } = new URL(request.url)
+    const page = parsePositiveInteger(searchParams.get('page'), 1)
+    const pageSizeParam = searchParams.get('pageSize')
+    const showAll = pageSizeParam === 'all'
+    const pageSize = showAll ? null : parsePositiveInteger(pageSizeParam, 30)
+    const skip = showAll || !pageSize ? 0 : (page - 1) * pageSize
+    const take = showAll || !pageSize ? undefined : pageSize
 
-    const [transactions, categoryMap] = await Promise.all([
+    const [transactions, total, categoryMap, summaryTransactions] = await Promise.all([
       prisma.transaction.findMany({
         where: { userId },
         orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
+        skip,
+        take,
         include: {
           account: { select: { id: true, name: true, currency: true } },
           fromAccount: { select: { id: true, name: true, currency: true } },
           toAccount: { select: { id: true, name: true, currency: true } },
         },
       }),
+      prisma.transaction.count({
+        where: { userId },
+      }),
       getCategoryMapSafely(userId),
+      prisma.transaction.findMany({
+        where: { userId },
+        select: {
+          type: true,
+          amount: true,
+          baseAmountSnapshot: true,
+        },
+      }),
     ])
 
-    return NextResponse.json(
-      transactions.map((transaction) => ({
+    const serializedTransactions = transactions.map((transaction) => ({
         ...transaction,
         notes: stripInternalNotes(transaction.notes),
         category: transaction.categoryKey ? categoryMap.get(transaction.categoryKey) ?? null : null,
       }))
-    )
+
+    return NextResponse.json({
+      transactions: serializedTransactions,
+      total,
+      page,
+      pageSize: showAll ? 'all' : pageSize ?? 30,
+      hasMore: showAll ? false : skip + serializedTransactions.length < total,
+      summary: summarizeTransactions(summaryTransactions),
+    })
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed to fetch transactions' }, { status: 500 })
   }

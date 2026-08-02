@@ -11,6 +11,35 @@ function stripInternalNotes(notes?: string | null) {
   return cleaned || null
 }
 
+function summarizeTransactions(
+  transactions: Array<{
+    type: string
+    amount: number
+    baseAmountSnapshot: number | null
+  }>,
+) {
+  return transactions.reduce(
+    (summary, transaction) => {
+      const normalizedAmount =
+        typeof transaction.baseAmountSnapshot === 'number'
+          ? transaction.baseAmountSnapshot
+          : transaction.amount
+
+      if (transaction.type === 'income') {
+        summary.income += Math.max(0, normalizedAmount)
+      }
+
+      if (transaction.type === 'expense') {
+        summary.expense += Math.abs(normalizedAmount)
+      }
+
+      summary.net = summary.income - summary.expense
+      return summary
+    },
+    { income: 0, expense: 0, net: 0 },
+  )
+}
+
 async function getCategoryMapSafely(userId: string) {
   try {
     const categories = await ensureDefaultCategories(userId)
@@ -42,6 +71,14 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
 
   try {
     await ensureDueRecurringTransactionsProcessed(userId)
+    const request = _request
+    const { searchParams } = new URL(request.url)
+    const page = Math.max(1, Number(searchParams.get('page')) || 1)
+    const pageSizeParam = searchParams.get('pageSize')
+    const showAll = pageSizeParam === 'all'
+    const pageSize = showAll ? null : Math.max(1, Number(pageSizeParam) || 30)
+    const skip = showAll || !pageSize ? 0 : (page - 1) * pageSize
+    const take = showAll || !pageSize ? undefined : pageSize
 
     const { id } = await props.params
 
@@ -59,13 +96,17 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
       return NextResponse.json({ error: 'Account not found or does not belong to user' }, { status: 404 })
     }
 
-    const [transactions, categoryMap] = await Promise.all([
+    const where = {
+      userId,
+      OR: [{ accountId: id }, { fromAccountId: id }, { toAccountId: id }],
+    }
+
+    const [transactions, total, categoryMap, summaryTransactions] = await Promise.all([
       prisma.transaction.findMany({
-        where: {
-          userId,
-          OR: [{ accountId: id }, { fromAccountId: id }, { toAccountId: id }],
-        },
+        where,
         orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
+        skip,
+        take,
         include: {
           account: {
             select: { id: true, name: true, currency: true },
@@ -78,16 +119,32 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
           },
         },
       }),
+      prisma.transaction.count({ where }),
       getCategoryMapSafely(userId),
+      prisma.transaction.findMany({
+        where,
+        select: {
+          type: true,
+          amount: true,
+          baseAmountSnapshot: true,
+        },
+      }),
     ])
 
-    return NextResponse.json(
-      transactions.map((transaction) => ({
+    const serializedTransactions = transactions.map((transaction) => ({
         ...transaction,
         notes: stripInternalNotes(transaction.notes),
         category: transaction.categoryKey ? categoryMap.get(transaction.categoryKey) ?? null : null,
       }))
-    )
+
+    return NextResponse.json({
+      transactions: serializedTransactions,
+      total,
+      page,
+      pageSize: showAll ? 'all' : pageSize ?? 30,
+      hasMore: showAll ? false : skip + serializedTransactions.length < total,
+      summary: summarizeTransactions(summaryTransactions),
+    })
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed to fetch transactions' }, { status: 500 })
   }

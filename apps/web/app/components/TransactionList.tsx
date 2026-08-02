@@ -1,10 +1,10 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useTransactions } from '@/hooks/useTransactions'
+import { TransactionsResponse, useTransactions } from '@/hooks/useTransactions'
 import { useCategories } from '@/hooks/useCategories'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowUpRight, ArrowDownLeft, Filter, Download, Calendar, Search, Trash2, X, ArrowRight, Pencil } from 'lucide-react'
+import { ArrowUpRight, ArrowDownLeft, Filter, Download, Calendar, Search, Trash2, X, ArrowRight, Pencil, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useRouter } from '@/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { useUiTheme } from '@/context/UiThemeContext'
@@ -22,6 +22,7 @@ interface Transaction {
   exchangeToAmount?: number | null;
   exchangeToCurrency?: string | null;
   createdAt?: string;
+  baseAmountSnapshot?: number | null;
   categoryKey?: string | null;
   notes?: string | null;
   category?: {
@@ -43,6 +44,9 @@ interface Transaction {
   };
 }
 
+type PageSizeOption = 30 | 100 | 'all'
+const DEFAULT_PAGE_SIZE: PageSizeOption = 30
+
 const TransactionList = ({ accountId }: { accountId?: string }) => {
   const { theme } = useUiTheme()
   const locale = useLocale()
@@ -50,13 +54,23 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
   const router = useRouter()
   const tTransactions = useTranslations('transactions')
   const tCommon = useTranslations('common')
-  const { data, error, isLoading } = useTransactions(accountId)
   const { data: categories } = useCategories()
   const [sortBy, setSortBy] = useState<'date' | 'amount'>('date')
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense' | 'transfer' | 'exchange'>('all')
   const [filterCategory, setFilterCategory] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [showFilters, setShowFilters] = useState(false)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<PageSizeOption>(DEFAULT_PAGE_SIZE)
+
+  const hasActiveFilters = Boolean(searchTerm.trim() || filterType !== 'all' || filterCategory !== 'all')
+  const effectivePageSize: PageSizeOption = hasActiveFilters ? 'all' : pageSize
+  const effectivePage = hasActiveFilters ? 1 : page
+  const { data, error, isLoading } = useTransactions({
+    accountId,
+    page: effectivePage,
+    pageSize: effectivePageSize,
+  })
   
   const queryClient = useQueryClient()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -106,7 +120,14 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
     return <AppLoadingState label={tTransactions('title')} />
   }
 
-  const transactions: Transaction[] = (data as Transaction[]) || []
+  const response = data as TransactionsResponse | undefined
+  const transactions: Transaction[] = response?.transactions || []
+  const totalCount = response?.total || 0
+  const hasMore = response?.hasMore || false
+  const totalPages =
+    typeof response?.pageSize === 'number' && response.pageSize > 0
+      ? Math.max(1, Math.ceil(totalCount / response.pageSize))
+      : 1
 
   if (error && transactions.length === 0) {
     return (
@@ -149,8 +170,22 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
   })
 
   // Calculate summary
-  const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0)
-  const totalExpense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0)
+  const getSummaryAmount = (transaction: Transaction) => {
+    if (typeof transaction.baseAmountSnapshot === 'number') {
+      return transaction.baseAmountSnapshot
+    }
+
+    return transaction.amount
+  }
+
+  const filteredIncome = filteredTransactions
+    .filter((t) => t.type === 'income')
+    .reduce((sum, t) => sum + Math.max(0, getSummaryAmount(t)), 0)
+  const filteredExpense = filteredTransactions
+    .filter((t) => t.type === 'expense')
+    .reduce((sum, t) => sum + Math.abs(getSummaryAmount(t)), 0)
+  const totalIncome = hasActiveFilters ? filteredIncome : response?.summary.income ?? filteredIncome
+  const totalExpense = hasActiveFilters ? filteredExpense : response?.summary.expense ?? filteredExpense
 
   // Export to CSV
   const handleExportCSV = () => {
@@ -184,7 +219,9 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
       <div className="flex items-center justify-between px-1">
         <div>
           <h2 className="text-xl md:text-2xl font-bold text-slate-800">{tTransactions('title')}</h2>
-          <p className="text-slate-500 text-xs md:text-sm mt-0.5">{tTransactions('totalTransactions')}: {transactions.length}</p>
+          <p className="text-slate-500 text-xs md:text-sm mt-0.5">
+            {tTransactions('totalTransactions')}: {totalCount}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           {isEditMode ? (
@@ -230,6 +267,20 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
           >
             <Filter className="w-5 h-5" />
           </button>
+          <select
+            value={String(pageSize)}
+            onChange={(e) => {
+              const nextPageSize = e.target.value === 'all' ? 'all' : Number(e.target.value)
+              setPage(1)
+              setPageSize(nextPageSize as PageSizeOption)
+            }}
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="Transaction display count"
+          >
+            <option value="30">30</option>
+            <option value="100">100</option>
+            <option value="all">전체</option>
+          </select>
         </div>
       </div>
 
@@ -458,6 +509,34 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
               </div>
             </div>
           ))}
+
+          {!hasActiveFilters && effectivePageSize !== 'all' ? (
+            <div className="mt-4 flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+              <p className="text-xs font-medium text-slate-500">
+                {effectivePage} / {totalPages}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                  disabled={effectivePage <= 1}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:border-blue-200 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                  <span>이전</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPage((current) => current + 1)}
+                  disabled={!hasMore}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:border-blue-200 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <span>다음</span>
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : (
         <div className="bg-white rounded-2xl p-12 shadow-sm border border-slate-100 text-center">
