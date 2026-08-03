@@ -103,6 +103,54 @@ function parsePositiveInteger(value: string | null, fallback: number) {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback
 }
 
+function buildDateRange(fromDate?: string | null, toDate?: string | null) {
+  if (!fromDate && !toDate) {
+    return undefined
+  }
+
+  const range: { gte?: Date; lte?: Date } = {}
+
+  if (fromDate) {
+    range.gte = new Date(`${normalizeDateInput(fromDate)}T00:00:00.000Z`)
+  }
+
+  if (toDate) {
+    range.lte = new Date(`${normalizeDateInput(toDate)}T23:59:59.999Z`)
+  }
+
+  return range
+}
+
+function buildTransactionWhere(
+  userId: string,
+  searchParams: URLSearchParams,
+) {
+  const type = searchParams.get('type')
+  const categoryKey = searchParams.get('categoryKey')
+  const search = searchParams.get('search')?.trim()
+  const fromDate = searchParams.get('fromDate')
+  const toDate = searchParams.get('toDate')
+  const dateRange = buildDateRange(fromDate, toDate)
+
+  return {
+    userId,
+    ...(type && type !== 'all' ? { type } : {}),
+    ...(categoryKey && categoryKey !== 'all' ? { categoryKey } : {}),
+    ...(dateRange ? { date: dateRange } : {}),
+    ...(search
+      ? {
+          OR: [
+            { description: { contains: search, mode: 'insensitive' as const } },
+            { notes: { contains: search, mode: 'insensitive' as const } },
+            { account: { name: { contains: search, mode: 'insensitive' as const } } },
+            { fromAccount: { name: { contains: search, mode: 'insensitive' as const } } },
+            { toAccount: { name: { contains: search, mode: 'insensitive' as const } } },
+          ],
+        }
+      : {}),
+  }
+}
+
 export async function GET(request: Request) {
   const { userId } = await requireRouteSession()
 
@@ -119,10 +167,11 @@ export async function GET(request: Request) {
     const pageSize = showAll ? null : parsePositiveInteger(pageSizeParam, 30)
     const skip = showAll || !pageSize ? 0 : (page - 1) * pageSize
     const take = showAll || !pageSize ? undefined : pageSize
+    const where = buildTransactionWhere(userId, searchParams)
 
-    const [transactions, total, categoryMap, summaryTransactions] = await Promise.all([
+    const [transactions, total, categoryMap, summaryGroups] = await Promise.all([
       prisma.transaction.findMany({
-        where: { userId },
+        where,
         orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
         skip,
         take,
@@ -133,13 +182,13 @@ export async function GET(request: Request) {
         },
       }),
       prisma.transaction.count({
-        where: { userId },
+        where,
       }),
       getCategoryMapSafely(userId),
-      prisma.transaction.findMany({
-        where: { userId },
-        select: {
-          type: true,
+      prisma.transaction.groupBy({
+        by: ['type'],
+        where,
+        _sum: {
           amount: true,
           baseAmountSnapshot: true,
         },
@@ -158,7 +207,13 @@ export async function GET(request: Request) {
       page,
       pageSize: showAll ? 'all' : pageSize ?? 30,
       hasMore: showAll ? false : skip + serializedTransactions.length < total,
-      summary: summarizeTransactions(summaryTransactions),
+      summary: summarizeTransactions(
+        summaryGroups.map((group) => ({
+          type: group.type,
+          amount: group._sum.amount ?? 0,
+          baseAmountSnapshot: group._sum.baseAmountSnapshot,
+        })),
+      ),
     })
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed to fetch transactions' }, { status: 500 })

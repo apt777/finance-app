@@ -40,6 +40,28 @@ function summarizeTransactions(
   )
 }
 
+function normalizeDateInput(date: string) {
+  return date.includes('T') ? date.split('T')[0] ?? date : date
+}
+
+function buildDateRange(fromDate?: string | null, toDate?: string | null) {
+  if (!fromDate && !toDate) {
+    return undefined
+  }
+
+  const range: { gte?: Date; lte?: Date } = {}
+
+  if (fromDate) {
+    range.gte = new Date(`${normalizeDateInput(fromDate)}T00:00:00.000Z`)
+  }
+
+  if (toDate) {
+    range.lte = new Date(`${normalizeDateInput(toDate)}T23:59:59.999Z`)
+  }
+
+  return range
+}
+
 async function getCategoryMapSafely(userId: string) {
   try {
     const categories = await ensureDefaultCategories(userId)
@@ -79,6 +101,12 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
     const pageSize = showAll ? null : Math.max(1, Number(pageSizeParam) || 30)
     const skip = showAll || !pageSize ? 0 : (page - 1) * pageSize
     const take = showAll || !pageSize ? undefined : pageSize
+    const type = searchParams.get('type')
+    const categoryKey = searchParams.get('categoryKey')
+    const search = searchParams.get('search')?.trim()
+    const fromDate = searchParams.get('fromDate')
+    const toDate = searchParams.get('toDate')
+    const dateRange = buildDateRange(fromDate, toDate)
 
     const { id } = await props.params
 
@@ -99,9 +127,27 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
     const where = {
       userId,
       OR: [{ accountId: id }, { fromAccountId: id }, { toAccountId: id }],
+      ...(type && type !== 'all' ? { type } : {}),
+      ...(categoryKey && categoryKey !== 'all' ? { categoryKey } : {}),
+      ...(dateRange ? { date: dateRange } : {}),
+      ...(search
+        ? {
+            AND: [
+              {
+                OR: [
+                  { description: { contains: search, mode: 'insensitive' as const } },
+                  { notes: { contains: search, mode: 'insensitive' as const } },
+                  { account: { name: { contains: search, mode: 'insensitive' as const } } },
+                  { fromAccount: { name: { contains: search, mode: 'insensitive' as const } } },
+                  { toAccount: { name: { contains: search, mode: 'insensitive' as const } } },
+                ],
+              },
+            ],
+          }
+        : {}),
     }
 
-    const [transactions, total, categoryMap, summaryTransactions] = await Promise.all([
+    const [transactions, total, categoryMap, summaryGroups] = await Promise.all([
       prisma.transaction.findMany({
         where,
         orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
@@ -121,10 +167,10 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
       }),
       prisma.transaction.count({ where }),
       getCategoryMapSafely(userId),
-      prisma.transaction.findMany({
+      prisma.transaction.groupBy({
+        by: ['type'],
         where,
-        select: {
-          type: true,
+        _sum: {
           amount: true,
           baseAmountSnapshot: true,
         },
@@ -143,7 +189,13 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
       page,
       pageSize: showAll ? 'all' : pageSize ?? 30,
       hasMore: showAll ? false : skip + serializedTransactions.length < total,
-      summary: summarizeTransactions(summaryTransactions),
+      summary: summarizeTransactions(
+        summaryGroups.map((group) => ({
+          type: group.type,
+          amount: group._sum.amount ?? 0,
+          baseAmountSnapshot: group._sum.baseAmountSnapshot,
+        })),
+      ),
     })
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed to fetch transactions' }, { status: 500 })

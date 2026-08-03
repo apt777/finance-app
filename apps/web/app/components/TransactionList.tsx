@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useDeferredValue, useEffect, useState } from 'react'
 import { TransactionsResponse, useTransactions } from '@/hooks/useTransactions'
 import { useCategories } from '@/hooks/useCategories'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -62,14 +62,28 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
   const [showFilters, setShowFilters] = useState(false)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState<PageSizeOption>(DEFAULT_PAGE_SIZE)
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
 
-  const hasActiveFilters = Boolean(searchTerm.trim() || filterType !== 'all' || filterCategory !== 'all')
-  const effectivePageSize: PageSizeOption = hasActiveFilters ? 'all' : pageSize
-  const effectivePage = hasActiveFilters ? 1 : page
+  const deferredSearchTerm = useDeferredValue(searchTerm)
+
+  const hasActiveFilters = Boolean(
+    deferredSearchTerm.trim() || filterType !== 'all' || filterCategory !== 'all' || fromDate || toDate,
+  )
+
+  useEffect(() => {
+    setPage(1)
+  }, [deferredSearchTerm, filterType, filterCategory, fromDate, toDate])
+
   const { data, error, isLoading } = useTransactions({
     accountId,
-    page: effectivePage,
-    pageSize: effectivePageSize,
+    page,
+    pageSize,
+    search: deferredSearchTerm,
+    type: filterType,
+    categoryKey: filterCategory,
+    fromDate,
+    toDate,
   })
   
   const queryClient = useQueryClient()
@@ -137,19 +151,8 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
     )
   }
 
-  // Filter transactions
-  const filteredTransactions = transactions.filter((t) => {
-    const matchesType = filterType === 'all' || t.type === filterType
-    const matchesCategory = filterCategory === 'all' || t.categoryKey === filterCategory
-    const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         (t.notes || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (t.category?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (t.account?.name || t.fromAccount?.name || t.toAccount?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
-    return matchesType && matchesCategory && matchesSearch
-  })
-
   // Sort transactions
-  const sortedTransactions = [...filteredTransactions].sort((a, b) => {
+  const sortedTransactions = [...transactions].sort((a, b) => {
     if (sortBy === 'date') {
       const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime()
       if (dateDiff !== 0) {
@@ -178,14 +181,14 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
     return transaction.amount
   }
 
-  const filteredIncome = filteredTransactions
+  const filteredIncome = transactions
     .filter((t) => t.type === 'income')
     .reduce((sum, t) => sum + Math.max(0, getSummaryAmount(t)), 0)
-  const filteredExpense = filteredTransactions
+  const filteredExpense = transactions
     .filter((t) => t.type === 'expense')
     .reduce((sum, t) => sum + Math.abs(getSummaryAmount(t)), 0)
-  const totalIncome = hasActiveFilters ? filteredIncome : response?.summary.income ?? filteredIncome
-  const totalExpense = hasActiveFilters ? filteredExpense : response?.summary.expense ?? filteredExpense
+  const totalIncome = response?.summary.income ?? filteredIncome
+  const totalExpense = response?.summary.expense ?? filteredExpense
 
   // Export to CSV
   const handleExportCSV = () => {
@@ -277,9 +280,9 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
             className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
             aria-label="Transaction display count"
           >
-            <option value="30">30</option>
-            <option value="100">100</option>
-            <option value="all">전체</option>
+            <option value="30">{ui.transactionList.pageSize30}</option>
+            <option value="100">{ui.transactionList.pageSize100}</option>
+            <option value="all">{ui.transactionList.pageSizeAll}</option>
           </select>
         </div>
       </div>
@@ -372,6 +375,38 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
                   </option>
                 ))}
               </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-4">
+            <div>
+              <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1.5 ml-1">{ui.transactionList.fromDate}</label>
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1.5 ml-1">{ui.transactionList.toDate}</label>
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 text-sm"
+              />
+            </div>
+            <div className="flex items-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setFromDate('')
+                  setToDate('')
+                }}
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-all hover:border-blue-200 hover:text-blue-600"
+              >
+                {ui.transactionList.clearDateRange}
+              </button>
             </div>
           </div>
         </div>
@@ -510,20 +545,20 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
             </div>
           ))}
 
-          {!hasActiveFilters && effectivePageSize !== 'all' ? (
+          {pageSize !== 'all' ? (
             <div className="mt-4 flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
               <p className="text-xs font-medium text-slate-500">
-                {effectivePage} / {totalPages}
+                {page} / {totalPages}
               </p>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setPage((current) => Math.max(1, current - 1))}
-                  disabled={effectivePage <= 1}
+                  disabled={page <= 1}
                   className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:border-blue-200 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
-                  <span>이전</span>
+                  <span>{ui.transactionList.previous}</span>
                 </button>
                 <button
                   type="button"
@@ -531,7 +566,7 @@ const TransactionList = ({ accountId }: { accountId?: string }) => {
                   disabled={!hasMore}
                   className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:border-blue-200 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  <span>다음</span>
+                  <span>{ui.transactionList.next}</span>
                   <ChevronRight className="h-3.5 w-3.5" />
                 </button>
               </div>

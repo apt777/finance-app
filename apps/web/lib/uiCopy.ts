@@ -395,6 +395,14 @@ const copy = {
     transactionList: {
       selectAll: (count: number) => `전체 선택 (${count})`,
       notAvailable: '-',
+      pageSize30: '30건',
+      pageSize100: '100건',
+      pageSizeAll: '전체',
+      previous: '이전',
+      next: '다음',
+      fromDate: '시작일',
+      toDate: '종료일',
+      clearDateRange: '기간 초기화',
     },
     goals: {
       workspaceLabel: '목표 워크스페이스',
@@ -785,6 +793,14 @@ const copy = {
     transactionList: {
       selectAll: (count: number) => `Select all (${count})`,
       notAvailable: '-',
+      pageSize30: '30 items',
+      pageSize100: '100 items',
+      pageSizeAll: 'All',
+      previous: 'Previous',
+      next: 'Next',
+      fromDate: 'From',
+      toDate: 'To',
+      clearDateRange: 'Clear range',
     },
     goals: {
       workspaceLabel: 'Goal workspace',
@@ -1175,6 +1191,14 @@ const copy = {
     transactionList: {
       selectAll: (count: number) => `すべて選択 (${count})`,
       notAvailable: '-',
+      pageSize30: '30件',
+      pageSize100: '100件',
+      pageSizeAll: 'すべて',
+      previous: '前へ',
+      next: '次へ',
+      fromDate: '開始日',
+      toDate: '終了日',
+      clearDateRange: '期間をクリア',
     },
     goals: {
       workspaceLabel: '目標ワークスペース',
@@ -1565,6 +1589,14 @@ const copy = {
     transactionList: {
       selectAll: (count: number) => `全选 (${count})`,
       notAvailable: '-',
+      pageSize30: '30条',
+      pageSize100: '100条',
+      pageSizeAll: '全部',
+      previous: '上一页',
+      next: '下一页',
+      fromDate: '开始日期',
+      toDate: '结束日期',
+      clearDateRange: '清除日期范围',
     },
     goals: {
       workspaceLabel: '目标工作区',
