@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import { getTodayDateStringInTimeZone } from '@/lib/timezone'
 import {
   NO_BALANCE_SYNC_MARKER,
+  isTodayTransaction,
   normalizeDateInput,
   serializeNotes,
   shouldApplyBalanceAdjustment,
@@ -15,12 +17,14 @@ describe('transactionPersistence', () => {
   })
 
   it('always applies balance adjustment for today', () => {
-    expect(shouldApplyBalanceAdjustment('2026-08-02', 'Asia/Tokyo', false)).toBe(true)
+    const today = getTodayDateStringInTimeZone('Asia/Tokyo')
+    expect(isTodayTransaction(today, 'Asia/Tokyo')).toBe(true)
+    expect(shouldApplyBalanceAdjustment(today, 'Asia/Tokyo', false)).toBe(true)
   })
 
   it('uses explicit opt-in for past transactions', () => {
-    expect(shouldApplyBalanceAdjustment('2026-08-01', 'Asia/Tokyo', false)).toBe(false)
-    expect(shouldApplyBalanceAdjustment('2026-08-01', 'Asia/Tokyo', true)).toBe(true)
+    expect(shouldApplyBalanceAdjustment('2000-01-01', 'Asia/Tokyo', false)).toBe(false)
+    expect(shouldApplyBalanceAdjustment('2000-01-01', 'Asia/Tokyo', true)).toBe(true)
   })
 
   it('marks notes when balance sync is disabled', () => {
