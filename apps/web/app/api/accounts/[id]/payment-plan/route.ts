@@ -8,6 +8,16 @@ function getPlanKey(accountId: string) {
   return `credit_card_payment_plan:${accountId}`
 }
 
+function getPaymentSettingsKey(accountId: string) {
+  return `credit_card_payment_settings:${accountId}`
+}
+
+type CreditCardPaymentSettings = {
+  paymentLoggingMode?: 'planned_only' | 'separate_transfer'
+  paymentSourceAccountId?: string
+  paymentDayOfMonth?: number | null
+}
+
 export async function GET(_request: Request, props: { params: Promise<{ id: string }> }) {
   const params = await props.params
 
@@ -18,19 +28,30 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const setting = await prisma.userSetting.findUnique({
-      where: {
-        userId_key: {
-          userId,
-          key: getPlanKey(params.id),
+    const [setting, settingsRecord] = await Promise.all([
+      prisma.userSetting.findUnique({
+        where: {
+          userId_key: {
+            userId,
+            key: getPlanKey(params.id),
+          },
         },
-      },
-    })
+      }),
+      prisma.userSetting.findUnique({
+        where: {
+          userId_key: {
+            userId,
+            key: getPaymentSettingsKey(params.id),
+          },
+        },
+      }),
+    ])
 
     const paymentPlan = setting?.value ? JSON.parse(setting.value) : {}
-    return NextResponse.json({ paymentPlan })
+    const paymentSettings = settingsRecord?.value ? JSON.parse(settingsRecord.value) : {}
+    return NextResponse.json({ paymentPlan, paymentSettings })
   } catch (error: any) {
-    return NextResponse.json({ paymentPlan: {}, error: error.message || 'Failed to load payment plan' }, { status: 200 })
+    return NextResponse.json({ paymentPlan: {}, paymentSettings: {}, error: error.message || 'Failed to load payment plan' }, { status: 200 })
   }
 }
 
@@ -46,6 +67,14 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
 
     const payload = await request.json()
     const paymentPlan = payload?.paymentPlan && typeof payload.paymentPlan === 'object' ? payload.paymentPlan : {}
+    const rawSettings = payload?.paymentSettings && typeof payload.paymentSettings === 'object' ? payload.paymentSettings : {}
+    const paymentSettings: CreditCardPaymentSettings = {
+      paymentLoggingMode: rawSettings.paymentLoggingMode === 'separate_transfer' ? 'separate_transfer' : 'planned_only',
+      paymentSourceAccountId: typeof rawSettings.paymentSourceAccountId === 'string' ? rawSettings.paymentSourceAccountId : '',
+      paymentDayOfMonth: Number.isFinite(Number(rawSettings.paymentDayOfMonth))
+        ? Math.min(31, Math.max(1, Number(rawSettings.paymentDayOfMonth)))
+        : null,
+    }
     const userTimeZone = await getUserTimeZone(userId)
     const currentMonthKey = getMonthKeyInTimeZone(userTimeZone)
     const currentMonthPlannedAmount = Number(paymentPlan?.[currentMonthKey] || 0)
@@ -68,6 +97,23 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
         },
       })
 
+      await tx.userSetting.upsert({
+        where: {
+          userId_key: {
+            userId,
+            key: getPaymentSettingsKey(params.id),
+          },
+        },
+        update: {
+          value: JSON.stringify(paymentSettings),
+        },
+        create: {
+          userId,
+          key: getPaymentSettingsKey(params.id),
+          value: JSON.stringify(paymentSettings),
+        },
+      })
+
       if (Number.isFinite(currentMonthPlannedAmount) && currentMonthPlannedAmount >= 0) {
         await tx.account.updateMany({
           where: {
@@ -82,7 +128,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
       }
     })
 
-    return NextResponse.json({ paymentPlan })
+    return NextResponse.json({ paymentPlan, paymentSettings })
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed to save payment plan' }, { status: 500 })
   }
